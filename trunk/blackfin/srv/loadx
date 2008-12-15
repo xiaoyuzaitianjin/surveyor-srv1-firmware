@@ -1,0 +1,9 @@
+echo type X [enter], then control-C, to start XMODEM file transfer of SRV-1-X.hex:
+nc 192.168.0.15 10001
+sleep 1
+sx -Xkbv --tcp-client 192.168.0.15:10001 SRV-1-X.hex
+sleep 1
+echo
+echo make certain that file transfer successfully completed, then
+echo type xf [enter] to write SRV-1-X.hex to the SRVX flash boot sector:
+nc 192.168.0.15 10001

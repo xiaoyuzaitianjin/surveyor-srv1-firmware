@@ -1,0 +1,395 @@
+<html><head>
+
+<link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
+<a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
+<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 21 November 2008</h3>
+
+<table width="720">
+<tbody><tr><td>All commands from the host to the SRV-1 robot are
+comprised of ASCII characters or ASCII followed by 8-binary or ASCII decimal characters.  All commands receive an
+acknowledgment from the robot to the host, which is either a '#'
+character followed by the command, or '##' for variable length
+responses. Variable length commands which don't specify a return size
+append a newline ('\n') to their response.</td>
+</tr><tr><td></td>
+</tr><tr><td>Note that all of these commands can be executed via a
+terminal program with TCP / telnet capability.  For example, you can connect using the 'netcat' command via<br>
+'nc robot-ip 10001'</td>
+</tr><tr><td></td>
+</tr><tr><td>When the robot first powers up, it will dump the 'V'
+Version command results ("##Version ...\n") so you can see what version
+of firmware is running. There is typically a 2 second delay after
+startup before the robot can accept any commands while the camera and
+other sensors are initialized - you should see the yellow LED's flash when the processor reboots.
+After startup, just to test that there
+is 2-way communication, send an 'V' to access the firmware version string.
+The only command that will
+produce strange results is the 'I' IMJ command, which grabs a JPEG
+frame - this will flood the screen with binary characters.</td>
+</tr><tr><td></td>
+</tr><tr><td>The firmware has two small interpreters - one is a prototype Lisp interpreter and the other is the Little C interpreter.  The 'Q' command will execute the C program that has been stored
+in the robot's flash buffer. The 'P' command will run a Lisp program from the flash buffer, and the '!' command will run Lisp interactively, terminated with an ESC.  The flash buffer can be set by the 'zr' command which transfers the contents of the user flash segment to the flash buffer, or via the 'X' command which
+transfers a file from the host via XMODEM protocol.  Before executing a program, the contents of the 
+flash buffer can be examined using 'zd'.  When the program finishes
+(assuming the C program isn't running an infinite loop), control
+returns to the regular SRV-1 command processing loop.
+</td>
+</tr><tr><td></td>
+</tr><tr><td>If there are any questions about this protocol, send email to <a href="mailto:support@surveyor.com">support@surveyor.com</a> or check the <a href="http://www.surveyor.com/robot_forum.html">Surveyor Robotics Forum</a>.</td>
+</tr><tr><td></td>
+</tr></tbody></table>
+<br>
+<table border="1" width="720">
+<tbody><tr><th>Command</th><th>Response</th><th>Description
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><th>Core Robot Commands</th><th></th><th>
+</td></tr><tr><td>except for 'q' command, all parameters are sent as 8-bit binary characters (0x00 - 0xFF)</td><td></td><td>
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'7'</td><td>'#7'</td><td>note that keypad commands ('1' - '9') don't become active until an 'Mxxx' motor control command has been received<br><br>robot drift left
+</td></tr><tr><td>'8'</td><td>'#8'</td><td>robot drive forward
+</td></tr><tr><td>'9'</td><td>'#9'</td><td>robot drift right
+</td></tr><tr><td>'4'</td><td>'#4'</td><td>robot drive left
+</td></tr><tr><td>'5'</td><td>'#5'</td><td>robot stop
+</td></tr><tr><td>'6'</td><td>'#6'</td><td>robot drive right
+</td></tr><tr><td>'1'</td><td>'#1'</td><td>robot back left
+</td></tr><tr><td>'2'</td><td>'#2'</td><td>robot drive back
+</td></tr><tr><td>'3'</td><td>'#3'</td><td>robot back right
+</td></tr><tr><td>'0'</td><td>'#0'</td><td>robot rotate left 20-deg
+</td></tr><tr><td>'.'</td><td>'#.'</td><td>robot rotate right 20-deg
+</td></tr><tr><th></th><th></th><th>
+</td></tr><tr><td>'+'</td><td>'#+'</td><td>increase motor/servo level
+</td></tr><tr><td>'-'</td><td>'#-'</td><td>decrease motor/servo level
+</td></tr><tr><td>'<'</td><td>'#<'</td><td>trim motor balance toward left
+</td></tr><tr><td>'>'</td><td>'#>'</td><td>trim motor balance toward right
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'a'</td><td>'#a'</td><td>set capture resolution to 160x120
+</td></tr><tr><td>'b'</td><td>'#b'</td><td>set capture resolution to 320x240
+</td></tr><tr><td>'c'</td><td>'#c'</td><td>set capture resolution to 640x480
+</td></tr><tr><td>'d' or 'A'</td><td>'#A'</td><td>set capture resolution to 1280x1024
+</td></tr><tr><th></th><th></th><th>
+</td></tr><tr><td>'E'</td><td></td><td>launches flash buffer line editor -<br>
+(T)op (B)ottom (P)reviouse (N)ext line (L)ist (I)nsert until ESC (D)elete (H)elp (X)exit
+</th></tr><tr><td>'Fab'</td><td>'#F'</td><td>Enables Failsafe mode for motor control<br>
+'ab' parameters sent as 8-bit binary<br><br>
+a = left motor/servo failsafe level, b = right motor/servo failsafe level.<br><br>
+sets motor/servo levels for 'M' and 'S' commands in case no command is received via the radio link within 2 seconds.  
+</th></tr><tr><td>'f'</td><td>'#f'</td><td>disables Failsafe mode
+</th></tr><tr><td>'g0'</td><td>'##g0'</td><td>grab reference frame and enable frame differencing
+</th></tr><tr><td>'g1'</td><td>'##g1'</td><td>enable color segmentation
+</th></tr><tr><td>'g2'</td><td>'##g2'</td><td>enable edge detection (threshold changed with 'T' command)
+</th></tr><tr><td>'G'</td><td>'#G'</td><td>disable frame differencing / color segmentation / edge detection
+</th></tr><tr><td>'h'</td><td>'#h'</td><td>switch serial channel to high baud rate (2500kbps)
+</td></tr><tr><th></th><th></th><th>
+</td></tr><tr><td>'I'</td><td>'##IMJxs0s1s2s3....'</td><td>grab JPEG compressed video frame
+<br><br> x = frame size in pixels:<br>   1 = 80x64, 3 = 160x120, 5 = 320x240, 7 = 640x480, 9 = 1280x1024
+<br><br> s0s1s2s3=frame size in bytes (s0 * 256^0 + s1 * 256^1 + s2 * 256^2 + s3 * 256^3)
+<br> .... = full JPEG frame
+<br><br> Note that sometimes the 'I' command returns nothing if the
+robot camera is busy, so the 'I' command should be called as many times
+as needed until a frame is returned
+</th></tr><tr><td>'irab'</td><td>'##ir cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
+a is device id, b is register, cc is 8-bit return value from register displayed as decimal value
+</th></tr><tr><td>'iRab'</td><td>'##iR cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
+a is device id, b is register, cc is 16-bit return value from register displayed as decimal value
+</th></tr><tr><td>'iwabc'</td><td>'##iw'</td><td>I2C register write ('abc' parameters sent as 8-bit binary)<br>
+a is device id, b is register, c is value written to register
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'l'</td><td>'#l'</td><td>turn on lasers
+</td></tr><tr><td>'L'</td><td>'#L'</td><td>turn off lasers
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'Mabc'</td><td>'#M'</td><td>direct motor control<br>
+'abc' parameters sent as 8-bit binary<br>
+<br> a=left speed, b=right speed, c=duration*10milliseconds
+<br><br> speeds are 2's complement 8-bit binary values - 0x00 through 0x7F is
+forward, 0xFF through 0x81 is reverse, e.g. the decimal equivalent of the 4-byte sequence 0x4D 0x32
+0xCE 0x14 = 'M' 50 -50 20 (rotate right for 200ms)
+<br><br> duration of 00 is infinite, e.g. the 4-byte sequence 0x4D 0x32 0x32 0x00 = M 50 50 00 (drive forward at 50% indefinitely)
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'o'</td><td>'#o'</td><td>enable caption overlay
+</td></tr><tr><td>'O'</td><td>'#O'</td><td>disable caption overlay
+</th></tr><tr><td>'p'</td><td>'##ping xxxx xxxx xxxx xxxx\n'</td><td>ping ultrasonic ranging modules attached to pins 27, 28, 29, 30 with trigger on pin 18 - tested with Maxbotics EZ0 and EZ1 modules.  xxxx return value is range in inches * 100 (2500 = 25 inches)
+</th></tr><tr><td>'qx'</td><td>'##quality x\n'</td><td>sets JPEG quality between 1-8 ('x' is an ASCII decimal character).  1 is highest, 8 is lowest
+</td></tr><tr><td>'R'</td><td>'#R'</td><td>measure range to nearest obstacle using laser pointers
+</td></tr><tr><td>'r'</td><td>'#r'</td><td>same as 'R', but with diagnostic output
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'Sab'</td><td>'#S'</td><td>direct servo control (TMR2 and TMR3) <br>
+'ab' parameters sent as 8-bit binary<br><br>
+a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
+<br><br> servo settings are 8-bit binary values, representing timing pulse widths ranging from 1ms to 2ms.  0x00 corresponds to a 1ms pulse, 0x64 corresponds to a 2ms pulse, and 0x32 is midrange with a 1.5ms pulse
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'sab'</td><td>'#s'</td><td>direct servo control of 2nd bank of servos (TMR6 and TMR7)<br>
+'ab' parameters sent as 8-bit binary<br><br>
+a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
+<br><br> servo settings are 8-bit binary values, representing timing pulse widths ranging from 1ms to 2ms.  0x00 corresponds to a 1ms pulse, 0x64 corresponds to a 2ms pulse, and 0x32 is midrange with a 1.5ms pulse
+</td></tr><tr><th></th><th></th><th>
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'t'</td><td>'##time - millisecs: xxxx\n'</td><td>outputs time in milliseconds since reset
+</th></tr><tr><td>'Tx'</td><td>'#T'</td><td>changes threshold in 'g2' edge detection - T4 is default, range is T1 to T9
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'V'</td><td>'##Version ...\n'</td><td>read firmware version info<br>response is terminated by newline character
+</th></tr><tr><td>'X'</td><td>'#Xmodem transfer count: bytes'</td><td>Xmodem-1K file transfer - receive file via xmodem protocol - store in flash buffer
+</th></tr><tr><td>'y'</td><td>'#y'</td><td>flip video capture (for use with upside-down camera)
+</th></tr><tr><td>'Y'</td><td>'#Y'</td><td>restore video capture to normal orientation
+</td></tr><tr><td>'zc'</td><td>'##zclear\n'</td><td>clear contents of flash buffer
+</td></tr><tr><td>'zC'</td><td>'##zCRC xxxx\n'</td><td>compute crc16_ccitt for flash buffer
+</td></tr><tr><td>'zd'</td><td>'##zd...\n'</td><td>flash buffer dump - dump contents of flash memory buffer to console
+</td></tr><tr><td>'zr'</td><td>'##zr\n'</td><td>flash memory read - read 65kb from user flash sector to flash buffer (e.g. read C program from flash sector before running C interpreter)
+</th></tr><tr><td>'zw'</td><td>'##zw\n'</td><td>flash memory write - write 65kb from flash buffer to user flash sector
+</td></tr><tr><td>'zZ'</td><td>'##zZ\n'</td><td>flash memory boot sector update - writes contents of flash buffer to boot sectors of flash memory - used to replace u-boot.ldr or srv1.ldr - checks first that a valid LDR format image is in the flash buffer
+</td></tr><tr><th></th><th></th><th>
+</td></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><th>Special Commands</th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'$!'</td><td></td><td>reset Blackfin
+</th></tr><tr><td>'$R'</td><td></td><td>SVS command - configures slave Blackfin to receive SPI transfer to flash buffer
+</th></tr><tr><td>'$X'</td><td></td><td>SVS command - configures master Blackfin to transfer contents of flash buffer via SPI
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'x?'</td><td></td><td>SRV1-X menu
+</th></tr><tr><td>'xs'</td><td></td><td>SRV1-X setup
+</th></tr><tr><td>'xb'</td><td></td><td>SRV1-X boot loader
+</th></tr><tr><td>'xf'</td><td></td><td>SRV1-X flash
+</th></tr><tr><td>'xA'</td><td></td><td>SRV1-X dump analog data
+</th></tr><tr><td>'xG'</td><td></td><td>SRV1-X GPS
+</th></tr><tr><td>'xC'</td><td></td><td>SRV1-X console
+</th></tr><tr><th></th><th></th><th>
+</td></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><th>Vision Commands</th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+</td></tr><tr><td>all parameters are sent as ASCII decimal characters ('0' - '9')</td><td></td><td>
+</th></tr><tr><th></th><th></th><th>
+<tr><td>'vbc'</td><td>'##vbc x1 x2 y1 y2    ssss...\n'</td><td>the
+'vb' command searches for blobs matching the colors in color bin #c,
+and returns coordinates of an x1, x2, y1, y2 rectangular region
+containing the matching pixels, along with a count of matching pixels
+in the blob. up to 16 blobs can be returned, and the blobs are sent in
+order of pixel count, though blobs smaller than MIN_BLOB_SIZE
+(currently set to 5 pixels) aren't shown.
+</td></tr><tr><td>'vccy1y2u1u2v1v2'</td><td>'##vcc\n'</td><td>the 'vc' command directly sets the contents of color bin #c.  <br>
+this command will return string with 'vc' followed by the color bin number.  <br>
+for example, we could save a set of colors to color bin #3
+corresponding to measurements taken at another time, such as the above
+mentioned orange golf ball color measurement, using 'vc3127176086111154200'.
+we could then confirm that the colors were properly stored by issuing
+the command 'vr3' to retrieve the contents of color bin #3.
+</td></tr><tr><td>'vh'</td><td>'##vhist y  u  v\n'</td><td>computes and lists the distribution of Y, U and V pixels over the entire range of possible values, divided into bins of 0-3, 4-7, 8-11, ... 248-251, 252-255
+</td></tr><tr><td>'vm'</td><td>'##vmean yy uu vv\n'</td><td>computes mean values for Y, U and V over the entire image.
+</td></tr><tr><td>'vpxxxxyyyy'</td><td>'##vp yyy uuu vvv\n'</td><td>the 'vp' command samples a single pixel defined by coordinates xxxx (column 0000-0159, 0000-0319, 0000-0639, 0000-1279 depending on resolution) and yy (row 0000-0127, 0000-0255, 0000-0511, 0000-1023, where 0000 is top of image). 'vp01600128' will sample a pixel in the middle of the image at 320x256 resolution, 'vp01600000' will sample a pixel in the middle of the top row, etc...
+</td></tr><tr><td>'vrc'</td><td>'##vrc y1 y2 u1 u2 v1 v2\n'</td><td>the 'vr' command retrieves the stored color info from color bin #c.  <br>this command will return string with 'vr' followed by the color bin number,
+followed by y1=Ymin, y2=Ymax, u1=Umin, u2=Umax, v1=Vmin, v2=Vmax. <br>
+in the above example where colors for an orange golf ball were captured
+using the 'vg' command for color bin #0, issuing a 'vr0' command will
+return the colors stored in color bin #0 - e.g. '##vr0 127 176 86 111 154 200\n'. 
+</td></tr><tr><td>'vzx'</td><td>'##vzero\n'</td><td>vz0 zeros out all of the color bins, vz1 / vz2 / vz3 / vz4 segments colors into various color spaces which can be used by enabling 'g1' color segmentation function ('G' turns it off)
+</th></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><th>Lisp Commands</th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'P'</td><td>execute Lisp from flash buffer</td><td>runs Lisp program stored in flash buffer, which got there via the 'zr' command (which reads user flash sector into flash buffer), 'X' command (XMODEM file transfer), or 'E' line editor.  The interpreter is based on the Scheme dialect of Lisp, using code from <a href="http://www.cs.indiana.edu/scheme-repository/imp/siod.html">"Scheme In One Defun" (SIOD)</a> by George J. Carrette. 
+</th></tr><tr><td>'!'</td><td>execute Lisp interactively</td><td>runs Lisp interactively from console;  ESC character (0x1B) terminates interpreter and returns to main firmware control loop<br><br>
+
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>Lisp primitives</td><th></th><th>
+
+</td></tr><tr><th></th><td>built-in functions</td><td>
++  -  *  /  =  &gt;  &lt; eq? eqv? null? pair? symbol? number? and or not
+<br>car cdr cons set-car! set-cdr! set! print eval define lambda
+<br>while quote if begin reverse 
+
+</td></tr><tr><th></th><td>special functions</td><td>
+(console) - pass interpreter control to console
+<br>(dump) - show current heap and stack pointers
+<br>(quit) - exit Lisp
+<br>(read) - input and process
+<br>(error) - throw error message
+<br>(oblist) - list all stored objects
+
+</td></tr><tr><th></th><td>robot functions</td><td>
+(time) - returns time since last reset in milliseconds
+<br>(input) - reads from keyboard numbers 0-9 (blocking read)
+<br>(compass) - reads heading from HMC6352 compass (option)
+<br>(signal) - returns true on any input from console (non-blocking)
+<br>(rand x) - returns random value ranging from 0 to x
+<br>(range) - uses laser pointers to distance to nearest obstacle in cm's
+<br>(delay x) - wait x milliseconds
+<br>(lasers x) - non-zero value turns lasers on
+<br>(robot x) - move robot ... 2=back 5=stop 8=fwd 4=left 6=right
+<br>(ping x) - read from sonar module 1-4
+<br>(color x '(ymin ymax umin umax vmin vmax)) - set color bin 0-16
+<br>(blob x) - search on color bin x
+
+</td></tr><tr><th></th><td>; comment</td><td>no processing of characters to end of line, e.g.<br>  ; this is a comment
+
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><th>C Language Commands</th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><td>'Q'</td><td>execute C program</td><td>runs C program stored in flash buffer, which got there via the 'E' line editor, the 'zr' command (which reads user flash sector into flash buffer) or 'X' command (XMODEM file transfer)<br><br>
+</th></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><td>C primitives</td><th></th><th>
+
+</td></tr><tr><th></th><td>assignments</td><td>a = b / 20; &nbsp;&nbsp;&nbsp;a = a - 0x55;
+
+</td></tr><tr><th></th><td>operators</td><td>+  -  *  /  %  &amp;  |  ^ =  (  )  &gt;  &gt;=  &lt;  &lt;=  ==  !=
+
+</td></tr><tr><th></th><td>int, char</td><td>'int' is 32-bit signed
+integer, 'char' is 8 bit unsigned chars. variables declared locally or
+globally - variable names can be up to 31 characters in length
+</td></tr><tr><th></th><td>/* comment */</td><td>no processing of characters, e.g.<br>
+/* this is a comment */<br>/* this is a <br> &nbsp;&nbsp;  two line comment */
+
+</td></tr><tr><th></th><td>for()</td><td>for() loop, can be nested 15 deep, e.g. <br><br>
+main()<br>
+{<br>
+&nbsp;&nbsp;  int i, j, k;<br>
+&nbsp;&nbsp;  for(i = 0; i &lt; 5; i = i + 1) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;    for(j = 0; j &lt; 3; j = j + 1) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      for(k = 3; k ; k = k - 1) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        print(i);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        print(j);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        print(k);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;    }<br>
+&nbsp;&nbsp;  }<br>
+}
+
+</td></tr><tr><th></th><td>int|char|void function() ... return</td><td>up to 25 functions can be defined, function name length up to 25 characters, and functions can be called recursively e.g.<br><br>
+factr(int i)<br>
+{<br>
+&nbsp;&nbsp;  if (i &lt; 2) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;    return 1;<br>
+&nbsp;&nbsp;  }<br>
+&nbsp;&nbsp;  else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;    return i * factr(i-1);<br>
+&nbsp;&nbsp;  }<br>
+}
+
+</td></tr><tr><th></th><td>if () ... else</td><td>
+int x;<br>
+x = sonar(1);  &nbsp;&nbsp;&nbsp;&nbsp; /* read sonar range */<br>
+if (x &lt; 500) {<br>
+&nbsp;&nbsp;motors(50, -50);  &nbsp;&nbsp; /* if obstacle detected, turn right */<br>
+} else {<br>
+&nbsp;&nbsp;motors(50, 50);<br>
+}
+
+</td></tr><tr><th></th><td>char input()</td><td>checks the serial port (radio channel) for a single incoming character.  <br><br>
+&nbsp;&nbsp;ch = input()  /* if no data is found, ch = 0  */
+
+</td></tr><tr><th></th><td>void print()</td><td>prints a set of strings and variables, followed by a newline ('\n'), e.g. <br>
+&nbsp;&nbsp;print("hello");<br>
+&nbsp;&nbsp;print("test" x y z);
+
+</td></tr><tr><th></th><td>while()<br>while() ... do<br>do ... while()</td><td>
+&nbsp;&nbsp;count = a;<br>
+&nbsp;&nbsp;  do {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;    print(count); <br>
+&nbsp;&nbsp;  } while(count=count-1);<br>
+
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><td>C - robot control/sense</td><th></th><th>
+
+</td></tr><tr><th></th><td>void delay(milliseconds)</td><td>program delay in milliseconds, e.g.<br><br>
+&nbsp;&nbsp;delay(500);
+
+</td></tr><tr><th></th><td>int get(location)</td><td>pointer operation - gets int data from memory location <br><br>
+&nbsp;&nbsp;&nbsp;int S; S = get(0x00100000);&nbsp;&nbsp;&nbsp; /* sets S from memory location 0x00100000 */<br>
+&nbsp;&nbsp;&nbsp;int S; int T = 0x00100000; S = get(T);&nbsp;&nbsp;&nbsp; /* sets S from memory location pointed to by T */<br>
+
+</td></tr><tr><th></th><td>void laser(on/off)</td><td>laser(1); turns on laser pointers, laser(0); turns them off
+
+</td></tr><tr><th></th><td>void motors(left, right)</td><td>sets left and right motor output, e.g.  <br><br>
+&nbsp;&nbsp;motors(50, -50); /* spin right */<br>
+&nbsp;&nbsp;motors(-50, 50); /* spin left */<br>
+&nbsp;&nbsp;motors(-50, -50); /* go backwards */<br>
+&nbsp;&nbsp;motors(50, 50); /* go forwards */
+
+</td></tr><tr><th></th><td>int rand()</td><td>returns a pseudo-random number between 0 and 65535
+
+</td></tr><tr><th></th><td>int range()</td><td>computes distance to nearest obstacle using laser pointers
+
+</td></tr><tr><th></th><td>int readi2c(channel, register)</td><td>same as 'ir' command - returns 8-bit value
+
+</td></tr><tr><th></th><td>int readi2c2(channel, register)</td><td>same as 'iR' command - returns 16-bit value
+
+</td></tr><tr><th></th><td>void servo(left, right)</td><td>sets left and right servo output, e.g.  <br><br>
+&nbsp;&nbsp;servo(50, 50); /* stop */<br>
+&nbsp;&nbsp;servo(25, 75); /* spin left */<br>
+&nbsp;&nbsp;servo(25, 25); /* go backwards */<br>
+&nbsp;&nbsp;servo(75, 75); /* go forward */
+
+</td></tr><tr><th></th><td>void servo2(left, right)</td><td>same as servo() command, but supports a 2nd set of servos on timer ports 6 & 7
+
+</td></tr><tr><th></th><td>int sonar(channel)</td><td>if sonar transducers are installed, returns measured range in channels 1-4.  return value of 0 means there is no active transducer on that channel
+
+</td></tr><tr><th></th><td>void set(location, value)</td><td>pointer operation - write int data to memory location <br><br>
+&nbsp;&nbsp;&nbsp;set(0x00100000, 555);&nbsp;&nbsp;&nbsp; /* writes 555 to memory location 0x00100000 */<br>
+&nbsp;&nbsp;&nbsp;int S = 0x00100000; set(S, 555);&nbsp;&nbsp;&nbsp; /* writes 555 to memory location pointed to by S */<br>
+&nbsp;&nbsp;&nbsp;int T = 555; set(0x00100000, T);&nbsp;&nbsp;&nbsp; /* writes value of T to memory 0x00100000 */<br>
+&nbsp;&nbsp;&nbsp;int S=0x00100000; int T = 555; set(S, T);&nbsp;&nbsp;&nbsp; /* writes value of T to memory location pointed to by S */<br>
+
+</td></tr><tr><th></th><td>int time()</td><td>get current time (milliseconds since startup) -<br><br>
+&nbsp;&nbsp;int t1;<br>
+&nbsp;&nbsp;t1 = time();
+
+</td></tr><tr><th></th><td>int writei2c(channel, register, value)</td><td>same as 'iw' command
+</th></tr><tr><th></th><th></th><th>
+</th></tr><tr><th></th><th></th><th>
+
+</th></tr><tr><td>C - robot vision</td><th></th><th>
+
+</td></tr><tr><th></th><td>int blob(color, num)</td><td>size = blob(colorbin, blobnum); -
+similar to the "vb" Blob function above, but only returns the selected blob[blobnum] matching the specified color (0 - 9), using reserved variables x, y and z, where x = centroid x coordinate, y = centroid y coordinate, z = blob width. Note that calling blob() with blobnum=0 will compute a new blob search, but calling blob() with blobnum>0 will only retrieve previous located blobs rather than triggering a new search<br>
+e.g.<br><br>
+
+main() {<br>
+&nbsp;&nbsp;int x, y, z;<br>
+&nbsp;&nbsp;color(2, 100, 140, 90, 110, 130, 160);<br>
+&nbsp;&nbsp;imgcap();<br>
+&nbsp;&nbsp;if (blob(2, 0))<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;print("blob 0" x y z);
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;if (blob(2, 1))<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;print("blob 1" x y z);
+&nbsp;&nbsp;}<br>
+}<br><br>
+
+which might output<br>
+&nbsp;&nbsp;&nbsp;blob 0   40    30    15<br>
+&nbsp;&nbsp;&nbsp;blob 1   60    25     8<br>
+for one blob centered at (40,30) with a width of 15 pixels and another blob centered at (60,25) with a width of 8 pixels<br><br>
+a returned size of 0 would indicate that no matching blob was found
+
+</td></tr><tr><th></th><td>void color(bin, y0, y1, u0, u1, v0, v1)</td><td>sets the y, u, v color range for a color bin, e.g. <br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;color(0, 100, 140, 90, 110, 130, 160);<br><br>
+would set color bin #0 with y ranging 100-140, u 90-110, v 130-160.  functionally equivalent to 'vc' color set function, and results can be confirmed with 'vr' command
+
+</td></tr><tr><th></th><td>void imgcap()</td><td>captures image at default resolution
+
+</td></tr><tr><th></th><td>void imgrcap()</td><td>captures and stores reference frame at default resolution
+
+</td></tr><tr><th></th><td>void imgdiff(flag)</td><td>enables image differencing on captured images at default resolution.  imgdiff(1) causes imgcap() to compute difference between latest captured frame and reference frame, imgdiff(0) turns off frame differencing
+
+</td></tr><tr><th></th><td>void resolution('abcA')</td><td>changes capture resolution 'a' = 160x128, 'b' = 320x256, 'c' = 640x512, 'A' = 1280x1024
+
+</th></tr></tbody></table>
+<br><br>
+last updated 23 November 2008 - 18:50 GMT
+<br>
+<script src="urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-226226-1";
+urchinTracker();
+</script>
+
+</body></html>
