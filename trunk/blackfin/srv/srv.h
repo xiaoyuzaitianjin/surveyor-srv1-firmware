@@ -22,9 +22,10 @@
 
 /* SDRAM allocation */
 #define FLASH_BUFFER 0x00100000  // address in SDRAM for buffering flash and xmodem 
-#define SPI_BUFFER   0x00180000  // 512kB buffer for transfer of data via SPI bus
+#define SPI_BUFFER1  0x00200000  // 512kB buffer for transfer of data via SPI bus
+#define SPI_BUFFER2  0x00280000  // 512kB buffer for transfer of data via SPI bus
 #define HEAPSTART    0x00300000  // put this above FLASH_BUFFER 
-#define HEAPSIZE     0x00C00000  // 13MB for now - leave 1MB for JPEG buffer
+#define HEAPSIZE     0x00C00000  // 12MB for now - leave 1MB for JPEG buffer
 #define DMA_BUF1     0x01000000  // address in SDRAM for DMA transfer of frames from camera
 #define DMA_BUF2     0x01300000  //   second DMA buffer for double buffering
 #define FRAME_BUF    0x01600000  // address in SDRAM for staging images for processing/jpeg
@@ -77,6 +78,10 @@ void enable_frame_diff ();
 void enable_segmentation();
 void enable_edge_detect();
 void set_edge_thresh();
+void grab_code_send();
+void recv_grab_code();
+void grab_dct_coeff();
+void show_dct_coeff(), show_dct_coeff310();
 void disable_frame_diff ();
 void overlay_on ();
 void overlay_off ();

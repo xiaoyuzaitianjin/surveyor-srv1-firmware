@@ -331,11 +331,12 @@ void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
             v2 = *(ip+2+skip) - *(ip+2-skip); 
             gx = ((y2*y2)>>2) + u2*u2 + v2*v2;
  
-            cc = ((*(ip+1) & 0xC0) >> 4)   // threshold Y to 0x0C position
-               + ((*ip & 0x80) >> 6)       // threshold U to 0x02 position
-               + ((*(ip+2) & 0x80) >> 7);  // threshold V to 0x01 position
-            if ((gx > thresh) || (gy > thresh))  
+            cc = ((*ip >> 2) & 0x38)       // threshold U to 0x0C position
+               + ((*(ip+2) >> 5) & 0x07);  // threshold V to 0x03 position
+            if (gx > thresh)  
                 cc |= 0x80;               // add 0x80 flag if this is edge pixel
+            if (gy > thresh)  
+                cc |= 0x40;               // add 0x40 flag if this is edge pixel
             *op++ = cc;
         }
     }
@@ -343,24 +344,23 @@ void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
 
 void svs_segview(unsigned char *spibuf, unsigned char *framebuf) {
     unsigned int ix;
-    unsigned char *ip;
-    unsigned int *op;
-    unsigned int colormap[] = {
-        0x20402040, 0x20C02040, 0x204020C0, 0x20C020C0,
-        0x60406040, 0x60C06040, 0x604060C0, 0x60C060C0,
-        0xA040A040, 0xA0C0A040, 0xA040A0C0, 0xA0C0A0C0,
-        0xE040E040, 0xE0C0E040, 0xE040E0C0, 0xE0C0E0C0,
-    };
+    unsigned char *ip, *op;
+
     if (imgWidth > 640)   // buffer size limits this function to 640x480 resolution
         return;
     
     ip = spibuf;
-    op = (unsigned int *)framebuf;
+    op = framebuf;
     for (ix=0; ix<imgWidth*imgHeight; ix+=2) {   
-        if (*ip & 0x80)      // is this an edge pixel ?
-            *op++ = 0xFF80FF80;
-        else
-            *op++ = colormap[*ip];
+        if (*ip & 0xC0) {      // is this an edge pixel ?
+            *(op+1) = *(op+3) = 0xFF;
+            *op = *(op+2) = 0x80;
+        } else {
+            *(op+1) = *(op+3) = 0xA0;
+            *op = ((*ip & 0x38) << 2) + 0x10;
+            *(op+2) = ((*ip & 0x07) << 5) + 0x10;
+        }
+        op += 4;
         ip++;
     }
 }

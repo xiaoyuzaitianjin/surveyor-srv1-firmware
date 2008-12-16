@@ -748,17 +748,17 @@ LISP leval_while(args,env)
  return(NIL);
 }
 
-LISP leval_cond(args,env)  // this is broken
- LISP args, env;
-{
- while (1) {
-   if NNULLP(leval(car(args),env))
-     return(truth);
-   args=cdr(args);
-   if NULLP(args)
-     return(NIL);
- }
-}
+//LISP leval_cond(args,env)  // this is broken
+// LISP args, env;
+//{
+// while (1) {
+//   if NNULLP(leval(car(args),env))
+//     return(truth);
+//   args=cdr(args);
+//   if NULLP(args)
+//     return(NIL);
+// }
+//}
 
 LISP leval_lambda(args,env)
  LISP args,env;
@@ -1141,7 +1141,7 @@ void init_subrs()
 // tc_msubr
  init_subr("if",tc_msubr,leval_if);
  init_subr("begin",tc_msubr,leval_progn);
- init_subr("cond",tc_msubr,leval_cond);
+  // init_subr("cond",tc_msubr,leval_cond);
  init_subr("or",tc_msubr,leval_or);
  init_subr("and",tc_msubr,leval_and);
  init_subr("let-internal",tc_msubr,leval_let);

@@ -54,6 +54,8 @@ unsigned int image_size; /* JPEG image size */
 char imgHead[11]; /* image frame header for I command */
 short hhpel[] = {0, -1, 0, 1, -1, 1, -1, 0, 1};
 short vhpel[] = {0, -1, -1, -1, 0, 0, 1, 1, 1};
+unsigned char *save_dct_ptr;
+int save_dct_flag = 0;
 
 /* Motor globals */
 int lspeed, rspeed, lspeed2, rspeed2, base_speed, err1;
@@ -97,6 +99,7 @@ void init_io() {
     pwm1_init = 0;
     pwm2_init = 0;
     silent_console = 0;
+    save_dct_flag = 0;
 }
 
 /* reset CPU */
@@ -371,7 +374,7 @@ void enable_segmentation() {
 
 void enable_edge_detect() {
     edge_detect_flag = 1;
-    edge_thresh = 2000;
+    edge_thresh = 3200;
     if (!silent_console)
         printf("##g2");
 }
@@ -379,7 +382,7 @@ void enable_edge_detect() {
 void set_edge_thresh () {
     unsigned char ch;
     ch = getch();
-    edge_thresh = (unsigned int)(ch & 0x0f) * 500;
+    edge_thresh = (unsigned int)(ch & 0x0f) * 800;
     if (!silent_console) {
         printf((unsigned char *)"#T");
     }
@@ -403,9 +406,89 @@ void grab_frame () {
         color_segment((unsigned char *)FRAME_BUF);
     if (edge_detect_flag) {
         //edge_detect((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF2, edge_thresh);
-        svs_segcode((unsigned char *)SPI_BUFFER, (unsigned char *)FRAME_BUF, edge_thresh);
-        svs_segview((unsigned char *)SPI_BUFFER, (unsigned char *)FRAME_BUF);
+        svs_segcode((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh);
+        svs_segview((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF);
     }
+}
+
+/* save DCT coefficients from JPEG compression in FRAME_BUF2 */
+void grab_dct_coeff() {
+    if (imgWidth > 640)  // not enough memory to do this for 1280x1024
+        return;
+    save_dct_flag = 1;
+    save_dct_ptr = (unsigned char *)FRAME_BUF2;
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    output_start = (unsigned char *)JPEG_BUF;
+    output_end = encode_image((unsigned char *)FRAME_BUF, output_start, quality, 
+            FOUR_TWO_TWO, imgWidth, imgHeight); 
+    save_dct_flag = 0;
+}
+
+void show_dct_coeff() {
+    int i1, i2, i3;
+    unsigned char *xx;
+    
+    grab_dct_coeff();
+    
+    i1 = ((getch() & 0x0F) * 1000) +  // which macroblock
+         ((getch() & 0x0F) * 100) +
+         ((getch() & 0x0F) * 10) +
+         (getch() & 0x0F);
+    printf("##j  macroblock %d\n\r", i1);
+    xx = (unsigned char *)(FRAME_BUF2 + (i1 * 64));  // 64 bytes per macroblock
+    for (i1=0; i1<4; i1++) {
+        for (i2=0; i2<16; i2++) {
+            printNumber(16, 4, 0, ' ', *xx++);
+        }
+        printf("\n\r");
+    }
+}
+
+void show_dct_coeff310() {
+    int i1, i2, i3;
+    unsigned char *xx;
+    
+    grab_dct_coeff();
+    
+    i1 = 310;
+    printf("##j  macroblock %d\n\r", i1);
+    xx = (unsigned char *)(FRAME_BUF2 + (i1 * 64));  // 64 bytes per macroblock
+    for (i1=0; i1<4; i1++) {
+        for (i2=0; i2<16; i2++) {
+            printNumber(16, 4, 0, ' ', *xx++);
+        }
+        printf("\n\r");
+    }
+}
+
+
+
+void grab_code_send() {   // grab frame, call svs_segcode, send to Blackfin #2
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    svs_segcode((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh);
+    svs_master((unsigned short *)SPI_BUFFER1, imgWidth*(imgHeight/2)+8);
+}
+
+void recv_grab_code() {   // recv buffer from Blackfin #1, grab frame, call svs_segcode
+    int ix, hit1, hit2;
+    unsigned char *buf1, *buf2;
+    
+    svs_slave((unsigned short *)SPI_BUFFER1, imgWidth*(imgHeight/2)+8);
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    svs_segcode((unsigned char *)SPI_BUFFER2, (unsigned char *)FRAME_BUF, edge_thresh);
+    buf1 = (unsigned char *)SPI_BUFFER1;
+    buf2 = (unsigned char *)SPI_BUFFER2;
+    hit1 = hit2 = 0;
+    for (ix=0; ix<imgWidth*imgHeight/2; ix++) {  // count edge pixels in each buffer
+        if (buf1[ix] & 0xC0)
+            hit1++;
+        if (buf2[ix] & 0xC0)
+            hit2++;
+    }
+    printf("recv_grab_code() - %d hits on left, %d hits on right\n\r", hit1, hit2);
 }
 
 void grab_reference_frame () {

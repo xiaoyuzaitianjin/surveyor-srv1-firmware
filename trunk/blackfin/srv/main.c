@@ -43,6 +43,12 @@ int main() {
                     grab_frame();
                     send_frame();
                     break;
+                case 'J':
+                    show_dct_coeff();
+                    break;
+                case 'j':
+                    show_dct_coeff310();
+                    break;
                 case 'y':
                     invert_video();
                     break;
@@ -107,6 +113,12 @@ int main() {
                             break;
                         case 'R':
                             svs_slave((unsigned short *)FLASH_BUFFER, 131072);
+                            break;
+                       case '1':
+                            grab_code_send();
+                            break;
+                       case '2':
+                            recv_grab_code();
                             break;
                     }
                     break;

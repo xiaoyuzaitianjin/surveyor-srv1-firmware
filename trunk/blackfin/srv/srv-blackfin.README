@@ -1,8 +1,22 @@
 				RELEASE NOTES
 
+SRV-1 firmware test build for Blackfin - 5 December 2008 
+    includes all changes since srv-blackfin-112608 release
+    
+    http://www.surveyor.com/blackfin/srv-blackfin-120508.zip
+
+* changed heap size to 12MB, flash buffer size to 1MB.  added
+  two 512kb buffers for SPI transfers
+  
+* changed 'g2' image segmentation/edge algorithm again.  now hosts 2 bits 
+  for gx/gy edge detect and 3 bits each for U and V in svs_segcode() and
+  svs_segview()
+  
+* added check for empty flash buffer in C interpreter
+
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 26 November 2008 
+SRV-1 firmware build for Blackfin - 26 November 2008 
     http://www.surveyor.com/blackfin/srv-blackfin-112608.zip
 
 * added complete malloc() and free() functions

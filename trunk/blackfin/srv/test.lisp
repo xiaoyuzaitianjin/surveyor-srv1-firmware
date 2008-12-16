@@ -65,12 +65,4 @@
            (standard-fib (- x 2)))))
 (standard-fib 10)
 
-(define (abs x)
-  (cond ((> x 0) x)
-        ((= x 0) 0)
-        ((< x 0) (- x))))
-
-(set! x (- 0 5))
-(abs x)
-
 (console)

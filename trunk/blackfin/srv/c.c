@@ -170,6 +170,11 @@ int errjmp[41];  //  buffer for setjmp() / longjmp()
 int c(char *pc)
 {
     p_buf = pc;
+    printf("running C program from flash buffer\n\r");
+    if (*pc == 0) {
+      printf("no program found.  goodbye ...\n\r");
+      return 0;
+    }
     prog = p_buf; 
     errjmp[40] = 0;
     setjmp(errjmp);
