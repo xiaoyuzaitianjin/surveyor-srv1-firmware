@@ -47,7 +47,7 @@ unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
 
 /* Camera globals */
 unsigned int quality, framecount, ix, overlay_flag;
-unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag;
+unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, dct_view_flag;
 unsigned int edge_thresh;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
@@ -100,6 +100,7 @@ void init_io() {
     pwm2_init = 0;
     silent_console = 0;
     save_dct_flag = 0;
+    dct_view_flag = 0;
 }
 
 /* reset CPU */
@@ -379,12 +380,18 @@ void enable_edge_detect() {
         printf("##g2");
 }
 
+void enable_dct_view() {
+    dct_view_flag = 1;
+    if (!silent_console)
+        printf("##g3");
+}
+
 void set_edge_thresh () {
     unsigned char ch;
     ch = getch();
     edge_thresh = (unsigned int)(ch & 0x0f) * 800;
     if (!silent_console) {
-        printf((unsigned char *)"#T");
+        printf("#T");
     }
 }
 
@@ -392,6 +399,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     frame_diff_flag = 0;
     segmentation_flag = 0;
     edge_detect_flag = 0;
+    dct_view_flag = 0;
     if (!silent_console)
         printf("#G");
 }
@@ -426,7 +434,7 @@ void grab_dct_coeff() {
 }
 
 void show_dct_coeff() {
-    int i1, i2, i3;
+    int i1, i2;
     unsigned char *xx;
     
     grab_dct_coeff();
@@ -446,7 +454,7 @@ void show_dct_coeff() {
 }
 
 void show_dct_coeff310() {
-    int i1, i2, i3;
+    int i1, i2;
     unsigned char *xx;
     
     grab_dct_coeff();
@@ -464,23 +472,20 @@ void show_dct_coeff310() {
 
 
 
-void grab_code_send() {   // grab frame, call svs_segcode, send to Blackfin #2
-    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
-            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
-    svs_segcode((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh);
-    svs_master((unsigned short *)SPI_BUFFER1, imgWidth*(imgHeight/2)+8);
+void grab_code_send() {   // grab frame, send DCT coeffs to Blackfin #2
+    grab_dct_coeff();
+    svs_master((unsigned short *)FRAME_BUF2, imgWidth*(imgHeight/2)+8);
 }
 
-void recv_grab_code() {   // recv buffer from Blackfin #1, grab frame, call svs_segcode
+void recv_grab_code() {   // read DCT coeffs from Blackfin #1 => SPI_BUFFER1
+    int ones[] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
     int ix, hit1, hit2;
     unsigned char *buf1, *buf2;
     
     svs_slave((unsigned short *)SPI_BUFFER1, imgWidth*(imgHeight/2)+8);
-    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
-            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
-    svs_segcode((unsigned char *)SPI_BUFFER2, (unsigned char *)FRAME_BUF, edge_thresh);
+    grab_dct_coeff();     // compute local DCT coeffs => FRAME_BUF2
     buf1 = (unsigned char *)SPI_BUFFER1;
-    buf2 = (unsigned char *)SPI_BUFFER2;
+    buf2 = (unsigned char *)FRAME_BUF2;
     hit1 = hit2 = 0;
     for (ix=0; ix<imgWidth*imgHeight/2; ix++) {  // count edge pixels in each buffer
         if (buf1[ix] & 0xC0)
@@ -679,7 +684,7 @@ void change_image_quality () {
         quality = 8;
     }
     if (!silent_console) {
-        printf((unsigned char *)"##quality - %c\n\r", ch);
+        printf("##quality - %c\n\r", ch);
     }
 }
 
@@ -790,23 +795,50 @@ void crc_flash_buffer () {
 /* Read user flash sector into flash buffer
    Serial protocol char: z-r */
 void read_user_flash () {
+    int ix;
     for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)
       *((unsigned char *)ix) = 0;   // clear the read buffer
     ix = spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00010000);
     printf("##zread count: %d\n\r", ix);
 }
 
+void read_user_sector (int isec) {
+    int ix;
+    printf("##zRead ");
+    if ((isec < 2) || (isec > 63)) {
+        printf(" - sector %d not accessible\n\r", isec);
+        return;
+    }
+    ix = spi_read((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 0x00010000);
+    printf (" - loaded %d bytes from flash sector %d\n\r", ix, isec);   
+}
+
 /* Write user flash sector from flash buffer
    Serial protocol char: z-w */
 void write_user_flash () {
+    int ix;
     ix = spi_write(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 
         (unsigned char *)(FLASH_BUFFER + 0x00010000), 0x00010000);
     printf("##zwrite count: %d\n\r", ix);
 }
 
+void write_user_sector (int isec) {
+    int ix;
+    printf("##zWrite ");
+    if ((isec < 2) || (isec > 63)) {
+        printf(" - sector %d not accessible\n\r", isec);
+        return;
+    }
+    ix = spi_write((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 
+        (unsigned char *)(FLASH_BUFFER + 0x00010000), 0x00010000);
+    printf (" - saved %d bytes to flash sector %d\n\r", ix, isec);   
+}
+
 /* Write boot flash sectors (1-2) from flash buffer
    Serial protocol char: z-Z */
 void write_boot_flash () {
+    unsigned char *cp;
+    int ix;
     cp = (unsigned char *)FLASH_BUFFER;
     if (cp[1] != 0x00 && cp[2] != 0x80 && cp[3] != 0xFF) {
         printf("##zZ boot image - invalid header\n\r");
@@ -967,7 +999,7 @@ void motor_set(unsigned char cc, int speed, int *ls, int *rs)  {
             right_speed = 0;
             break;
         case '6':     // turn right
-            left_speed = speed+3050;
+            left_speed = speed+30;
             right_speed = speed-30;
             break;
         case '1':     // back left
@@ -983,14 +1015,14 @@ void motor_set(unsigned char cc, int speed, int *ls, int *rs)  {
             right_speed = -(speed-30);
             break;
         case '.':     // clockwise turn
-            setPWM(-75, +75);
+            setPWM(70, -70);
             delayMS(200);
             setPWM(0, 0);
             left_speed = 0;
             right_speed = 0;
             break;
         case '0':     // counter clockwise turn
-            setPWM(75, -75);
+            setPWM(-70, 70);
             delayMS(200);
             setPWM(0, 0);
             left_speed = 0;
@@ -1085,10 +1117,10 @@ void initPPM2() {
 
 void setPWM (int mleft, int mright) {
     if (mleft < 0) {
-        *pPORTHIO = (*pPORTHIO & 0xFFDF);  // clear left direction bit
+        *pPORTHIO = (*pPORTHIO & 0xFFEF);  // clear left direction bit
         mleft = -mleft;
     } else {
-        *pPORTHIO = (*pPORTHIO & 0xFFDF) | 0x0020;  // turn on left direction bit
+        *pPORTHIO = (*pPORTHIO & 0xFFEF) | 0x0010;  // turn on left direction bit
     }
     if (mleft > 100)
         mleft = 100;
@@ -1096,10 +1128,10 @@ void setPWM (int mleft, int mright) {
         mleft = 1;
 
     if (mright < 0) {
-        *pPORTHIO = (*pPORTHIO & 0xFFEF);  // clear right direction bit
+        *pPORTHIO = (*pPORTHIO & 0xFFDF);  // clear right direction bit
         mright = -mright;
     } else {
-        *pPORTHIO = (*pPORTHIO & 0xFFEF) | 0x0010;  // turn on right direction bit
+        *pPORTHIO = (*pPORTHIO & 0xFFDF) | 0x0020;  // turn on right direction bit
     }
     if (mright > 100)
         mright = 100;

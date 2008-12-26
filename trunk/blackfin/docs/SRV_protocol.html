@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 21 November 2008</h3>
+<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 26 December 2008</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -135,7 +135,9 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </td></tr><tr><td>'zC'</td><td>'##zCRC xxxx\n'</td><td>compute crc16_ccitt for flash buffer
 </td></tr><tr><td>'zd'</td><td>'##zd...\n'</td><td>flash buffer dump - dump contents of flash memory buffer to console
 </td></tr><tr><td>'zr'</td><td>'##zr\n'</td><td>flash memory read - read 65kb from user flash sector to flash buffer (e.g. read C program from flash sector before running C interpreter)
+</td></tr><tr><td>'zRxx'</td><td>'##zRead\n'</td><td>flash memory read - read 65kb from specified flash sector xx (02 - 63) to flash buffer (e.g. read C program from flash sector before running C interpreter).  Sectors 00 and 01 are off-limits.
 </th></tr><tr><td>'zw'</td><td>'##zw\n'</td><td>flash memory write - write 65kb from flash buffer to user flash sector
+</th></tr><tr><td>'zWxx'</td><td>'##zWxx\n'</td><td>flash memory write - write 65kb from flash buffer to specified flash sector 02-63 (sectors 00 and 01 are off-limits)
 </td></tr><tr><td>'zZ'</td><td>'##zZ\n'</td><td>flash memory boot sector update - writes contents of flash buffer to boot sectors of flash memory - used to replace u-boot.ldr or srv1.ldr - checks first that a valid LDR format image is in the flash buffer
 </td></tr><tr><th></th><th></th><th>
 </td></tr><tr><th></th><th></th><th>
@@ -145,14 +147,7 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </th></tr><tr><td>'$!'</td><td></td><td>reset Blackfin
 </th></tr><tr><td>'$R'</td><td></td><td>SVS command - configures slave Blackfin to receive SPI transfer to flash buffer
 </th></tr><tr><td>'$X'</td><td></td><td>SVS command - configures master Blackfin to transfer contents of flash buffer via SPI
-</th></tr><tr><th></th><th></th><th>
-</th></tr><tr><td>'x?'</td><td></td><td>SRV1-X menu
-</th></tr><tr><td>'xs'</td><td></td><td>SRV1-X setup
-</th></tr><tr><td>'xb'</td><td></td><td>SRV1-X boot loader
-</th></tr><tr><td>'xf'</td><td></td><td>SRV1-X flash
-</th></tr><tr><td>'xA'</td><td></td><td>SRV1-X dump analog data
-</th></tr><tr><td>'xG'</td><td></td><td>SRV1-X GPS
-</th></tr><tr><td>'xC'</td><td></td><td>SRV1-X console
+</td></tr><tr><td>'C'</td><td></td><td>play chess.  before first use, save book.txt book openings to flash sector 5 with zW05 command
 </th></tr><tr><th></th><th></th><th>
 </td></tr><tr><th></th><th></th><th>
 
@@ -383,7 +378,7 @@ would set color bin #0 with y ranging 100-140, u 90-110, v 130-160.  functionall
 
 </th></tr></tbody></table>
 <br><br>
-last updated 23 November 2008 - 18:50 GMT
+last updated 26 December 2008 - 18:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

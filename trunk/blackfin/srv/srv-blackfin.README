@@ -1,9 +1,9 @@
 				RELEASE NOTES
 
-SRV-1 firmware test build for Blackfin - 5 December 2008 
+SRV-1 firmware test build for Blackfin - 26 December 2008 
     includes all changes since srv-blackfin-112608 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-120508.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-122608.zip
 
 * changed heap size to 12MB, flash buffer size to 1MB.  added
   two 512kb buffers for SPI transfers
@@ -14,6 +14,16 @@ SRV-1 firmware test build for Blackfin - 5 December 2008
   
 * added check for empty flash buffer in C interpreter
 
+* added zR and zW commands - allows read and write of specific 64kB flash 
+  sectors (02 - 63) to/from the flash buffer.  'zR05' reads sector 05 to the flash
+  buffer;  'zW22' writes the flash buffer to flash sector 22.
+  
+* fixed problem with direction bits in setPWM() - the left and right motor
+  direction bits were swapped.
+
+* added TSCP chess engine (http://www.tckerrigan.com/Chess/TSCP) - invoke 
+  with 'C' command
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 26 November 2008 

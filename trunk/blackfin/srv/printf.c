@@ -218,13 +218,13 @@ static int print(char **out, int *varg)
 
 int printf(const char *format, ...)
 {
-	register int *varg = (int *)(&format);
+	int *varg = (int *)(&format);
 	return print(0, varg);
 }
 
 int sprintf(char *out, const char *format, ...)
 {
-	register int *varg = (int *)(&format);
+	int *varg = (int *)(&format);
 	return print(&out, varg);
 }
 

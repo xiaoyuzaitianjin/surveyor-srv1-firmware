@@ -319,7 +319,7 @@ void initialization (JPEG_ENCODER_STRUCTURE *jpeg, UINT32 image_format, UINT32 i
 {
     UINT16 mcu_width, mcu_height, bytes_per_pixel;
 
-    if (image_format == FOUR_ZERO_ZERO || image_format == FOUR_FOUR_FOUR)
+    if (image_format == FOUR_ZERO_ZERO)
     {
         jpeg->mcu_width = mcu_width = 8;
         jpeg->mcu_height = mcu_height = 8;
@@ -327,11 +327,8 @@ void initialization (JPEG_ENCODER_STRUCTURE *jpeg, UINT32 image_format, UINT32 i
         jpeg->horizontal_mcus = (UINT16) ((image_width + mcu_width - 1) >> 3);
         jpeg->vertical_mcus = (UINT16) ((image_height + mcu_height - 1) >> 3);
 
-        if (image_format == FOUR_ZERO_ZERO)
-        {
-            bytes_per_pixel = 1;
-            read_format = read_400_format;
-        }
+        bytes_per_pixel = 1;
+        read_format = read_400_format;
     }
     else
     {
@@ -943,16 +940,20 @@ void read_400_format (JPEG_ENCODER_STRUCTURE *jpeg_encoder_structure, UINT8 *inp
         for (j=cols; j>0; j--)
             *Y1_Ptr++ = *input_ptr++;
 
-        for (j=8-cols; j>0; j--)
-            *Y1_Ptr++ = *(Y1_Ptr-1);
+        for (j=8-cols; j>0; j--) {
+            *Y1_Ptr = *(Y1_Ptr - 1);
+            Y1_Ptr++;
+        }
 
         input_ptr += incr;
     }
 
     for (i=8-rows; i>0; i--)
     {
-        for (j=8; j>0; j--)
-            *Y1_Ptr++ = *(Y1_Ptr - 8);
+        for (j=8; j>0; j--) {
+            *Y1_Ptr = *(Y1_Ptr - 8);
+            Y1_Ptr++;
+        }
     }
 }
 
@@ -1001,22 +1002,28 @@ void read_422_format (JPEG_ENCODER_STRUCTURE *jpeg_encoder_structure, UINT8 *inp
 
         if (cols <= 8)
         {
-            for (j=8-Y1_cols; j>0; j--)
-                *Y1_Ptr++ = *(Y1_Ptr - 1);
+            for (j=8-Y1_cols; j>0; j--) {
+                *Y1_Ptr = *(Y1_Ptr - 1);
+                Y1_Ptr++;
+            }
 
-            for (j=8-Y2_cols; j>0; j--)
-                *Y2_Ptr++ = *(Y1_Ptr - 1);
+            for (j=8-Y2_cols; j>0; j--) {
+                *Y2_Ptr = *(Y1_Ptr - 1);
+                Y2_Ptr++;
+            }
         }
         else
         {
-            for (j=8-Y2_cols; j>0; j--)
-                *Y2_Ptr++ = *(Y2_Ptr - 1);
+            for (j=8-Y2_cols; j>0; j--) {
+                *Y2_Ptr = *(Y2_Ptr - 1);
+                Y2_Ptr++;
+            }
         }
 
         for (j=(16-cols)>>1; j>0; j--)
         {
-            *CB_Ptr++ = *(CB_Ptr-1);
-            *CR_Ptr++ = *(CR_Ptr-1);
+            *CB_Ptr = *(CB_Ptr-1);  CB_Ptr++;
+            *CR_Ptr = *(CR_Ptr-1);  CR_Ptr++;
         }
 
         input_ptr += incr;
@@ -1026,10 +1033,10 @@ void read_422_format (JPEG_ENCODER_STRUCTURE *jpeg_encoder_structure, UINT8 *inp
     {
         for (j=8; j>0; j--)
         {
-            *Y1_Ptr++ = *(Y1_Ptr - 8);
-            *Y2_Ptr++ = *(Y2_Ptr - 8);
-            *CB_Ptr++ = *(CB_Ptr - 8);
-            *CR_Ptr++ = *(CR_Ptr - 8);
+            *Y1_Ptr = *(Y1_Ptr - 8);  Y1_Ptr++;
+            *Y2_Ptr = *(Y2_Ptr - 8);  Y2_Ptr++;
+            *CB_Ptr = *(CB_Ptr - 8);  CB_Ptr++;
+            *CR_Ptr = *(CR_Ptr - 8);  CR_Ptr++;
         }
     }
 }

@@ -82,6 +82,7 @@ void grab_code_send();
 void recv_grab_code();
 void grab_dct_coeff();
 void show_dct_coeff(), show_dct_coeff310();
+void enable_dct_view();
 void disable_frame_diff ();
 void overlay_on ();
 void overlay_off ();
@@ -111,7 +112,9 @@ void start_lisp_from_console ();
 
 /* Flash */
 void read_user_flash ();
+void read_user_sector (int);
 void write_user_flash ();
+void write_user_sector (int);
 void write_boot_flash ();
 void clear_flash_buffer ();
 void crc_flash_buffer ();

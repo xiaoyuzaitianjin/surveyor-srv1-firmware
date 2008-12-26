@@ -23,6 +23,7 @@
 
 int main() {
     unsigned char ch;
+    int ix;
 
     init_heap();
     init_io(); // Initialise LED, GPIO, serial flow & lasers.
@@ -73,6 +74,9 @@ int main() {
                 case 'd':   // 1280 x 1024
                 case 'A':   // 1280 x 1024
                     camera_reset(1280);
+                    break;
+                case 'C':   // play chess
+                    chess();
                     break;
                 case 'V':   // send version string
                     serial_out_version();
@@ -132,27 +136,41 @@ int main() {
                     set_edge_thresh();
                     break;
                 case 'z':  // read, write or dump a flash sector
-                    ch = getch();
-                    if (ch == 'r') {
-                      // read user flash sector into flash buffer
-                      read_user_flash();
-                    }
-                    if (ch == 'w') {
-                      // write user flash sector from flash buffer
-                      write_user_flash();
-                    }
-                    if (ch == 'Z') {
-                      // write boot flash sectors (1-2) from flash buffer
-                      write_boot_flash();
-                    }
-                    if (ch == 'd') {  // dump flash buffer contents to console
-                      serial_out_flashbuffer();
-                    }
-                    if (ch == 'c') {  // clear flash buffer
-                      clear_flash_buffer();
-                    }
-                    if (ch == 'C') {  // compute flash buffer checksum
-                      crc_flash_buffer();
+                    switch (getch()) {
+                        case 'r':
+                              // read user flash sector into flash buffer
+                            read_user_flash();
+                            break;
+                        case 'R':
+                              // read user sector 00 - 63  to flash buffer
+                            ix = ((getch() & 0x0F) * 10) + (getch() & 0x0F);
+                            read_user_sector(ix);
+                            break;
+                        case 'w':
+                              // write user flash sector from flash buffer
+                            write_user_flash();
+                            break;
+                        case 'W':
+                              // write user sector 00 - 63  from flash buffer
+                            ix = ((getch() & 0x0F) * 10) + (getch() & 0x0F);
+                            write_user_sector(ix);
+                            break;
+                        case 'Z':
+                              // write boot flash sectors (1-2) from flash buffer
+                            write_boot_flash();
+                            break;
+                        case 'd':
+                              // dump flash buffer contents to console
+                            serial_out_flashbuffer();
+                            break;
+                        case 'c':
+                              // clear flash buffer
+                            clear_flash_buffer();
+                            break;
+                        case 'C':
+                              // compute flash buffer checksum
+                            crc_flash_buffer();
+                            break;
                     }
                     break;
                 case 'p':   // ping sonar - supports up to 4 transducers
@@ -216,6 +234,8 @@ int main() {
                         enable_segmentation();
                     if (ch == '2')
                         enable_edge_detect();
+                    if (ch == '3')
+                        enable_dct_view();
                     break;
                 case 'G':   // disable frame differencing and color segmentation
                     disable_frame_diff();

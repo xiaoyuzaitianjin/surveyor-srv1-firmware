@@ -1,5 +1,6 @@
 CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c \
-  xmodem.c colors.c edit.c malloc.c string.c spi.c lisp.c c.o printf.c 
+  xmodem.c colors.c edit.c malloc.c string.c spi.c lisp.c c.o printf.c \
+  chess.c
 ASMSRCS = r8x8dct.asm math.asm setjmp.asm
 
 CPUDEFINES = -D__ADSPBF537__ -D__ADSPLPBLACKFIN__

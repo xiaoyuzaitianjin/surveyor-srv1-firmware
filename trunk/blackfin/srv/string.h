@@ -7,8 +7,8 @@ extern int isdigit(char);
 extern int  atoi(char *);
 extern void itoa(int, char *);
 extern void reverse(char *);
-extern memcpy(unsigned char *, unsigned char *, int);
-extern memset(unsigned char*, unsigned char, int);
+extern void memcpy(unsigned char *, unsigned char *, int);
+extern void memset(unsigned char*, unsigned char, int);
 #define xmemset memset
 #define xmemcpy memcpy
 
