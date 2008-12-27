@@ -22,7 +22,8 @@ SRV-1 firmware test build for Blackfin - 26 December 2008
   direction bits were swapped.
 
 * added TSCP chess engine (http://www.tckerrigan.com/Chess/TSCP) - invoke 
-  with 'C' command
+  with 'C' command.  before running first time, save book openings "book.txt"
+  to flash sector 5 using new zW05 command
   
 ============================================================================
 

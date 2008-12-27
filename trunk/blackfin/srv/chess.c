@@ -1,7 +1,7 @@
 /*
- *    MAIN.C
+ *    CHESS.C
  *    Tom Kerrigan's Simple Chess Program (TSCP)
- *
+ *    Modified for Surveyor SRV-1 Blackfin Camera
  *    Copyright 1997 Tom Kerrigan
  */
 
@@ -12,6 +12,279 @@
 #include "setjmp.h"
 #include "malloc.h"
 #include "chess.h"
+
+/* the board representation */
+int color[64];  /* LIGHT, DARK, or EMPTY */
+int piece[64];  /* PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, or EMPTY */
+int side;  /* the side to move */
+int xside;  /* the side not to move */
+int castle;  /* a bitfield with the castle permissions. if 1 is set,
+                white can still castle kingside. 2 is white queenside.
+                4 is black kingside. 8 is black queenside. */
+int ep;  /* the en passant square. if white moves e2e4, the en passant
+            square is set to e3, because that's where a pawn would move
+            in an en passant capture */
+int fifty;  /* the number of moves since a capture or pawn move, used
+               to handle the fifty-move-draw rule */
+int hash;  /* a (more or less) unique number that corresponds to the
+              position */
+int ply;  /* the number of half-moves (ply) since the
+             root of the search tree */
+int hply;  /* h for history; the number of ply since the beginning
+              of the game */
+
+/* gen_dat is some memory for move lists that are created by the move
+   generators. The move list for ply n starts at first_move[n] and ends
+   at first_move[n + 1]. */
+gen_t *gen_dat;
+//gen_t gen_dat[GEN_STACK];
+int first_move[MAX_PLY];
+
+/* the history heuristic array (used for move ordering) */
+int **history;
+//int history[64][64];
+
+/* we need an array of hist_t's so we can take back the
+   moves we make */
+hist_t *hist_dat;
+//hist_t hist_dat[HIST_STACK];
+
+/* the engine will search for max_time milliseconds or until it finishes
+   searching max_depth ply. */
+int max_time;
+int max_depth;
+
+/* the time when the engine starts searching, and when it should stop */
+int start_time;
+int stop_time;
+
+int nodes;  /* the number of nodes we've searched */
+
+/* a "triangular" PV array; for a good explanation of why a triangular
+   array is needed, see "How Computers Play Chess" by Levy and Newborn. */
+move **pv;
+//move pv[MAX_PLY][MAX_PLY];
+int pv_length[MAX_PLY];
+BOOL follow_pv;
+
+/* random numbers used to compute hash; see set_hash() in board.c */
+int **hash_piece_b;  /* indexed by piece [color][type][square] */
+int **hash_piece_w;  /* indexed by piece [color][type][square] */
+//int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
+int hash_side;
+int hash_ep[64];
+
+/* Now we have the mailbox array, so called because it looks like a
+   mailbox, at least according to Bob Hyatt. This is useful when we
+   need to figure out what pieces can go where. Let's say we have a
+   rook on square a4 (32) and we want to know if it can move one
+   square to the left. We subtract 1, and we get 31 (h5). The rook
+   obviously can't move to h5, but we don't know that without doing
+   a lot of annoying work. Sooooo, what we do is figure out a4's
+   mailbox number, which is 61. Then we subtract 1 from 61 (60) and
+   see what mailbox[60] is. In this case, it's -1, so it's out of
+   bounds and we can forget it. You can see how mailbox[] is used
+   in attack() in board.c. */
+
+int mailbox[120] = {
+     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+     -1,  0,  1,  2,  3,  4,  5,  6,  7, -1,
+     -1,  8,  9, 10, 11, 12, 13, 14, 15, -1,
+     -1, 16, 17, 18, 19, 20, 21, 22, 23, -1,
+     -1, 24, 25, 26, 27, 28, 29, 30, 31, -1,
+     -1, 32, 33, 34, 35, 36, 37, 38, 39, -1,
+     -1, 40, 41, 42, 43, 44, 45, 46, 47, -1,
+     -1, 48, 49, 50, 51, 52, 53, 54, 55, -1,
+     -1, 56, 57, 58, 59, 60, 61, 62, 63, -1,
+     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
+int mailbox64[64] = {
+    21, 22, 23, 24, 25, 26, 27, 28,
+    31, 32, 33, 34, 35, 36, 37, 38,
+    41, 42, 43, 44, 45, 46, 47, 48,
+    51, 52, 53, 54, 55, 56, 57, 58,
+    61, 62, 63, 64, 65, 66, 67, 68,
+    71, 72, 73, 74, 75, 76, 77, 78,
+    81, 82, 83, 84, 85, 86, 87, 88,
+    91, 92, 93, 94, 95, 96, 97, 98
+};
+
+
+/* slide, offsets, and offset are basically the vectors that
+   pieces can move in. If slide for the piece is FALSE, it can
+   only move one square in any one direction. offsets is the
+   number of directions it can move in, and offset is an array
+   of the actual directions. */
+
+BOOL slide[6] = {
+    FALSE, FALSE, TRUE, TRUE, TRUE, FALSE
+};
+
+int offsets[6] = {
+    0, 8, 4, 4, 8, 8
+};
+
+int offset[6][8] = {
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { -21, -19, -12, -8, 8, 12, 19, 21 },
+    { -11, -9, 9, 11, 0, 0, 0, 0 },
+    { -10, -1, 1, 10, 0, 0, 0, 0 },
+    { -11, -10, -9, -1, 1, 9, 10, 11 },
+    { -11, -10, -9, -1, 1, 9, 10, 11 }
+};
+
+
+/* This is the castle_mask array. We can use it to determine
+   the castling permissions after a move. What we do is
+   logical-AND the castle bits with the castle_mask bits for
+   both of the move's squares. Let's say castle is 1, meaning
+   that white can still castle kingside. Now we play a move
+   where the rook on h1 gets captured. We AND castle with
+   castle_mask[63], so we have 1&14, and castle becomes 0 and
+   white can't castle kingside anymore. */
+
+int castle_mask[64] = {
+     7, 15, 15, 15,  3, 15, 15, 11,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    13, 15, 15, 15, 12, 15, 15, 14
+};
+
+
+/* the piece letters, for print_board() */
+char piece_char[6] = {
+    'P', 'N', 'B', 'R', 'Q', 'K'
+};
+
+
+/* the initial board state */
+
+int init_color[64] = {
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
+int init_piece[64] = {
+    3, 1, 2, 4, 5, 2, 1, 3,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    3, 1, 2, 4, 5, 2, 1, 3
+};
+
+#define DOUBLED_PAWN_PENALTY        10
+#define ISOLATED_PAWN_PENALTY        20
+#define BACKWARDS_PAWN_PENALTY        8
+#define PASSED_PAWN_BONUS            20
+#define ROOK_SEMI_OPEN_FILE_BONUS    10
+#define ROOK_OPEN_FILE_BONUS        15
+#define ROOK_ON_SEVENTH_BONUS        20
+
+
+/* the values of the pieces */
+int piece_value[6] = {
+    100, 300, 300, 500, 900, 0
+};
+
+/* The "pcsq" arrays are piece/square tables. They're values
+   added to the material value of the piece based on the
+   location of the piece. */
+
+int pawn_pcsq[64] = {
+      0,   0,   0,   0,   0,   0,   0,   0,
+      5,  10,  15,  20,  20,  15,  10,   5,
+      4,   8,  12,  16,  16,  12,   8,   4,
+      3,   6,   9,  12,  12,   9,   6,   3,
+      2,   4,   6,   8,   8,   6,   4,   2,
+      1,   2,   3, -10, -10,   3,   2,   1,
+      0,   0,   0, -40, -40,   0,   0,   0,
+      0,   0,   0,   0,   0,   0,   0,   0
+};
+
+int knight_pcsq[64] = {
+    -10, -10, -10, -10, -10, -10, -10, -10,
+    -10,   0,   0,   0,   0,   0,   0, -10,
+    -10,   0,   5,   5,   5,   5,   0, -10,
+    -10,   0,   5,  10,  10,   5,   0, -10,
+    -10,   0,   5,  10,  10,   5,   0, -10,
+    -10,   0,   5,   5,   5,   5,   0, -10,
+    -10,   0,   0,   0,   0,   0,   0, -10,
+    -10, -30, -10, -10, -10, -10, -30, -10
+};
+
+int bishop_pcsq[64] = {
+    -10, -10, -10, -10, -10, -10, -10, -10,
+    -10,   0,   0,   0,   0,   0,   0, -10,
+    -10,   0,   5,   5,   5,   5,   0, -10,
+    -10,   0,   5,  10,  10,   5,   0, -10,
+    -10,   0,   5,  10,  10,   5,   0, -10,
+    -10,   0,   5,   5,   5,   5,   0, -10,
+    -10,   0,   0,   0,   0,   0,   0, -10,
+    -10, -10, -20, -10, -10, -20, -10, -10
+};
+
+int king_pcsq[64] = {
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40,
+    -20, -20, -20, -20, -20, -20, -20, -20,
+      0,  20,  40, -20,   0, -20,  40,  20
+};
+
+int king_endgame_pcsq[64] = {
+      0,  10,  20,  30,  30,  20,  10,   0,
+     10,  20,  30,  40,  40,  30,  20,  10,
+     20,  30,  40,  50,  50,  40,  30,  20,
+     30,  40,  50,  60,  60,  50,  40,  30,
+     30,  40,  50,  60,  60,  50,  40,  30,
+     20,  30,  40,  50,  50,  40,  30,  20,
+     10,  20,  30,  40,  40,  30,  20,  10,
+      0,  10,  20,  30,  30,  20,  10,   0
+};
+
+/* The flip array is used to calculate the piece/square
+   values for DARK pieces. The piece/square value of a
+   LIGHT pawn is pawn_pcsq[sq] and the value of a DARK
+   pawn is pawn_pcsq[flip[sq]] */
+int flip[64] = {
+     56,  57,  58,  59,  60,  61,  62,  63,
+     48,  49,  50,  51,  52,  53,  54,  55,
+     40,  41,  42,  43,  44,  45,  46,  47,
+     32,  33,  34,  35,  36,  37,  38,  39,
+     24,  25,  26,  27,  28,  29,  30,  31,
+     16,  17,  18,  19,  20,  21,  22,  23,
+      8,   9,  10,  11,  12,  13,  14,  15,
+      0,   1,   2,   3,   4,   5,   6,   7
+};
+
+/* pawn_rank[x][y] is the rank of the least advanced pawn of color x on file
+   y - 1. There are "buffer files" on the left and right to avoid special-case
+   logic later. If there's no pawn on a rank, we pretend the pawn is
+   impossibly far advanced (0 for LIGHT and 7 for DARK). This makes it easy to
+   test for pawns on a rank and it simplifies some pawn evaluation code. */
+int pawn_rank[2][10];
+
+int piece_mat[2];  /* the value of a side's pieces */
+int pawn_mat[2];  /* the value of a side's pawns */
 
 /* see the beginning of think() */
 int errjmp[41];
@@ -40,10 +313,12 @@ int scan(char *st) {
 }
 
 void init_mem() {
-    pv = (move **)malloc(MAX_PLY * MAX_PLY * sizeof(move));
-    history = (int **)malloc(64 * 64 * sizeof(int));
-    hist_dat = (void *)malloc(HIST_STACK * sizeof(hist_t));
     gen_dat = (void *)malloc(GEN_STACK * sizeof(gen_t));
+    hist_dat = (void *)malloc(HIST_STACK * sizeof(hist_t));
+    history = (int **)malloc(64 * 64 * sizeof(int));
+    pv = (move **)malloc(MAX_PLY * MAX_PLY * sizeof(move));
+    hash_piece_b = (int **)malloc(6 * 64 * sizeof(int));
+    hash_piece_w = (int **)malloc(6 * 64 * sizeof(int));
 }
 
 void free_mem() {
@@ -51,6 +326,8 @@ void free_mem() {
     free((char *)history);
     free((char *)hist_dat);
     free((char *)gen_dat);
+    free((char *)hash_piece_b);
+    free((char *)hash_piece_w);
 }
 
 void flush_input() {
@@ -275,7 +552,7 @@ void print_board()
 {
     int i;
     
-    printf("\n8 ");
+    printf("\n\r8 ");
     for (i = 0; i < 64; ++i) {
         switch (color[i]) {
             case EMPTY:
@@ -355,10 +632,13 @@ void init_hash()
 {
     int i, j, k;
 
-    for (i = 0; i < 2; ++i)
+    //for (i = 0; i < 2; ++i)
         for (j = 0; j < 6; ++j)
-            for (k = 0; k < 64; ++k)
-                hash_piece[i][j][k] = hash_rand();
+            for (k = 0; k < 64; ++k) {
+                hash_piece_b[j][k] = hash_rand();
+                hash_piece_w[j][k] = hash_rand();
+                //hash_piece[i][j][k] = hash_rand();
+            }
     hash_side = hash_rand();
     for (i = 0; i < 64; ++i)
         hash_ep[i] = hash_rand();
@@ -397,9 +677,14 @@ void set_hash()
     int i;
 
     hash = 0;    
-    for (i = 0; i < 64; ++i)
-        if (color[i] != EMPTY)
-            hash ^= hash_piece[color[i]][piece[i]][i];
+    for (i = 0; i < 64; ++i) {
+        if (color[i] != EMPTY) {
+            if (color[i] == DARK)
+                hash ^= hash_piece_b[piece[i]][i];
+            if (color[i] == LIGHT)
+                hash ^= hash_piece_w[piece[i]][i];
+        }
+    }
     if (side == DARK)
         hash ^= hash_side;
     if (ep != -1)
@@ -964,277 +1249,6 @@ BOOL book_match(char *s1, char *s2)
             return FALSE;
     return TRUE;
 }
-
-/* the board representation */
-int color[64];  /* LIGHT, DARK, or EMPTY */
-int piece[64];  /* PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, or EMPTY */
-int side;  /* the side to move */
-int xside;  /* the side not to move */
-int castle;  /* a bitfield with the castle permissions. if 1 is set,
-                white can still castle kingside. 2 is white queenside.
-                4 is black kingside. 8 is black queenside. */
-int ep;  /* the en passant square. if white moves e2e4, the en passant
-            square is set to e3, because that's where a pawn would move
-            in an en passant capture */
-int fifty;  /* the number of moves since a capture or pawn move, used
-               to handle the fifty-move-draw rule */
-int hash;  /* a (more or less) unique number that corresponds to the
-              position */
-int ply;  /* the number of half-moves (ply) since the
-             root of the search tree */
-int hply;  /* h for history; the number of ply since the beginning
-              of the game */
-
-/* gen_dat is some memory for move lists that are created by the move
-   generators. The move list for ply n starts at first_move[n] and ends
-   at first_move[n + 1]. */
-gen_t *gen_dat;
-//gen_t gen_dat[GEN_STACK];
-int first_move[MAX_PLY];
-
-/* the history heuristic array (used for move ordering) */
-int **history;
-//int history[64][64];
-
-/* we need an array of hist_t's so we can take back the
-   moves we make */
-hist_t *hist_dat;
-//hist_t hist_dat[HIST_STACK];
-
-/* the engine will search for max_time milliseconds or until it finishes
-   searching max_depth ply. */
-int max_time;
-int max_depth;
-
-/* the time when the engine starts searching, and when it should stop */
-int start_time;
-int stop_time;
-
-int nodes;  /* the number of nodes we've searched */
-
-/* a "triangular" PV array; for a good explanation of why a triangular
-   array is needed, see "How Computers Play Chess" by Levy and Newborn. */
-move **pv;
-//move pv[MAX_PLY][MAX_PLY];
-int pv_length[MAX_PLY];
-BOOL follow_pv;
-
-/* random numbers used to compute hash; see set_hash() in board.c */
-int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
-int hash_side;
-int hash_ep[64];
-
-/* Now we have the mailbox array, so called because it looks like a
-   mailbox, at least according to Bob Hyatt. This is useful when we
-   need to figure out what pieces can go where. Let's say we have a
-   rook on square a4 (32) and we want to know if it can move one
-   square to the left. We subtract 1, and we get 31 (h5). The rook
-   obviously can't move to h5, but we don't know that without doing
-   a lot of annoying work. Sooooo, what we do is figure out a4's
-   mailbox number, which is 61. Then we subtract 1 from 61 (60) and
-   see what mailbox[60] is. In this case, it's -1, so it's out of
-   bounds and we can forget it. You can see how mailbox[] is used
-   in attack() in board.c. */
-
-int mailbox[120] = {
-     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-     -1,  0,  1,  2,  3,  4,  5,  6,  7, -1,
-     -1,  8,  9, 10, 11, 12, 13, 14, 15, -1,
-     -1, 16, 17, 18, 19, 20, 21, 22, 23, -1,
-     -1, 24, 25, 26, 27, 28, 29, 30, 31, -1,
-     -1, 32, 33, 34, 35, 36, 37, 38, 39, -1,
-     -1, 40, 41, 42, 43, 44, 45, 46, 47, -1,
-     -1, 48, 49, 50, 51, 52, 53, 54, 55, -1,
-     -1, 56, 57, 58, 59, 60, 61, 62, 63, -1,
-     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-};
-
-int mailbox64[64] = {
-    21, 22, 23, 24, 25, 26, 27, 28,
-    31, 32, 33, 34, 35, 36, 37, 38,
-    41, 42, 43, 44, 45, 46, 47, 48,
-    51, 52, 53, 54, 55, 56, 57, 58,
-    61, 62, 63, 64, 65, 66, 67, 68,
-    71, 72, 73, 74, 75, 76, 77, 78,
-    81, 82, 83, 84, 85, 86, 87, 88,
-    91, 92, 93, 94, 95, 96, 97, 98
-};
-
-
-/* slide, offsets, and offset are basically the vectors that
-   pieces can move in. If slide for the piece is FALSE, it can
-   only move one square in any one direction. offsets is the
-   number of directions it can move in, and offset is an array
-   of the actual directions. */
-
-BOOL slide[6] = {
-    FALSE, FALSE, TRUE, TRUE, TRUE, FALSE
-};
-
-int offsets[6] = {
-    0, 8, 4, 4, 8, 8
-};
-
-int offset[6][8] = {
-    { 0, 0, 0, 0, 0, 0, 0, 0 },
-    { -21, -19, -12, -8, 8, 12, 19, 21 },
-    { -11, -9, 9, 11, 0, 0, 0, 0 },
-    { -10, -1, 1, 10, 0, 0, 0, 0 },
-    { -11, -10, -9, -1, 1, 9, 10, 11 },
-    { -11, -10, -9, -1, 1, 9, 10, 11 }
-};
-
-
-/* This is the castle_mask array. We can use it to determine
-   the castling permissions after a move. What we do is
-   logical-AND the castle bits with the castle_mask bits for
-   both of the move's squares. Let's say castle is 1, meaning
-   that white can still castle kingside. Now we play a move
-   where the rook on h1 gets captured. We AND castle with
-   castle_mask[63], so we have 1&14, and castle becomes 0 and
-   white can't castle kingside anymore. */
-
-int castle_mask[64] = {
-     7, 15, 15, 15,  3, 15, 15, 11,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    13, 15, 15, 15, 12, 15, 15, 14
-};
-
-
-/* the piece letters, for print_board() */
-char piece_char[6] = {
-    'P', 'N', 'B', 'R', 'Q', 'K'
-};
-
-
-/* the initial board state */
-
-int init_color[64] = {
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0
-};
-
-int init_piece[64] = {
-    3, 1, 2, 4, 5, 2, 1, 3,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    6, 6, 6, 6, 6, 6, 6, 6,
-    0, 0, 0, 0, 0, 0, 0, 0,
-    3, 1, 2, 4, 5, 2, 1, 3
-};
-
-#define DOUBLED_PAWN_PENALTY        10
-#define ISOLATED_PAWN_PENALTY        20
-#define BACKWARDS_PAWN_PENALTY        8
-#define PASSED_PAWN_BONUS            20
-#define ROOK_SEMI_OPEN_FILE_BONUS    10
-#define ROOK_OPEN_FILE_BONUS        15
-#define ROOK_ON_SEVENTH_BONUS        20
-
-
-/* the values of the pieces */
-int piece_value[6] = {
-    100, 300, 300, 500, 900, 0
-};
-
-/* The "pcsq" arrays are piece/square tables. They're values
-   added to the material value of the piece based on the
-   location of the piece. */
-
-int pawn_pcsq[64] = {
-      0,   0,   0,   0,   0,   0,   0,   0,
-      5,  10,  15,  20,  20,  15,  10,   5,
-      4,   8,  12,  16,  16,  12,   8,   4,
-      3,   6,   9,  12,  12,   9,   6,   3,
-      2,   4,   6,   8,   8,   6,   4,   2,
-      1,   2,   3, -10, -10,   3,   2,   1,
-      0,   0,   0, -40, -40,   0,   0,   0,
-      0,   0,   0,   0,   0,   0,   0,   0
-};
-
-int knight_pcsq[64] = {
-    -10, -10, -10, -10, -10, -10, -10, -10,
-    -10,   0,   0,   0,   0,   0,   0, -10,
-    -10,   0,   5,   5,   5,   5,   0, -10,
-    -10,   0,   5,  10,  10,   5,   0, -10,
-    -10,   0,   5,  10,  10,   5,   0, -10,
-    -10,   0,   5,   5,   5,   5,   0, -10,
-    -10,   0,   0,   0,   0,   0,   0, -10,
-    -10, -30, -10, -10, -10, -10, -30, -10
-};
-
-int bishop_pcsq[64] = {
-    -10, -10, -10, -10, -10, -10, -10, -10,
-    -10,   0,   0,   0,   0,   0,   0, -10,
-    -10,   0,   5,   5,   5,   5,   0, -10,
-    -10,   0,   5,  10,  10,   5,   0, -10,
-    -10,   0,   5,  10,  10,   5,   0, -10,
-    -10,   0,   5,   5,   5,   5,   0, -10,
-    -10,   0,   0,   0,   0,   0,   0, -10,
-    -10, -10, -20, -10, -10, -20, -10, -10
-};
-
-int king_pcsq[64] = {
-    -40, -40, -40, -40, -40, -40, -40, -40,
-    -40, -40, -40, -40, -40, -40, -40, -40,
-    -40, -40, -40, -40, -40, -40, -40, -40,
-    -40, -40, -40, -40, -40, -40, -40, -40,
-    -40, -40, -40, -40, -40, -40, -40, -40,
-    -40, -40, -40, -40, -40, -40, -40, -40,
-    -20, -20, -20, -20, -20, -20, -20, -20,
-      0,  20,  40, -20,   0, -20,  40,  20
-};
-
-int king_endgame_pcsq[64] = {
-      0,  10,  20,  30,  30,  20,  10,   0,
-     10,  20,  30,  40,  40,  30,  20,  10,
-     20,  30,  40,  50,  50,  40,  30,  20,
-     30,  40,  50,  60,  60,  50,  40,  30,
-     30,  40,  50,  60,  60,  50,  40,  30,
-     20,  30,  40,  50,  50,  40,  30,  20,
-     10,  20,  30,  40,  40,  30,  20,  10,
-      0,  10,  20,  30,  30,  20,  10,   0
-};
-
-/* The flip array is used to calculate the piece/square
-   values for DARK pieces. The piece/square value of a
-   LIGHT pawn is pawn_pcsq[sq] and the value of a DARK
-   pawn is pawn_pcsq[flip[sq]] */
-int flip[64] = {
-     56,  57,  58,  59,  60,  61,  62,  63,
-     48,  49,  50,  51,  52,  53,  54,  55,
-     40,  41,  42,  43,  44,  45,  46,  47,
-     32,  33,  34,  35,  36,  37,  38,  39,
-     24,  25,  26,  27,  28,  29,  30,  31,
-     16,  17,  18,  19,  20,  21,  22,  23,
-      8,   9,  10,  11,  12,  13,  14,  15,
-      0,   1,   2,   3,   4,   5,   6,   7
-};
-
-/* pawn_rank[x][y] is the rank of the least advanced pawn of color x on file
-   y - 1. There are "buffer files" on the left and right to avoid special-case
-   logic later. If there's no pawn on a rank, we pretend the pawn is
-   impossibly far advanced (0 for LIGHT and 7 for DARK). This makes it easy to
-   test for pawns on a rank and it simplifies some pawn evaluation code. */
-int pawn_rank[2][10];
-
-int piece_mat[2];  /* the value of a side's pieces */
-int pawn_mat[2];  /* the value of a side's pawns */
 
 int eval()
 {

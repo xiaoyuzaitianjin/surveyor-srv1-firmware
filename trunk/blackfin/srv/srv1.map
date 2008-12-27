@@ -17,7 +17,6 @@ i                   0x4               srv.o
 blobcnt             0x40              colors.o
 segmentation_flag   0x4               srv.o
 Temp                0x80              jpeg.o
-hash_piece          0xc00             chess.o
 Cqt                 0x40              jpeg.o
 ymax                0x44              colors.o
 blobx1              0x40              colors.o
@@ -37,6 +36,7 @@ umax                0x44              colors.o
 which_lheap         0x4               lisp.o
 ICqt                0x80              jpeg.o
 pv                  0x4               chess.o
+hash_piece_b        0x4               chess.o
 hist_dat            0x4               chess.o
 oblist              0x4               lisp.o
 gvar_index          0x4               c.o
@@ -136,6 +136,7 @@ ugetf               0x4               lisp.o
 xbuff               0x406             xmodem.o
 errjmp              0xa4              c.o
 lheap               0x4               lisp.o
+hash_piece_w        0x4               chess.o
 lquit               0x4               lisp.o
 old_lheap_used      0x4               lisp.o
 dlist1              0xc               camera.o
@@ -172,10 +173,9 @@ Linker script and memory map
  stm_m25p32.o(.sdram.text)
  printf.o(.sdram.text)
  xmodem.o(.sdram.text)
- chess.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x563c
+.l1code         0xffa00000     0x7d04
  main.o(.text)
  .text          0xffa00000      0x2b8 main.o
                 0xffa00000                main
@@ -327,12 +327,54 @@ Linker script and memory map
                 0xffa053b8                svs_master
                 0xffa052d0                svs_slave
  uart.o(.text)
+ chess.o(.text)
+ .text          0xffa054b8     0x26c8 chess.o
+                0xffa05c28                gen
+                0xffa071dc                init_mem
+                0xffa056d0                attack
+                0xffa07180                free_mem
+                0xffa0596c                gen_caps
+                0xffa07114                open_book
+                0xffa07078                hash_rand
+                0xffa07160                flush_input
+                0xffa05838                gen_promote
+                0xffa054b8                parse_move
+                0xffa07254                scan
+                0xffa0674c                eval_dark_king
+                0xffa06ad0                reps
+                0xffa06dd4                book_match
+                0xffa05634                init_board
+                0xffa065d4                eval_lkp
+                0xffa06634                eval_light_king
+                0xffa0746c                search
+                0xffa06b38                sort_pv
+                0xffa06474                getline
+                0xffa06820                eval
+                0xffa057f4                in_check
+                0xffa07294                get_ms
+                0xffa06534                eval_dark_pawn
+                0xffa07684                think
+                0xffa064a0                eval_light_pawn
+                0xffa072d0                quiesce
+                0xffa066fc                eval_dkp
+                0xffa06e18                move_str
+                0xffa06bc4                sort
+                0xffa07298                checkup
+                0xffa07884                chess
+                0xffa0709c                init_hash
+                0xffa06c40                print_result
+                0xffa06ef0                book_move
+                0xffa05898                gen_push
+                0xffa05580                set_hash
+                0xffa05f94                takeback
+                0xffa06104                makemove
+                0xffa06d18                print_board
  setjmp.o(.text)
- .text          0xffa054b8      0x184 setjmp.o
-                0xffa054b8                longjmp
-                0xffa05580                setjmp
+ .text          0xffa07b80      0x184 setjmp.o
+                0xffa07b80                longjmp
+                0xffa07c48                setjmp
 
-.text           0x00000000     0x808c
+.text           0x00000000     0x5a1c
  .text          0x00000000       0xf0 camera.o
                 0x00000000                camera_init
                 0x000000a8                camera_start
@@ -532,61 +574,20 @@ Linker script and memory map
                 0x0000526c                _inbyte
                 0x00005230                crc16_ccitt
                 0x00005534                xmodemReceive
- .text          0x0000572c     0x2670 chess.o
-                0x00005e8c                gen
-                0x0000741c                init_mem
-                0x00005934                attack
-                0x000073dc                free_mem
-                0x00005bd0                gen_caps
-                0x00007370                open_book
-                0x000072dc                hash_rand
-                0x000073bc                flush_input
-                0x00005a9c                gen_promote
-                0x0000572c                parse_move
-                0x00007470                scan
-                0x000069b0                eval_dark_king
-                0x00006d34                reps
-                0x00007038                book_match
-                0x00005898                init_board
-                0x00006838                eval_lkp
-                0x00006898                eval_light_king
-                0x00007688                search
-                0x00006d9c                sort_pv
-                0x000066d8                getline
-                0x00006a84                eval
-                0x00005a58                in_check
-                0x000074b0                get_ms
-                0x00006798                eval_dark_pawn
-                0x000078a0                think
-                0x00006704                eval_light_pawn
-                0x000074ec                quiesce
-                0x00006960                eval_dkp
-                0x0000707c                move_str
-                0x00006e28                sort
-                0x000074b4                checkup
-                0x00007aa0                chess
-                0x00007300                init_hash
-                0x00006ea4                print_result
-                0x00007154                book_move
-                0x00005afc                gen_push
-                0x000057f4                set_hash
-                0x000061f8                takeback
-                0x00006368                makemove
-                0x00006f7c                print_board
- .text          0x00007d9c       0xd0 init.o
-                0x00007d9c                initcode
- .text          0x00007e6c      0x220 string.o
-                0x00007e6c                strcmp
-                0x00007eb4                atoi
-                0x00008034                memcpy
-                0x00008050                memset
-                0x00007f98                itoa
-                0x00008064                strdup
-                0x00007f60                reverse
-                0x00007e8c                strchr
-                0x00007ea4                strcpy
-                0x00008028                isdigit
-                0x00007f40                strlen
+ .text          0x0000572c       0xd0 init.o
+                0x0000572c                initcode
+ .text          0x000057fc      0x220 string.o
+                0x000057fc                strcmp
+                0x00005844                atoi
+                0x000059c4                memcpy
+                0x000059e0                memset
+                0x00005928                itoa
+                0x000059f4                strdup
+                0x000058f0                reverse
+                0x0000581c                strchr
+                0x00005834                strcpy
+                0x000059b8                isdigit
+                0x000058d0                strlen
 
 .l1data         0xff800000     0x2084
  *(.data)
@@ -601,53 +602,53 @@ Linker script and memory map
  .data          0xff800194        0x0 stm_m25p32.o
  .data          0xff800194        0x0 printf.o
  .data          0xff800194        0x0 xmodem.o
- .data          0xff800194      0xcf0 chess.o
-                0xff80086c                piece_value
-                0xff800884                pawn_pcsq
-                0xff800664                piece_char
-                0xff80076c                init_piece
-                0xff800d84                flip
-                0xff800a84                bishop_pcsq
-                0xff800c84                king_endgame_pcsq
-                0xff800474                slide
-                0xff800374                mailbox64
-                0xff800194                mailbox
-                0xff800564                castle_mask
-                0xff800b84                king_pcsq
-                0xff800984                knight_pcsq
-                0xff8004a4                offset
-                0xff80048c                offsets
-                0xff80066c                init_color
- .data          0xff800e84        0x0 main.o
- .data          0xff800e84        0x0 math.o
- .data          0xff800e84        0x0 malloc.o
- .data          0xff800e84      0x910 srv.o
-                0xff8012e6                vhpel
-                0xff80128c                version_string
-                0xff800e8c                font8x8
-                0xff800e84                fontmask
-                0xff8012f8                deadbeef_beef
-                0xff8012b4                frame
-                0xff8012d4                hhpel
- .data          0xff801794        0x0 uart.o
- .data          0xff801794        0x0 colors.o
- .data          0xff801794      0x8f0 jpeg.o
-                0xff801fc4                zigzag_table
-                0xff8017ec                chrominance_dc_size_table
-                0xff801a8c                chrominance_ac_code_table
-                0xff801948                luminance_ac_size_table
-                0xff801804                luminance_ac_code_table
-                0xff8017bc                luminance_dc_size_table
-                0xff8017d4                chrominance_dc_code_table
-                0xff802004                luminance_quant_table
-                0xff801e14                markerdata
-                0xff8017a4                luminance_dc_code_table
-                0xff801794                fdct_coeff
-                0xff802044                chrominance_quant_table
-                0xff801d14                bitsize
-                0xff801bd0                chrominance_ac_size_table
- .data          0xff802084        0x0 r8x8dct.o
- .data          0xff802084        0x0 spi.o
+ .data          0xff800194        0x0 main.o
+ .data          0xff800194        0x0 math.o
+ .data          0xff800194        0x0 malloc.o
+ .data          0xff800194      0x910 srv.o
+                0xff8005f6                vhpel
+                0xff80059c                version_string
+                0xff80019c                font8x8
+                0xff800194                fontmask
+                0xff800608                deadbeef_beef
+                0xff8005c4                frame
+                0xff8005e4                hhpel
+ .data          0xff800aa4        0x0 uart.o
+ .data          0xff800aa4        0x0 colors.o
+ .data          0xff800aa4      0x8f0 jpeg.o
+                0xff8012d4                zigzag_table
+                0xff800afc                chrominance_dc_size_table
+                0xff800d9c                chrominance_ac_code_table
+                0xff800c58                luminance_ac_size_table
+                0xff800b14                luminance_ac_code_table
+                0xff800acc                luminance_dc_size_table
+                0xff800ae4                chrominance_dc_code_table
+                0xff801314                luminance_quant_table
+                0xff801124                markerdata
+                0xff800ab4                luminance_dc_code_table
+                0xff800aa4                fdct_coeff
+                0xff801354                chrominance_quant_table
+                0xff801024                bitsize
+                0xff800ee0                chrominance_ac_size_table
+ .data          0xff801394        0x0 r8x8dct.o
+ .data          0xff801394        0x0 spi.o
+ .data          0xff801394      0xcf0 chess.o
+                0xff801a6c                piece_value
+                0xff801a84                pawn_pcsq
+                0xff801864                piece_char
+                0xff80196c                init_piece
+                0xff801f84                flip
+                0xff801c84                bishop_pcsq
+                0xff801e84                king_endgame_pcsq
+                0xff801674                slide
+                0xff801574                mailbox64
+                0xff801394                mailbox
+                0xff801764                castle_mask
+                0xff801d84                king_pcsq
+                0xff801b84                knight_pcsq
+                0xff8016a4                offset
+                0xff80168c                offsets
+                0xff80186c                init_color
  .data          0xff802084        0x0 setjmp.o
  .data          0xff802084        0x0 init.o
  .data          0xff802084        0x0 string.o
@@ -657,7 +658,7 @@ Linker script and memory map
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff802084     0x1a1c
+.rodata         0xff802084     0x1a20
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
                 0xff802084      0x2cd c.o
@@ -678,20 +679,22 @@ Linker script and memory map
                                   0x8 (size before relaxing)
  *fill*         0xff802c17        0x1 00
  .rodata        0xff802c18      0x200 xmodem.o
- .rodata        0xff802e18       0x30 chess.o
+ .rodata        0xff802e18      0x23c main.o
+ .rodata        0xff803054       0xa8 srv.o
  .rodata.str1.4
-                0xff802e48      0x34c chess.o
-                                0x358 (size before relaxing)
- .rodata        0xff803194      0x23c main.o
- .rodata        0xff8033d0       0xa8 srv.o
- .rodata.str1.4
-                0xff803478      0x57a srv.o
+                0xff8030fc      0x57a srv.o
                                 0x58c (size before relaxing)
- *fill*         0xff8039f2        0x2 00
- .rodata        0xff8039f4       0x10 uart.o
- .rodata        0xff803a04       0x40 jpeg.o
+ *fill*         0xff803676        0x2 00
+ .rodata        0xff803678       0x10 uart.o
+ .rodata        0xff803688       0x40 jpeg.o
  .rodata.str1.4
-                0xff803a44       0x5c spi.o
+                0xff8036c8       0x5b spi.o
+                                 0x5c (size before relaxing)
+ *fill*         0xff803723        0x1 00
+ .rodata        0xff803724       0x30 chess.o
+ .rodata.str1.4
+                0xff803754      0x350 chess.o
+                                0x35c (size before relaxing)
 
 .data
  *(.data .data.* .gnu.linkonce.d.*)
@@ -708,13 +711,13 @@ Linker script and memory map
  *(SORT(.dtors.*))
  *(.dtors)
 
-.sdram.bss      0x0000808c        0x0
-                0x0000808c                __sdram_bss_start = .
+.sdram.bss      0x00005a1c        0x0
+                0x00005a1c                __sdram_bss_start = .
  *(.bss.sdram)
-                0x0000808c                . = ALIGN (0x4)
-                0x0000808c                __sdram_bss_end = .
+                0x00005a1c                . = ALIGN (0x4)
+                0x00005a1c                __sdram_bss_end = .
 
-.bss            0xff900000     0x39e0
+.bss            0xff900000     0x2de8
                 0xff900000                __bss_start = .
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
@@ -726,22 +729,22 @@ Linker script and memory map
  .bss           0xff900010        0x0 stm_m25p32.o
  .bss           0xff900010        0x0 printf.o
  .bss           0xff900010        0x0 xmodem.o
- .bss           0xff900010        0xc chess.o
-                0xff900010                ftime_ok
- .bss           0xff90001c        0x0 main.o
- .bss           0xff90001c        0x0 math.o
- .bss           0xff90001c        0x4 malloc.o
-                0xff90001c                allocp
- .bss           0xff900020        0x8 srv.o
-                0xff900024                failsafe_mode
-                0xff900020                save_dct_flag
- .bss           0xff900028        0x0 uart.o
- .bss           0xff900028        0x0 colors.o
- .bss           0xff900028        0x8 jpeg.o
-                0xff900028                lcode
-                0xff90002c                bitindex
- .bss           0xff900030        0x0 r8x8dct.o
- .bss           0xff900030        0x0 spi.o
+ .bss           0xff900010        0x0 main.o
+ .bss           0xff900010        0x0 math.o
+ .bss           0xff900010        0x4 malloc.o
+                0xff900010                allocp
+ .bss           0xff900014        0x8 srv.o
+                0xff900018                failsafe_mode
+                0xff900014                save_dct_flag
+ .bss           0xff90001c        0x0 uart.o
+ .bss           0xff90001c        0x0 colors.o
+ .bss           0xff90001c        0x8 jpeg.o
+                0xff90001c                lcode
+                0xff900020                bitindex
+ .bss           0xff900024        0x0 r8x8dct.o
+ .bss           0xff900024        0x0 spi.o
+ .bss           0xff900024        0xc chess.o
+                0xff900024                ftime_ok
  .bss           0xff900030        0x0 setjmp.o
  .bss           0xff900030        0x0 init.o
  .bss           0xff900030        0x0 string.o
@@ -795,115 +798,116 @@ Linker script and memory map
  COMMON         0xff9014e8      0x406 xmodem.o
                 0xff9014e8                xbuff
  *fill*         0xff9018ee        0x2 00
- COMMON         0xff9018f0      0xfb4 chess.o
-                0xff9018f0                pv_length
-                0xff901970                fifty
-                0xff901974                first_move
-                0xff9019f4                max_time
-                0xff9019f8                hash_piece
-                0xff9025f8                side
-                0xff9025fc                piece
-                0xff9026fc                follow_pv
-                0xff902700                hash
-                0xff902704                pv
-                0xff902708                hist_dat
-                0xff90270c                history
-                0xff902710                max_depth
-                0xff902714                piece_mat
-                0xff90271c                stop_time
-                0xff902720                stop_search
-                0xff902724                hash_side
-                0xff902728                ply
-                0xff90272c                hash_ep
-                0xff90282c                nodes
-                0xff902830                ep
-                0xff902834                hply
-                0xff902838                start_time
-                0xff90283c                xside
-                0xff902840                pawn_rank
-                0xff902890                castle
-                0xff902894                pawn_mat
-                0xff90289c                gen_dat
-                0xff9028a0                book_file
- COMMON         0xff9028a4       0x14 malloc.o
-                0xff9028a4                base
-                0xff9028ac                heap_end
-                0xff9028b0                heap_start
-                0xff9028b4                heap_ptr
- COMMON         0xff9028b8       0xc0 srv.o
-                0xff9028b8                imgWidth
-                0xff9028bc                rfailsafe
-                0xff9028c0                j
-                0xff9028c4                x_acc
-                0xff9028c8                i
-                0xff9028cc                segmentation_flag
-                0xff9028d0                pwm2_init
-                0xff9028d4                sonar_data
-                0xff9028e8                y_acc0
-                0xff9028ec                quality
-                0xff9028f0                y_acc
-                0xff9028f4                output_start
-                0xff9028f8                pwm1_init
-                0xff9028fc                image_size
-                0xff902900                pwm1_mode
-                0xff902904                save_dct_ptr
-                0xff902908                x_center
-                0xff90290c                lfailsafe
-                0xff902910                edge_thresh
-                0xff902914                master
-                0xff902918                base_speed
-                0xff90291c                rspeed2
-                0xff902920                lspeed
-                0xff902924                overlay_flag
-                0xff902928                lspeed2
-                0xff90292c                err1
-                0xff902930                deadbeef_seed
-                0xff902934                cp
-                0xff902938                output_end
-                0xff90293c                pwm2_mode
-                0xff902940                framecount
-                0xff902944                dct_view_flag
-                0xff902948                x_acc0
-                0xff90294c                imgHead
-                0xff902958                silent_console
-                0xff90295c                edge_detect_flag
-                0xff902960                imgHeight
-                0xff902964                failsafe_clock
-                0xff902968                y_center
-                0xff90296c                rspeed
-                0xff902970                frame_diff_flag
-                0xff902974                ix
- COMMON         0xff902978      0xae4 colors.o
-                0xff902978                blobcnt
-                0xff9029b8                ymax
-                0xff9029fc                blobx1
-                0xff902a3c                umax
-                0xff902a80                hist0
-                0xff902e80                hist1
-                0xff903280                bloby2
-                0xff9032c0                mean
-                0xff9032cc                vmax
-                0xff903310                vmin
-                0xff903354                bloby1
-                0xff903394                blobx2
-                0xff9033d4                ymin
-                0xff903418                umin
- COMMON         0xff90345c      0x584 jpeg.o
-                0xff90345c                Y2
-                0xff9034dc                Temp
-                0xff90355c                Cqt
-                0xff90359c                Y3
-                0xff90361c                Y4
-                0xff90369c                ICqt
-                0xff90371c                ILqt
-                0xff90379c                CR
-                0xff90381c                Lqt
-                0xff90385c                CB
-                0xff9038dc                fdct_temp
-                0xff90395c                read_format
-                0xff903960                Y1
-                0xff9039e0                . = ALIGN (0x4)
-                0xff9039e0                __bss_end = .
+ COMMON         0xff9018f0       0x14 malloc.o
+                0xff9018f0                base
+                0xff9018f8                heap_end
+                0xff9018fc                heap_start
+                0xff901900                heap_ptr
+ COMMON         0xff901904       0xc0 srv.o
+                0xff901904                imgWidth
+                0xff901908                rfailsafe
+                0xff90190c                j
+                0xff901910                x_acc
+                0xff901914                i
+                0xff901918                segmentation_flag
+                0xff90191c                pwm2_init
+                0xff901920                sonar_data
+                0xff901934                y_acc0
+                0xff901938                quality
+                0xff90193c                y_acc
+                0xff901940                output_start
+                0xff901944                pwm1_init
+                0xff901948                image_size
+                0xff90194c                pwm1_mode
+                0xff901950                save_dct_ptr
+                0xff901954                x_center
+                0xff901958                lfailsafe
+                0xff90195c                edge_thresh
+                0xff901960                master
+                0xff901964                base_speed
+                0xff901968                rspeed2
+                0xff90196c                lspeed
+                0xff901970                overlay_flag
+                0xff901974                lspeed2
+                0xff901978                err1
+                0xff90197c                deadbeef_seed
+                0xff901980                cp
+                0xff901984                output_end
+                0xff901988                pwm2_mode
+                0xff90198c                framecount
+                0xff901990                dct_view_flag
+                0xff901994                x_acc0
+                0xff901998                imgHead
+                0xff9019a4                silent_console
+                0xff9019a8                edge_detect_flag
+                0xff9019ac                imgHeight
+                0xff9019b0                failsafe_clock
+                0xff9019b4                y_center
+                0xff9019b8                rspeed
+                0xff9019bc                frame_diff_flag
+                0xff9019c0                ix
+ COMMON         0xff9019c4      0xae4 colors.o
+                0xff9019c4                blobcnt
+                0xff901a04                ymax
+                0xff901a48                blobx1
+                0xff901a88                umax
+                0xff901acc                hist0
+                0xff901ecc                hist1
+                0xff9022cc                bloby2
+                0xff90230c                mean
+                0xff902318                vmax
+                0xff90235c                vmin
+                0xff9023a0                bloby1
+                0xff9023e0                blobx2
+                0xff902420                ymin
+                0xff902464                umin
+ COMMON         0xff9024a8      0x584 jpeg.o
+                0xff9024a8                Y2
+                0xff902528                Temp
+                0xff9025a8                Cqt
+                0xff9025e8                Y3
+                0xff902668                Y4
+                0xff9026e8                ICqt
+                0xff902768                ILqt
+                0xff9027e8                CR
+                0xff902868                Lqt
+                0xff9028a8                CB
+                0xff902928                fdct_temp
+                0xff9029a8                read_format
+                0xff9029ac                Y1
+ COMMON         0xff902a2c      0x3bc chess.o
+                0xff902a2c                pv_length
+                0xff902aac                fifty
+                0xff902ab0                first_move
+                0xff902b30                max_time
+                0xff902b34                side
+                0xff902b38                piece
+                0xff902c38                follow_pv
+                0xff902c3c                hash
+                0xff902c40                pv
+                0xff902c44                hash_piece_b
+                0xff902c48                hist_dat
+                0xff902c4c                history
+                0xff902c50                max_depth
+                0xff902c54                piece_mat
+                0xff902c5c                stop_time
+                0xff902c60                stop_search
+                0xff902c64                hash_side
+                0xff902c68                ply
+                0xff902c6c                hash_ep
+                0xff902d6c                nodes
+                0xff902d70                ep
+                0xff902d74                hply
+                0xff902d78                start_time
+                0xff902d7c                xside
+                0xff902d80                pawn_rank
+                0xff902dd0                castle
+                0xff902dd4                pawn_mat
+                0xff902ddc                hash_piece_w
+                0xff902de0                gen_dat
+                0xff902de4                book_file
+                0xff902de8                . = ALIGN (0x4)
+                0xff902de8                __bss_end = .
                 0xffb00ffc                . = 0xffb00ffc
                 0xffb00ffc                PROVIDE (_supervisor_stack, .)
 LOAD init.o
@@ -938,13 +942,13 @@ OUTPUT(srv1.bin elf32-bfin)
  .comment       0x0000008c       0x1c stm_m25p32.o
  .comment       0x000000a8       0x1c printf.o
  .comment       0x000000c4       0x1c xmodem.o
- .comment       0x000000e0       0x1c chess.o
- .comment       0x000000fc       0x1c main.o
- .comment       0x00000118       0x1c malloc.o
- .comment       0x00000134       0x1c srv.o
- .comment       0x00000150       0x1c uart.o
- .comment       0x0000016c       0x1c colors.o
- .comment       0x00000188       0x1c jpeg.o
- .comment       0x000001a4       0x1c spi.o
+ .comment       0x000000e0       0x1c main.o
+ .comment       0x000000fc       0x1c malloc.o
+ .comment       0x00000118       0x1c srv.o
+ .comment       0x00000134       0x1c uart.o
+ .comment       0x00000150       0x1c colors.o
+ .comment       0x0000016c       0x1c jpeg.o
+ .comment       0x00000188       0x1c spi.o
+ .comment       0x000001a4       0x1c chess.o
  .comment       0x000001c0       0x1c init.o
  .comment       0x000001dc       0x1c string.o
