@@ -74,8 +74,7 @@ int failsafe_clock;
 int sonar_data[5];
 
 /* random number generator globals */
-unsigned int deadbeef_seed;
-unsigned int deadbeef_beef = 0xdeadbeef;
+unsigned int rand_seed = 0x55555555;
 
 /* General globals */
 unsigned char *cp;
@@ -1464,16 +1463,18 @@ void process_colors() {
     }
 }
 
-/* infamous 0xDEADBEEF pseudo-random number generator by 
-       Robbert Haarman http://inglorion.net 
-   returns number between 0x0000 and 0xFFFF */
-   
-int rand() {
-    if (deadbeef_beef == 0xdeadbeef)  // initialize 
-        deadbeef_seed = readRTC();
-    deadbeef_seed = (deadbeef_seed << 7) ^ ((deadbeef_seed >> 25) + deadbeef_beef);
-    deadbeef_beef = (deadbeef_beef << 7) ^ ((deadbeef_beef >> 25) + 0xdeadbeef);
-    return (deadbeef_seed & 0x0000FFFF);  // return rand number from 0x0000 to 0xFFFF
+/* pseudo-random number generator based on Galois linear feedback shift register
+     taps: 32 22 2 1; characteristic polynomial:  x^32 + x^22 + x^2 + x^1 + 1  */
+unsigned int rand() { 
+    int ix, iy;
+    if (rand_seed == 0x55555555) {  // initialize 
+        iy = (readRTC() % 1000) + 1000;
+        for (ix=0; ix<iy; ix++)
+            rand_seed = (rand_seed >> 1) ^ (-(rand_seed & 0x00000001) & 0x80200003); 
+    }
+    for (ix=0; ix<19; ix++)  // use every 19th result
+        rand_seed = (rand_seed >> 1) ^ (-(rand_seed & 0x00000001) & 0x80200003); 
+    return (rand_seed);
 }
 
 unsigned int isqrt(unsigned int val) {

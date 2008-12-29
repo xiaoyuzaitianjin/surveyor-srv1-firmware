@@ -141,7 +141,7 @@ void setPPM2 (int mleft, int mright);
 int check_bounds_0_100(int ix);
 
 /* Misc */
-int rand();
+unsigned int rand();
 unsigned int isqrt(unsigned int);
 
 /* Clock */

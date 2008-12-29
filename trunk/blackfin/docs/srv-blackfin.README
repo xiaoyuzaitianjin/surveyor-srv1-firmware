@@ -1,9 +1,9 @@
 				RELEASE NOTES
 
-SRV-1 firmware test build for Blackfin - 26 December 2008 
+SRV-1 firmware test build for Blackfin - 29 December 2008 
     includes all changes since srv-blackfin-112608 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-122608.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-122908.zip
 
 * changed heap size to 12MB, flash buffer size to 1MB.  added
   two 512kb buffers for SPI transfers
@@ -24,6 +24,11 @@ SRV-1 firmware test build for Blackfin - 26 December 2008
 * added TSCP chess engine (http://www.tckerrigan.com/Chess/TSCP) - invoke 
   with 'C' command.  before running first time, save book openings "book.txt"
   to flash sector 5 using new zW05 command
+
+* changed rand() function to resolve some non-random behaviors uncovered by 
+  the chess engine.  also fixed indexing problem with double dimensioned
+  arrays in chess.c (compiler doesn't like '**' in place of '[][]' for 
+  indexing
   
 ============================================================================
 

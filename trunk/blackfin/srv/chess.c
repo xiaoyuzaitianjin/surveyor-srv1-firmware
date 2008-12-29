@@ -41,7 +41,7 @@ gen_t *gen_dat;
 int first_move[MAX_PLY];
 
 /* the history heuristic array (used for move ordering) */
-int **history;
+int *history;
 //int history[64][64];
 
 /* we need an array of hist_t's so we can take back the
@@ -62,15 +62,13 @@ int nodes;  /* the number of nodes we've searched */
 
 /* a "triangular" PV array; for a good explanation of why a triangular
    array is needed, see "How Computers Play Chess" by Levy and Newborn. */
-move **pv;
+move *pv;
 //move pv[MAX_PLY][MAX_PLY];
 int pv_length[MAX_PLY];
 BOOL follow_pv;
 
 /* random numbers used to compute hash; see set_hash() in board.c */
-int **hash_piece_b;  /* indexed by piece [color][type][square] */
-int **hash_piece_w;  /* indexed by piece [color][type][square] */
-//int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
+int hash_piece[2][6][64];  /* indexed by piece [color][type][square] */
 int hash_side;
 int hash_ep[64];
 
@@ -293,7 +291,6 @@ BOOL stop_search;
 /* get_ms() returns the milliseconds elapsed since midnight,
    January 1, 1970. */
 
-BOOL ftime_ok = FALSE;  /* does ftime return milliseconds? */
 int get_ms()
 {
     return (readRTC());
@@ -313,12 +310,14 @@ int scan(char *st) {
 }
 
 void init_mem() {
-    gen_dat = (void *)malloc(GEN_STACK * sizeof(gen_t));
-    hist_dat = (void *)malloc(HIST_STACK * sizeof(hist_t));
-    history = (int **)malloc(64 * 64 * sizeof(int));
-    pv = (move **)malloc(MAX_PLY * MAX_PLY * sizeof(move));
-    hash_piece_b = (int **)malloc(6 * 64 * sizeof(int));
-    hash_piece_w = (int **)malloc(6 * 64 * sizeof(int));
+    gen_dat = (gen_t *)malloc(GEN_STACK * 8);
+	memset((unsigned char *)gen_dat, 0, (GEN_STACK * 8));
+    hist_dat = (hist_t *)malloc(HIST_STACK * 24);
+	memset((unsigned char *)hist_dat, 0, (HIST_STACK * 24));
+    history = (int *)malloc(64 * 64 * 4);
+	memset((unsigned char *)history, 0, (64 * 64 * 4));
+    pv = (move *)malloc(MAX_PLY * MAX_PLY * 4);
+	memset((unsigned char *)pv, 0, (MAX_PLY * MAX_PLY * 4));
 }
 
 void free_mem() {
@@ -326,8 +325,6 @@ void free_mem() {
     free((char *)history);
     free((char *)hist_dat);
     free((char *)gen_dat);
-    free((char *)hash_piece_b);
-    free((char *)hash_piece_w);
 }
 
 void flush_input() {
@@ -370,13 +367,13 @@ int chess()
             
             /* think about the move and make it */
             think(1);
-            if (!pv[0][0].u) {
+            if (!pv[0].u) {
                 printf("(no legal moves)\n\r");
                 computer_side = EMPTY;
                 continue;
             }
-            printf("Robot's move: %s\n\r", move_str(pv[0][0].b));
-            makemove(pv[0][0].b);
+            printf("Robot's move: %s\n\r", move_str(pv[0].b));
+            makemove(pv[0].b);
             ply = 0;
             gen();
             print_result();
@@ -405,6 +402,7 @@ int chess()
             continue;
         }
         if (!strcmp(s, "sd")) {
+            scan( s);
             max_depth = atoi(s);
             max_time = 1 << 25;
             continue;
@@ -566,7 +564,7 @@ void print_board()
                 break;
         }
         if ((i + 1) % 8 == 0 && i != 63)
-            printf("\n%d ", 7 - ROW(i));
+            printf("\n\r%d ", 7 - ROW(i));
     }
     printf("\n\n   a b c d e f g h\n\n\r");
 }
@@ -632,13 +630,13 @@ void init_hash()
 {
     int i, j, k;
 
-    //for (i = 0; i < 2; ++i)
-        for (j = 0; j < 6; ++j)
+    for (i = 0; i < 2; ++i) {
+        for (j = 0; j < 6; ++j) {
             for (k = 0; k < 64; ++k) {
-                hash_piece_b[j][k] = hash_rand();
-                hash_piece_w[j][k] = hash_rand();
-                //hash_piece[i][j][k] = hash_rand();
+                hash_piece[i][j][k] = hash_rand();
             }
+        }
+    }
     hash_side = hash_rand();
     for (i = 0; i < 64; ++i)
         hash_ep[i] = hash_rand();
@@ -651,12 +649,13 @@ void init_hash()
 
 int hash_rand()
 {
-    int i;
-    int r = 0;
-
-    for (i = 0; i < 32; ++i)
-        r ^= rand() << i;
-    return r;
+//    int i;
+//    int r = 0;
+//
+//    for (i = 0; i < 32; ++i)
+//        r ^= rand() << i;
+//    return r;
+    return (int)rand();
 }
 
 
@@ -679,10 +678,7 @@ void set_hash()
     hash = 0;    
     for (i = 0; i < 64; ++i) {
         if (color[i] != EMPTY) {
-            if (color[i] == DARK)
-                hash ^= hash_piece_b[piece[i]][i];
-            if (color[i] == LIGHT)
-                hash ^= hash_piece_w[piece[i]][i];
+            hash ^= hash_piece[color[i]][piece[i]][i];
         }
     }
     if (side == DARK)
@@ -932,7 +928,7 @@ void gen_push(int from, int to, int bits)
     if (color[to] != EMPTY)
         g->score = 1000000 + (piece[to] * 10) - piece[from];
     else
-        g->score = history[from][to];
+        g->score = history[64*from + to];
 }
 
 
@@ -1166,6 +1162,10 @@ int getline(char *st, char *src) {
         *st++ = *src++;
         cnt++;
     }
+    if (cnt > 0) {  // make certain to count newline
+        *st++ = 0;
+        cnt += 2;   //  there's a CR and LF
+    }
     return cnt;
 }
 
@@ -1195,14 +1195,16 @@ int book_move()
 
     /* compare line to each line in the opening book */
     cp = (char *) FLASH_BUFFER;
-    while ((ix = getline(book_line, cp))) {
+    ix = getline(book_line, cp);
+    while (ix) {
+        //printf("%s\n\r", book_line);
         cp += ix;
         if (book_match(line, book_line)) {
 
             /* parse the book move that continues the line */
             m = parse_move(&book_line[strlen(line)]);
             if (m == -1)
-                continue;
+                goto endloop;
             m = gen_dat[m].m.u;
 
             /* add the book move to the move list, or update the move's
@@ -1219,6 +1221,7 @@ int book_move()
             }
             ++total_count;
         }
+        endloop:  ix = getline(book_line, cp);
     }
 
     /* no book moves? */
@@ -1545,51 +1548,51 @@ int eval_dkp(int f)
 
 void think(int output)
 {
-    int i, j, x;
+	int i, j, x;
 
-    /* try the opening book first */
-    pv[0][0].u = book_move();
-    if (pv[0][0].u != -1)
-        return;
+	/* try the opening book first */
+	pv[0].u = book_move();
+	if (pv[0].u != -1)
+		return;
 
-    /* some code that lets us longjmp back here and return
-       from think() when our time is up */
-    stop_search = FALSE;
-    setjmp(errjmp);
-    if (stop_search) {
-        
-        /* make sure to take back the line we were searching */
-        while (ply)
-            takeback();
-        return;
-    }
+	/* some code that lets us longjmp back here and return
+	   from think() when our time is up */
+	stop_search = FALSE;
+	setjmp(errjmp);
+	if (stop_search) {
+		
+		/* make sure to take back the line we were searching */
+		while (ply)
+			takeback();
+		return;
+	}
 
-    start_time = get_ms();
-    stop_time = start_time + max_time;
+	start_time = get_ms();
+	stop_time = start_time + max_time;
 
-    ply = 0;
-    nodes = 0;
+	ply = 0;
+	nodes = 0;
 
-    memset((unsigned char *)pv, 0, MAX_PLY * MAX_PLY * sizeof(move));
-    memset((unsigned char *)history, 0, 64 * 64 * sizeof(int));
-    if (output == 1)
-        printf("ply      nodes  score  pv\n");
-    for (i = 1; i <= max_depth; ++i) {
-        follow_pv = TRUE;
-        x = search(-10000, 10000, i);
-        if (output == 1)
-            printf("%3d  %9d  %5d ", i, nodes, x);
-        else if (output == 2)
-            printf("%d %d %d %d",
-                    i, x, (get_ms() - start_time) / 10, nodes);
-        if (output) {
-            for (j = 0; j < pv_length[0]; ++j)
-                printf(" %s", move_str(pv[0][j].b));
-            printf("\n\r");
-        }
-        if (x > 9000 || x < -9000)
-            break;
-    }
+	memset((unsigned char *)pv, 0, (MAX_PLY * MAX_PLY * 4));
+	memset((unsigned char *)history, 0, (64 * 64 * 4));
+	if (output == 1)
+		printf("ply      nodes  score  pv\n\r");
+	for (i = 1; i <= max_depth; ++i) {
+		follow_pv = TRUE;
+		x = search(-10000, 10000, i);
+		if (output == 1)
+			printf("%3d  %9d  %5d ", i, nodes, x);
+		else if (output == 2)
+			printf("%d %d %d %d",
+					i, x, (get_ms() - start_time) / 10, nodes);
+		if (output) {
+			for (j = 0; j < pv_length[0]; ++j)
+				printf(" %s", move_str(pv[j].b));
+			printf("\n\r");
+		}
+		if (x > 9000 || x < -9000)
+			break;
+	}
 }
 
 
@@ -1597,81 +1600,81 @@ void think(int output)
 
 int search(int alpha, int beta, int depth)
 {
-    int i, j, x;
-    BOOL c, f;
+	int i, j, x;
+	BOOL c, f;
 
-    /* we're as deep as we want to be; call quiesce() to get
-       a reasonable score and return it. */
-    if (!depth)
-        return quiesce(alpha,beta);
-    ++nodes;
+	/* we're as deep as we want to be; call quiesce() to get
+	   a reasonable score and return it. */
+	if (!depth)
+		return quiesce(alpha,beta);
+	++nodes;
 
-    /* do some housekeeping every 1024 nodes */
-    if ((nodes & 1023) == 0)
-        checkup();
+	/* do some housekeeping every 1024 nodes */
+	if ((nodes & 1023) == 0)
+		checkup();
 
-    pv_length[ply] = ply;
+	pv_length[ply] = ply;
 
-    /* if this isn't the root of the search tree (where we have
-       to pick a move and can't simply return 0) then check to
-       see if the position is a repeat. if so, we can assume that
-       this line is a draw and return 0. */
-    if (ply && reps())
-        return 0;
+	/* if this isn't the root of the search tree (where we have
+	   to pick a move and can't simply return 0) then check to
+	   see if the position is a repeat. if so, we can assume that
+	   this line is a draw and return 0. */
+	if (ply && reps())
+		return 0;
 
-    /* are we too deep? */
-    if (ply >= MAX_PLY - 1)
-        return eval();
-    if (hply >= HIST_STACK - 1)
-        return eval();
+	/* are we too deep? */
+	if (ply >= MAX_PLY - 1)
+		return eval();
+	if (hply >= HIST_STACK - 1)
+		return eval();
 
-    /* are we in check? if so, we want to search deeper */
-    c = in_check(side);
-    if (c)
-        ++depth;
-    gen();
-    if (follow_pv)  /* are we following the PV? */
-        sort_pv();
-    f = FALSE;
+	/* are we in check? if so, we want to search deeper */
+	c = in_check(side);
+	if (c)
+		++depth;
+	gen();
+	if (follow_pv)  /* are we following the PV? */
+		sort_pv();
+	f = FALSE;
 
-    /* loop through the moves */
-    for (i = first_move[ply]; i < first_move[ply + 1]; ++i) {
-        sort(i);
-        if (!makemove(gen_dat[i].m.b))
-            continue;
-        f = TRUE;
-        x = -search(-beta, -alpha, depth - 1);
-        takeback();
-        if (x > alpha) {
+	/* loop through the moves */
+	for (i = first_move[ply]; i < first_move[ply + 1]; ++i) {
+		sort(i);
+		if (!makemove(gen_dat[i].m.b))
+			continue;
+		f = TRUE;
+		x = -search(-beta, -alpha, depth - 1);
+		takeback();
+		if (x > alpha) {
 
-            /* this move caused a cutoff, so increase the history
-               value so it gets ordered high next time we can
-               search it */
-            history[(int)gen_dat[i].m.b.from][(int)gen_dat[i].m.b.to] += depth;
-            if (x >= beta)
-                return beta;
-            alpha = x;
+			/* this move caused a cutoff, so increase the history
+			   value so it gets ordered high next time we can
+			   search it */
+			history[64*(int)gen_dat[i].m.b.from + (int)gen_dat[i].m.b.to] += depth;
+			if (x >= beta)
+				return beta;
+			alpha = x;
 
-            /* update the PV */
-            pv[ply][ply] = gen_dat[i].m;
-            for (j = ply + 1; j < pv_length[ply + 1]; ++j)
-                pv[ply][j] = pv[ply + 1][j];
-            pv_length[ply] = pv_length[ply + 1];
-        }
-    }
+			/* update the PV */
+			pv[MAX_PLY*ply+ply] = gen_dat[i].m;
+			for (j = ply + 1; j < pv_length[ply + 1]; ++j)
+				pv[MAX_PLY*ply+j] = pv[MAX_PLY*(ply + 1) + j];
+			pv_length[ply] = pv_length[ply + 1];
+		}
+	}
 
-    /* no legal moves? then we're in checkmate or stalemate */
-    if (!f) {
-        if (c)
-            return -10000 + ply;
-        else
-            return 0;
-    }
+	/* no legal moves? then we're in checkmate or stalemate */
+	if (!f) {
+		if (c)
+			return -10000 + ply;
+		else
+			return 0;
+	}
 
-    /* fifty move draw rule */
-    if (fifty >= 100)
-        return 0;
-    return alpha;
+	/* fifty move draw rule */
+	if (fifty >= 100)
+		return 0;
+	return alpha;
 }
 
 
@@ -1684,53 +1687,53 @@ int search(int alpha, int beta, int depth)
 
 int quiesce(int alpha,int beta)
 {
-    int i, j, x;
+	int i, j, x;
 
-    ++nodes;
+	++nodes;
 
-    /* do some housekeeping every 1024 nodes */
-    if ((nodes & 1023) == 0)
-        checkup();
+	/* do some housekeeping every 1024 nodes */
+	if ((nodes & 1023) == 0)
+		checkup();
 
-    pv_length[ply] = ply;
+	pv_length[ply] = ply;
 
-    /* are we too deep? */
-    if (ply >= MAX_PLY - 1)
-        return eval();
-    if (hply >= HIST_STACK - 1)
-        return eval();
+	/* are we too deep? */
+	if (ply >= MAX_PLY - 1)
+		return eval();
+	if (hply >= HIST_STACK - 1)
+		return eval();
 
-    /* check with the evaluation function */
-    x = eval();
-    if (x >= beta)
-        return beta;
-    if (x > alpha)
-        alpha = x;
+	/* check with the evaluation function */
+	x = eval();
+	if (x >= beta)
+		return beta;
+	if (x > alpha)
+		alpha = x;
 
-    gen_caps();
-    if (follow_pv)  /* are we following the PV? */
-        sort_pv();
+	gen_caps();
+	if (follow_pv)  /* are we following the PV? */
+		sort_pv();
 
-    /* loop through the moves */
-    for (i = first_move[ply]; i < first_move[ply + 1]; ++i) {
-        sort(i);
-        if (!makemove(gen_dat[i].m.b))
-            continue;
-        x = -quiesce(-beta, -alpha);
-        takeback();
-        if (x > alpha) {
-            if (x >= beta)
-                return beta;
-            alpha = x;
+	/* loop through the moves */
+	for (i = first_move[ply]; i < first_move[ply + 1]; ++i) {
+		sort(i);
+		if (!makemove(gen_dat[i].m.b))
+			continue;
+		x = -quiesce(-beta, -alpha);
+		takeback();
+		if (x > alpha) {
+			if (x >= beta)
+				return beta;
+			alpha = x;
 
-            /* update the PV */
-            pv[ply][ply] = gen_dat[i].m;
-            for (j = ply + 1; j < pv_length[ply + 1]; ++j)
-                pv[ply][j] = pv[ply + 1][j];
-            pv_length[ply] = pv_length[ply + 1];
-        }
-    }
-    return alpha;
+			/* update the PV */
+			pv[MAX_PLY*ply+ply] = gen_dat[i].m;
+			for (j = ply + 1; j < pv_length[ply + 1]; ++j)
+				pv[MAX_PLY*ply+j] = pv[MAX_PLY*(ply + 1) + j];
+			pv_length[ply] = pv_length[ply + 1];
+		}
+	}
+	return alpha;
 }
 
 
@@ -1740,13 +1743,13 @@ int quiesce(int alpha,int beta)
 
 int reps()
 {
-    int i;
-    int r = 0;
+	int i;
+	int r = 0;
 
-    for (i = hply - fifty; i < hply; ++i)
-        if (hist_dat[i].hash == hash)
-            ++r;
-    return r;
+	for (i = hply - fifty; i < hply; ++i)
+		if (hist_dat[i].hash == hash)
+			++r;
+	return r;
 }
 
 
@@ -1759,15 +1762,15 @@ int reps()
 
 void sort_pv()
 {
-    int i;
+	int i;
 
-    follow_pv = FALSE;
-    for(i = first_move[ply]; i < first_move[ply + 1]; ++i)
-        if (gen_dat[i].m.u == pv[0][ply].u) {
-            follow_pv = TRUE;
-            gen_dat[i].score += 10000000;
-            return;
-        }
+	follow_pv = FALSE;
+	for(i = first_move[ply]; i < first_move[ply + 1]; ++i)
+		if (gen_dat[i].m.u == pv[ply].u) {
+			follow_pv = TRUE;
+			gen_dat[i].score += 10000000;
+			return;
+		}
 }
 
 
@@ -1779,21 +1782,21 @@ void sort_pv()
 
 void sort(int from)
 {
-    int i;
-    int bs;  /* best score */
-    int bi;  /* best i */
-    gen_t g;
+	int i;
+	int bs;  /* best score */
+	int bi;  /* best i */
+	gen_t g;
 
-    bs = -1;
-    bi = from;
-    for (i = from; i < first_move[ply + 1]; ++i)
-        if (gen_dat[i].score > bs) {
-            bs = gen_dat[i].score;
-            bi = i;
-        }
-    g = gen_dat[from];
-    gen_dat[from] = gen_dat[bi];
-    gen_dat[bi] = g;
+	bs = -1;
+	bi = from;
+	for (i = from; i < first_move[ply + 1]; ++i)
+		if (gen_dat[i].score > bs) {
+			bs = gen_dat[i].score;
+			bi = i;
+		}
+	g = gen_dat[from];
+	gen_dat[from] = gen_dat[bi];
+	gen_dat[bi] = g;
 }
 
 
@@ -1801,10 +1804,10 @@ void sort(int from)
 
 void checkup()
 {
-    /* is the engine's time up? if so, longjmp back to the
-       beginning of think() */
-    if (get_ms() >= stop_time) {
-        stop_search = TRUE;
-        longjmp(errjmp, 1);
-    }
+	/* is the engine's time up? if so, longjmp back to the
+	   beginning of think() */
+	if (get_ms() >= stop_time) {
+		stop_search = TRUE;
+		longjmp(errjmp, 0);
+	}
 }
