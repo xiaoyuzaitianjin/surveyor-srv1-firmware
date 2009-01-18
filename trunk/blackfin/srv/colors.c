@@ -1,4 +1,5 @@
 #include "colors.h"
+#include "print.h"
 
 extern unsigned int imgWidth, imgHeight;
 
@@ -28,77 +29,37 @@ unsigned int vpix(unsigned char *frame_buf, unsigned int xx, unsigned int yy) {
                         (unsigned int)frame_buf[ix+3];
 }
 
-//  compute boundaries x1,y1 x2,y2 boundaries for a color bin 'ii'
-//  save values in blobcnt[0], blobx1[0], bloby1[0] ...
-//  return pixel count for color bin
-unsigned int vblok(unsigned char *frame_buf, unsigned int ii) {
-    unsigned int ix, xx, yy, y, u, v;
-    unsigned int maxx, maxy, x1, x2, y1, y2, count;
-
-    maxx = imgWidth;
-    maxy = imgHeight;
-
-    count = 0;
-    x1 = maxx;
-    x2 = 0;
-    y1 = maxy;
-    y2 = 0;
-    
-    for (xx=0; xx<maxx; xx+=2) {
-        for (yy=0; yy<maxy; yy++) {
-            ix = index(xx,yy);
-            y = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
-            u = (unsigned int)frame_buf[ix];
-            v = (unsigned int)frame_buf[ix+2];
-            if ((y >= ymin[ii])
-             && (y <= ymax[ii]) 
-             && (u >= umin[ii]) 
-             && (u <= umax[ii]) 
-             && (v >= vmin[ii]) 
-             && (v <= vmax[ii])) {
-                count++;
-                if (y2 < yy)
-                    y2 = yy;
-                if (y1 > yy)
-                    y1 = yy;
-                if (x2 < xx)
-                    x2 = xx;
-                if (x1 > xx)
-                    x1 = xx;
-            }
-        }
-    }
-    blobx1[0] = x1;
-    blobx2[0] = x2;
-    bloby1[0] = y1;
-    bloby2[0] = y2;
-    blobcnt[0] = count;
-    return count;
+// merge blobs, changing any pixel in blob_buf[] in old_blob to new_blob
+void blob_merge(unsigned char *blob_buf, unsigned char old_blob, unsigned char new_blob) {
+    int ix;
+    for (ix=0; ix<(imgWidth*imgHeight>>1); ix++)
+        if (blob_buf[ix] == old_blob)
+            blob_buf[ix] = new_blob;
 }
 
 // return number of blobs found that match the search color
-unsigned int vblob(unsigned char *frame_buf, unsigned int ii) {
-    unsigned int jj, ix, xx, yy, y, u, v, count, bottom, top, tmp;
-    unsigned int maxx, maxy;
+// algorithm derived from "Using a Particle Filter for Gesture Recognition", Alexander Gruenstein
+//    http://www.mit.edu/~alexgru/vision/
+unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned int ii) {
+    unsigned int ix, iy, xx, yy, y, u, v, tmp;
+    unsigned char curBlob, vL, vTL, vT, vTR, vME;
 
-    maxx = imgWidth;
-    maxy = imgHeight;
-
-    for (jj=0; jj<MAX_BLOBS; jj++) {
-        blobcnt[jj] = 0;
-        blobx1[jj] = maxx;
-        blobx2[jj] = 0;
-        bloby1[jj] = maxy;
-        bloby2[jj] = 0;
+    for (curBlob=0; curBlob<MAX_BLOBS; curBlob++) {
+        blobcnt[curBlob] = 0;
+        blobx1[curBlob] = imgWidth;
+        blobx2[curBlob] = 0;
+        bloby1[curBlob] = imgHeight;
+        bloby2[curBlob] = 0;
     }
         
-    jj = 0;    // jj indicates the current blob being processed
-    for (xx=0; xx<maxx; xx+=2) {
-        count = 0;
-        bottom = maxy;
-        top = 0;
-        for (yy=0; yy<maxy; yy++) {
+    // tag all pixels in blob_buf[]    
+    //     matching = 1  
+    //     no color match = 0
+    // thus all matching pixels will belong to blob #1
+    for (yy=0; yy<imgHeight; yy++) {
+        for (xx=0; xx<imgWidth; xx+=2) {   
             ix = index(xx,yy);
+            iy = xx + (yy * imgWidth);
             y = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
             u = (unsigned int)frame_buf[ix];
             v = (unsigned int)frame_buf[ix+2];
@@ -107,36 +68,107 @@ unsigned int vblob(unsigned char *frame_buf, unsigned int ii) {
              && (u >= umin[ii]) 
              && (u <= umax[ii]) 
              && (v >= vmin[ii]) 
-             && (v <= vmax[ii])) {
-                count++;
-                if (bottom > yy)
-                    bottom = yy;
-                if (top < yy)
-                    top = yy;
-            }
-        }
-        if (count) {
-            if (bloby1[jj] > bottom)
-                bloby1[jj] = bottom;
-            if (bloby2[jj] < top)
-                bloby2[jj] = top;
-            if (blobx1[jj] > xx)
-                blobx1[jj] = xx;
-            if (blobx2[jj] < xx)
-                blobx2[jj] = xx;
-            blobcnt[jj] += count;
-        } else {
-            if (blobcnt[jj])    // move to next blob if a gap is found
-                jj++;
-            if (jj > (MAX_BLOBS-2))
-                goto blobbreak;
+             && (v <= vmax[ii]))
+                blob_buf[iy] = 1;
+            else
+                blob_buf[iy] = 0;
         }
     }
-blobbreak:     // now sort blobs by size, largest to smallest pixel count
-    for (xx=0; xx<=jj; xx++) {
-        if (blobcnt[xx] == 0)    // no more blobs, so exit
-            return xx;
-        for (yy=xx; yy<=jj; yy++) {
+
+    curBlob = 1;
+    for (yy=1; yy<imgHeight; yy++) {
+        for (xx=2; xx<(imgWidth-2); xx+=2) {
+            ix = xx + (yy * imgWidth);
+            vL = 0; vTL = 0; vT = 0; vTR = 0;
+            vME = 0;
+            if (blob_buf[ix] == 1) {
+                vL =  blob_buf[ix-2];    // left
+                vTL = blob_buf[(ix - imgWidth) - 2];   // top left
+                vT =  blob_buf[ix - imgWidth];  // top
+                vTR = blob_buf[(ix - imgWidth) + 2];   // top right
+                
+                if (vL)
+                    vME = vL;
+                if (vTL)
+                    vME = vTL;  // guaranteed same as vL by previous iteration
+                if (vT) {
+                    if ((vL != 0) && (vL != vT))      // we have a U connection
+                        blob_merge(blob_buf, vT, vL); // change all vT's to vL's
+                    else
+                        vME = vT;
+                }
+                if (vTR) {
+                    if ((vTL != 0) && (vTL != vTR))
+                        blob_merge(blob_buf, vTR, vTL); // change all vTR's to vTL's
+                    else
+                        vME = vTR;
+                }
+                if (vME == 0) {
+                    vME = curBlob;
+                    curBlob++;
+                    if (curBlob >= MAX_BLOBS)  // max blob limit exceeded
+                        return 0;
+                }
+                blob_buf[ix] = vME;
+            }
+        }
+    }
+
+
+    // measure the blobs
+    for (yy=0; yy<imgHeight; yy++) {
+        for (xx=0; xx<imgWidth; xx+=2) {
+            ix = xx + (yy * imgWidth);
+            iy = blob_buf[ix];
+            if (iy) {
+                blobcnt[iy]++;
+                if (xx < blobx1[iy])
+                    blobx1[iy] = xx;
+                if (xx > blobx2[iy])
+                    blobx2[iy] = xx;
+                if (yy < bloby1[iy])
+                    bloby1[iy] = yy;
+                if (yy > bloby2[iy])
+                    bloby2[iy] = yy;
+            }
+        }
+    }
+
+    // compress the blob array
+    for (xx=0; xx<=curBlob; xx++)
+        if (blobcnt[xx] < MIN_BLOB_SIZE)
+            blobcnt[xx] = 0;
+            
+    for (xx=0; xx<curBlob; xx++) {
+        if (blobcnt[xx] == 0) {
+            for (yy=xx+1; yy<=curBlob; yy++) {
+                if (blobcnt[yy]) {
+                    blobcnt[xx] = blobcnt[yy];
+                    blobx1[xx] = blobx1[yy];
+                    blobx2[xx] = blobx2[yy];
+                    bloby1[xx] = bloby1[yy];
+                    bloby2[xx] = bloby2[yy];
+                    blobcnt[yy] = 0;
+                    break;
+                }
+            }
+        }
+    }
+    
+    iy = 0;
+    for (xx=0; xx<=curBlob; xx++) {
+        if (blobcnt[xx])
+            iy++;
+        else
+            break;
+    }
+    curBlob = iy;
+
+    // sort blobs by size, largest to smallest pixel count
+    for (xx=0; xx<=curBlob; xx++) {
+        if (blobcnt[xx] == 0)  // no more blobs
+            break;
+        for (yy=xx+1; yy<=curBlob; yy++) {
             if (blobcnt[yy] == 0)
                 break;
             if (blobcnt[xx] < blobcnt[yy]) {
@@ -158,7 +190,7 @@ blobbreak:     // now sort blobs by size, largest to smallest pixel count
             }
         }
     }
-    return xx;
+    return curBlob;
 }
 
 // histogram function - 
@@ -167,16 +199,12 @@ blobbreak:     // now sort blobs by size, largest to smallest pixel count
 
 void vhist(unsigned char *frame_buf) {
     unsigned int ix, iy, xx, yy, y1, u1, v1;
-    unsigned int maxx, maxy;
-
-    maxx = imgWidth;
-    maxy = imgHeight;
 
     for (ix=0; ix<256; ix++) {          hist0[ix] = 0;  // accumulator 
         hist1[ix] = 0;  
     }
-    for (xx=0; xx<maxx; xx+=2) {   
-        for (yy=0; yy<maxy; yy++) {
+    for (xx=0; xx<imgWidth; xx+=2) {   
+        for (yy=0; yy<imgHeight; yy++) {
             ix = index(xx,yy);  
             y1 = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
             u1 = ((unsigned int)frame_buf[ix]);
@@ -196,14 +224,10 @@ void vhist(unsigned char *frame_buf) {
 void vmean(unsigned char *frame_buf) {
     unsigned int ix, xx, yy, y1, u1, v1;
     unsigned int my, mu, mv;
-    unsigned int maxx, maxy;
-
-    maxx = imgWidth;
-    maxy = imgHeight;
     my = mu = mv = 0;
 
-    for (xx=0; xx<maxx; xx+=2) {   
-        for (yy=0; yy<maxy; yy++) {
+    for (xx=0; xx<imgWidth; xx+=2) {   
+        for (yy=0; yy<imgHeight; yy++) {
             ix = index(xx,yy);  // yx, uv, vx range from 0-63 (yuv value divided by 4)
             y1 = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
             u1 = ((unsigned int)frame_buf[ix]);
@@ -213,9 +237,9 @@ void vmean(unsigned char *frame_buf) {
             mv += v1;
         }
     }
-    mean[0] = ((my*2) / maxx) / maxy;
-    mean[1] = ((mu*2) / maxx) / maxy;
-    mean[2] = ((mv*2) / maxx) / maxy;
+    mean[0] = ((my*2) / imgWidth) / imgHeight;
+    mean[1] = ((mu*2) / imgWidth) / imgHeight;
+    mean[2] = ((mv*2) / imgWidth) / imgHeight;
 }
 
 void color_segment(unsigned char *frame_buf) {
@@ -331,8 +355,8 @@ void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
             v2 = *(ip+2+skip) - *(ip+2-skip); 
             gx = ((y2*y2)>>2) + u2*u2 + v2*v2;
  
-            cc = ((*ip >> 2) & 0x38)       // threshold U to 0x0C position
-               + ((*(ip+2) >> 5) & 0x07);  // threshold V to 0x03 position
+            cc = ((*ip >> 2) & 0x38)       // threshold U to 0x38 position
+               + ((*(ip+2) >> 5) & 0x07);  // threshold V to 0x07 position
             if (gx > thresh)  
                 cc |= 0x80;               // add 0x80 flag if this is edge pixel
             if (gy > thresh)  

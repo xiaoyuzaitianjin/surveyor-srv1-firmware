@@ -311,13 +311,9 @@ int scan(char *st) {
 
 void init_mem() {
     gen_dat = (gen_t *)malloc(GEN_STACK * 8);
-	memset((unsigned char *)gen_dat, 0, (GEN_STACK * 8));
     hist_dat = (hist_t *)malloc(HIST_STACK * 24);
-	memset((unsigned char *)hist_dat, 0, (HIST_STACK * 24));
     history = (int *)malloc(64 * 64 * 4);
-	memset((unsigned char *)history, 0, (64 * 64 * 4));
     pv = (move *)malloc(MAX_PLY * MAX_PLY * 4);
-	memset((unsigned char *)pv, 0, (MAX_PLY * MAX_PLY * 4));
 }
 
 void free_mem() {

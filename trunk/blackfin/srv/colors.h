@@ -1,4 +1,4 @@
-#define MAX_BLOBS  16
+#define MAX_BLOBS  63
 #define MAX_COLORS 17  // reserve color #16 for internal use
 #define MIN_BLOB_SIZE 5
 
@@ -6,8 +6,7 @@
 
 //#define index(xx, yy)   (scaling_enabled > 0) ? ((imgWidth * (xx + ((63-yy) * imgWidth))) / 40) : ((yy * imgWidth + xx) * 2)
 
-extern unsigned int vblob(unsigned char *, unsigned int);
-extern unsigned int vblok(unsigned char *, unsigned int);
+extern unsigned int vblob(unsigned char *, unsigned char *, unsigned int);
 extern unsigned int vpix(unsigned char *, unsigned int, unsigned int);
 extern void init_colors();
 extern void vhist(unsigned char *frame_buf);

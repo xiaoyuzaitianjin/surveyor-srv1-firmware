@@ -232,7 +232,7 @@ unsigned int laser_range(int dflag) {
     *pPORTHIO &= 0xFC7F;    // lasers off
     umin[16] = 80; umax[16]=144; vmin[16] = 100; vmax[16]=255; ymax[16]=255;   // set color bin #16
     for(ymin[16]=200; ymin[16]>0; ymin[16]-=10) {
-        vblob((unsigned char *)FRAME_BUF, 16);  // use the brightest blob
+        vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, 16);  // use the brightest blob
         if (dflag)
             printf("right blobs: ymin=%d   %d %d %d %d %d  %d %d %d %d %d  %d %d %d %d %d\n\r",
               ymin[16], 
@@ -260,7 +260,7 @@ unsigned int laser_range(int dflag) {
     *pPORTHIO &= 0xFC7F;    // lasers off
     umin[16] = 80; umax[16]=144; vmin[16] = 100; vmax[16]=255; ymax[16]=255;   // set color bin #16
     for(ymin[16]=200; ymin[16]>0; ymin[16]-=10) {
-        vblob((unsigned char *)FRAME_BUF, 16);  // use the brightest blob
+        vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, 16);  // use the brightest blob
         if (dflag)
             printf("left blobs: ymin=%d   %d %d %d %d %d  %d %d %d %d %d  %d %d %d %d %d\n\r",
               ymin[16], 
@@ -1217,7 +1217,11 @@ void delayMS(int delay) {  // delay up to 100000 millisecs (100 secs)
    Serial protocol char: F */
 void enable_failsafe() {
     lfailsafe = (int)((signed char)getch());
+        if (lfailsafe == 0)  // minimum PWM power setting is 0x01, not 0x00
+            lfailsafe = 1;
     rfailsafe = (int)((signed char)getch());
+        if (rfailsafe == 0)  // minimum PWM power setting is 0x01, not 0x00
+            rfailsafe = 1;
     failsafe_mode = 1;
     if (!silent_console)
         printf("#F");
@@ -1257,7 +1261,6 @@ void process_colors() {
                     //    vc = set colors
                     //    vp = sample individual pixel
                     //    vb = find blobs
-                    //    vk = find x1,x2,y1,y2 limits of color
                     //    vr = recall colors
                     //    vh = histogram
                     //    vm = mean colors
@@ -1321,30 +1324,19 @@ void process_colors() {
             break;
         case 'b':  //    vb = find blobs for a given color
             ch1 = getch();
+            ch2 = ch1;
             if (ch1 > '9')
                 ch1 = (ch1 & 0x0F) + 9;
             else
                 ch1 &= 0x0F;
             grab_frame();
-            vblob((unsigned char *)FRAME_BUF, ch1);
+            ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
             if (!silent_console) {
-                printf("##vb%c", ch1);
-                for (ix=0; ix<MAX_BLOBS; ix++)
-                    if (blobcnt[ix] < MIN_BLOB_SIZE)
-                        break;
+                printf("##vb%c\n\r", ch2);
                 for (iy=0; iy<ix; iy++) {
                     printf(" %d - %d %d %d %d  \n\r", 
                         blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
                 }
-            }
-            break;
-        case 'k':  //    vk = find x1,x2,y1,y2 limits of color
-            ix = (unsigned int)getch() & 0x0F;
-            grab_frame();
-            vblok((unsigned char *)FRAME_BUF, ix);
-            if (!silent_console) {
-                printf("##vk %d - %d %d %d %d\n\r", 
-                    blobcnt[0], blobx1[0], blobx2[0], bloby1[0], bloby2[0]);
             }
             break;
         case 'r':  //    vr = recall colors

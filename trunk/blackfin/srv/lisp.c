@@ -1280,7 +1280,7 @@ LISP lblob(LISP cbin)
     if (ix > MAX_COLORS) err("invalid color bin", cbin);
     move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
-    vblob((unsigned char *)FRAME_BUF, ix);
+    vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
     return (cons(flocons(blobcnt[0]),   // return list comprised of blobcnt,
         cons(flocons((blobx1[0]+blobx2[0])/2),            // x midpoint
         cons(flocons((bloby1[0]+bloby2[0])/2), NIL))));   // and y midpoint

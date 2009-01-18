@@ -1190,7 +1190,7 @@ int blob()    //    search for blob by color, index;  return center point X,Y an
     eval_exp(&iblob);
         
     if (iblob == 0)
-        vblob((unsigned char *)FRAME_BUF, ix);
+        vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
 
     if (blobcnt[iblob] == 0) {
         assign_var("x", 0); 
