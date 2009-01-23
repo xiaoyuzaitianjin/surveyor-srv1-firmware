@@ -2,6 +2,7 @@
 #include "print.h"
 
 extern unsigned int imgWidth, imgHeight;
+extern int silent_console;
 
 unsigned int ymax[MAX_COLORS], ymin[MAX_COLORS], umax[MAX_COLORS], umin[MAX_COLORS], vmax[MAX_COLORS], vmin[MAX_COLORS];
 unsigned int blobx1[MAX_BLOBS], blobx2[MAX_BLOBS], bloby1[MAX_BLOBS], bloby2[MAX_BLOBS], blobcnt[MAX_BLOBS];
@@ -32,7 +33,7 @@ unsigned int vpix(unsigned char *frame_buf, unsigned int xx, unsigned int yy) {
 // merge blobs, changing any pixel in blob_buf[] in old_blob to new_blob
 void blob_merge(unsigned char *blob_buf, unsigned char old_blob, unsigned char new_blob) {
     int ix;
-    for (ix=0; ix<(imgWidth*imgHeight>>1); ix++)
+    for (ix=0; ix<(imgWidth*imgHeight); ix+=2)
         if (blob_buf[ix] == old_blob)
             blob_buf[ix] = new_blob;
 }
@@ -106,8 +107,11 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                 if (vME == 0) {
                     vME = curBlob;
                     curBlob++;
-                    if (curBlob >= MAX_BLOBS)  // max blob limit exceeded
+                    if (curBlob >= MAX_BLOBS) { // max blob limit exceeded
+                        if (!silent_console)
+                            printf("  vblob #%d: max blob limit exceeded\n\r", ii);
                         return 0;
+                    }
                 }
                 blob_buf[ix] = vME;
             }

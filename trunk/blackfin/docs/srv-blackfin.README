@@ -1,8 +1,22 @@
 				RELEASE NOTES
 
-SRV-1 firmware test build for Blackfin - 29 December 2008 
-    includes all changes since srv-blackfin-112608 release
+============================================================================
+
+SRV-1 firmware test build for Blackfin - 23 January 2009 
+    includes all changes since srv-blackfin-122908 release
     
+    http://www.surveyor.com/blackfin/srv-blackfin-012309.zip
+
+* rewrote vblob() - now handles vertically overlapping blobs and is much more 
+  accurate
+  
+* added delayUS() and delayNS() microsecond and nanosecond delay functions
+
+* made small changes to the laser_range() function for new vblob()
+
+============================================================================
+
+SRV-1 firmware build for Blackfin - 29 December 2008 
     http://www.surveyor.com/blackfin/srv-blackfin-122908.zip
 
 * changed heap size to 12MB, flash buffer size to 1MB.  added
@@ -23,13 +37,15 @@ SRV-1 firmware test build for Blackfin - 29 December 2008
 
 * added TSCP chess engine (http://www.tckerrigan.com/Chess/TSCP) - invoke 
   with 'C' command.  before running first time, save book openings "book.txt"
-  to flash sector 5 using new zW05 command
-
+  to flash sector 5 using new zW05 command.  
+  
 * changed rand() function to resolve some non-random behaviors uncovered by 
   the chess engine.  also fixed indexing problem with double dimensioned
   arrays in chess.c (compiler doesn't like '**' in place of '[][]' for 
-  indexing
+  indexing)
   
+* fixed problem with failsafe() functions with motor power settings of 0x00
+
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 26 November 2008 
@@ -385,17 +401,11 @@ SRV-1 firmware build for Blackfin - 16 December 2007
   
 * added vision functions to firmware: 
       vc = set colors
-
       vg = grab color sample
-
       vs = scan each pixel column until color mismatch
-
       vf = search each pixel column until color is found
-
       vn = count number of pixels that match color in each pixel column
-
       vb = find blobs
-
       vr = recall colors
   parameters are now decimal instead of hex (as in ARM7 version), this
   is less compact but a lot easier to read.  the functions are still based
@@ -411,7 +421,6 @@ SRV-1 firmware build for Blackfin - 16 December 2007
           of 40 columns, returned in _x, _y, _z
       blob(color) - searches for blob by color, returns center point _x, _y 
           and width _z
-
 
 * changed the motor settings so sufficient power is provided to motors 
   during cw/ccw rotation commands.

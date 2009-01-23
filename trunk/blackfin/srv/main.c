@@ -28,7 +28,9 @@ int main() {
     init_heap();
     init_io(); // Initialise LED, GPIO, serial flow & lasers.
     initRTC();
+    initTMR4();
     init_uart0();
+    //init_uart1();  // use UART1 with GPS until GPIO soft-UART is ready
     init_colors();
     init_sonar();
     disable_failsafe();
@@ -118,11 +120,18 @@ int main() {
                         case 'R':
                             svs_slave((unsigned short *)FLASH_BUFFER, 131072);
                             break;
-                       case '1':
+                        case '1':
                             grab_code_send();
                             break;
-                       case '2':
+                        case '2':
                             recv_grab_code();
+                            break;
+                        case 'g':  // gps test
+                            printf("gps test\n\r");
+                            while (!getchar(&ch)) {
+                                if (uart1GetChar(&ch))
+                                    putchar(ch);
+                            }
                             break;
                     }
                     break;

@@ -240,13 +240,11 @@ unsigned int laser_range(int dflag) {
               blobcnt[1], blobx1[1], blobx2[1], bloby1[1], bloby2[1],
               blobcnt[2], blobx1[2], blobx2[2], bloby1[2], bloby2[2]);
         ix = blobcnt[0];
-        if (ix < 2)
+        if (!ix)
             continue;
         if (blobx1[0] < (imgWidth/2)) // make certain that blob is on right
             continue;
-        if ((bloby2[0]-bloby1[0]) < (ix+1))
-            break;
-        ix = 0;   // in case loop falls through
+        break;
     }
     rrange = (6*imgWidth) / (blobx2[0]+blobx1[0]-imgWidth+1); // right blob
     rconf = (100 * ix) / ((blobx2[0]-blobx1[0]+1) * (bloby2[0]-bloby1[0]+1));
@@ -268,13 +266,11 @@ unsigned int laser_range(int dflag) {
               blobcnt[1], blobx1[1], blobx2[1], bloby1[1], bloby2[1],
               blobcnt[2], blobx1[2], blobx2[2], bloby1[2], bloby2[2]);
         ix = blobcnt[0];
-        if (ix < 2)
+        if (!ix)
             continue;
-        if (blobx2[0] > (imgWidth/2)) 
+        if (blobx2[0] > (imgWidth/2)) // make certain that blob is on left
             continue;
-        if ((bloby2[0]-bloby1[0]) < (ix+1))
-            break;
-        ix = 0;   // in case loop falls through
+        break;
     }
     lrange = (6*imgWidth) / (imgWidth-blobx2[0]-blobx1[0]+ 1); // left blob
     lconf = (100 * ix) / ((blobx2[0]-blobx1[0]+1) * (bloby2[0]-bloby1[0]+1));
@@ -1210,6 +1206,44 @@ void delayMS(int delay) {  // delay up to 100000 millisecs (100 secs)
         return;
     i0 = readRTC();
     while (readRTC() < (i0 + delay))
+        continue;
+}
+
+void delayUS(int delay) {  // delay up to 100000 microseconds (.1 sec)
+    // CORE_CLOCK (MASTER_CLOCK * VCO_MULTIPLIER / CCLK_DIVIDER) = 22,118,000 * 22
+    // PERIPHERAL_CLOCK  (CORE_CLOCK / SCLK_DIVIDER) =  CORE_CLOCK / 4 = 121,649,000
+    // *pTIMER4_PERIOD = PERIPHERAL_CLOCK, so TIMER4 should be counting a 121.649MHz rate
+    int target, start;
+    
+    if ((delay < 0) || (delay > 100000))
+        return;
+    start = *pTIMER4_COUNTER;
+    target = (((PERIPHERAL_CLOCK / 10000) * delay) / 100) + start;
+    
+    if (target > PERIPHERAL_CLOCK) {  // wait for timer to wrap-around
+        target -= PERIPHERAL_CLOCK;
+        while (*pTIMER4_COUNTER > target)
+            continue;
+    }
+    while (*pTIMER4_COUNTER < target)
+        continue;
+}
+
+void delayNS(int delay) {  // delay up to 100000 nanoseconds (.1 millisec)
+    // minimum possible delay is approx 10ns
+    int target, start;
+    
+    if ((delay < 10) || (delay > 100000))
+        return;
+    start = *pTIMER4_COUNTER;
+    target = (((PERIPHERAL_CLOCK / 10000) * delay) / 100000) + start;
+    
+    if (target > PERIPHERAL_CLOCK) {  // wait for timer to wrap-around
+        target -= PERIPHERAL_CLOCK;
+        while (*pTIMER4_COUNTER > target)
+            continue;
+    }
+    while (*pTIMER4_COUNTER < target)
         continue;
 }
 

@@ -106,7 +106,7 @@ public class SRV1Console extends Canvas implements ActionListener, KeyListener
     {
     if (DEBUG) {
         try {
-        debug = new FileOutputStream("debug/debug.bin");
+        debug = new FileOutputStream("debug.bin");
         } catch (Exception e) { e.printStackTrace(); }
     }
     }
@@ -705,7 +705,7 @@ public class SRV1Console extends Canvas implements ActionListener, KeyListener
         }
         } 
 
-        if (frameSize > 0 && frameSize < (150 * 1024)) { // limit frames to 100k
+        if (frameSize > 0 && frameSize < (150 * 1024)) { // limit frames to 150k
 
         if (DEBUG) System.out.println("reading frame: " + pos + " / " + frameSize);
 
