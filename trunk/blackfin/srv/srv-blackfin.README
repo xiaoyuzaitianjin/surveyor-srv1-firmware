@@ -2,10 +2,10 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 23 January 2009 
+SRV-1 firmware test build for Blackfin - 25 January 2009 
     includes all changes since srv-blackfin-122908 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-012309.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-012509.zip
 
 * rewrote vblob() - now handles vertically overlapping blobs and is much more 
   accurate
@@ -13,6 +13,8 @@ SRV-1 firmware test build for Blackfin - 23 January 2009
 * added delayUS() and delayNS() microsecond and nanosecond delay functions
 
 * made small changes to the laser_range() function for new vblob()
+
+* added myfunc.c for user defined functions
 
 ============================================================================
 

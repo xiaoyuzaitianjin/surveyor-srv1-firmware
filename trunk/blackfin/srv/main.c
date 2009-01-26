@@ -18,6 +18,7 @@
 #include "print.h"
 #include "spi.h"
 #include "string.h"
+#include "myfunc.h"
 
 //#define SRV1X
 
@@ -134,6 +135,9 @@ int main() {
                             }
                             break;
                     }
+                    break;
+                case '%': // jump to user defined functions in myfunc.c
+                    myfunc();
                     break;
                 case 'E': // launch flash buffer editor
                     launch_editor();

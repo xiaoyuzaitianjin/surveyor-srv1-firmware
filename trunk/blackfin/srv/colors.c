@@ -143,7 +143,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
         if (blobcnt[xx] < MIN_BLOB_SIZE)
             blobcnt[xx] = 0;
             
-    for (xx=0; xx<curBlob; xx++) {
+    for (xx=0; xx<(curBlob-1); xx++) {
         if (blobcnt[xx] == 0) {
             for (yy=xx+1; yy<=curBlob; yy++) {
                 if (blobcnt[yy]) {
