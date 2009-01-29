@@ -2,10 +2,10 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 25 January 2009 
+SRV-1 firmware test build for Blackfin - 27 January 2009 
     includes all changes since srv-blackfin-122908 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-012509.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-012709.zip
 
 * rewrote vblob() - now handles vertically overlapping blobs and is much more 
   accurate
@@ -15,6 +15,8 @@ SRV-1 firmware test build for Blackfin - 25 January 2009
 * made small changes to the laser_range() function for new vblob()
 
 * added myfunc.c for user defined functions
+
+* integrated neural net functions for pixel pattern matching
 
 ============================================================================
 

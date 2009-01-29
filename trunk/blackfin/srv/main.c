@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *  main.c - main control loop for SRV-1 robot
- *    Copyright (C) 2005-2007  Surveyor Corporation
+ *    Copyright (C) 2005-2009  Surveyor Corporation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -231,6 +231,9 @@ int main() {
                     break; 
                 case 'v':   // vision commands
                     process_colors();
+                    break;
+                case 'n':   // neural net commands
+                    process_neuralnet();
                     break;
                 case 'F':   // set failsafe mode
                     enable_failsafe();

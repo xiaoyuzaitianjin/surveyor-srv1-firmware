@@ -2,7 +2,7 @@
  *  neural.c - simple integer backprop neural network library based on 
  *  floating point code originally written by Baegsch of www.e-m-c.org
  *
- *       Copyright (C) 2007-2008  Surveyor Corporation
+ *       Copyright (C) 2007-2009  Surveyor Corporation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,232 +15,47 @@
  *  GNU General Public License for more details (www.gnu.org/licenses)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#define NUM_INPUT    64
-#define NUM_OUTPUT   16
-#define NUM_HIDDEN   16    
-#define NUM_PATTERNS 16
+#include "neural.h"
+#include "srv.h"
+#include "print.h"
 
 int learn = 300;
 
-typedef struct pattern_st {
-    int p_in[NUM_INPUT];
-    int p_out[NUM_OUTPUT];
-} pattern_t;
-
-pattern_t pattern[] = {
-    {  // solid ball
-    {    0,    0,    0, 1024, 1024,    0,    0,    0,
-         0, 1024, 1024, 1024, 1024, 1024, 1024,    0,
-         0, 1024, 1024, 1024, 1024, 1024, 1024,    0,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-         0, 1024, 1024, 1024, 1024, 1024, 1024,    0,
-         0, 1024, 1024, 1024, 1024, 1024, 1024,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0 },
-    { 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // solid square
-    { 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024 },
-    { 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // cross
-    {    0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0 },
-    { 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // box
-    { 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024 },
-    { 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // circle
-    {    0,    0,    0, 1024, 1024,    0,    0,    0,
-         0, 1024, 1024, 1024, 1024, 1024, 1024,    0,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-         0, 1024, 1024, 1024, 1024, 1024, 1024,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0 },
-    { 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // xing
-    { 1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-         0,    0, 1024,    0,    0, 1024,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0, 1024,    0,    0, 1024,    0,    0,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024 },
-    { 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // diamond
-    {    0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // horizontal line
-    {    0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-      1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // vertical line
-    {    0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // slash
-    {    0,    0,    0,    0,    0,    0, 1024, 1024,
-         0,    0,    0,    0,    0,    0, 1024, 1024,
-         0,    0,    0,    0,    0, 1024,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0, 1024,    0,    0,    0,    0,    0,
-      1024, 1024,    0,    0,    0,    0,    0,    0,
-      1024, 1024,    0,    0,    0,    0,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0, 0 }
-    }, 
-    {  // backslash
-    { 1024, 1024,    0,    0,    0,    0,    0,    0,
-      1024, 1024,    0,    0,    0,    0,    0,    0,
-         0,    0, 1024,    0,    0,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0,    0,    0, 1024,    0,    0,
-         0,    0,    0,    0,    0,    0, 1024, 1024,
-         0,    0,    0,    0,    0,    0, 1024, 1024 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0, 0 }
-    }, 
-    {  // up arrow
-    {    0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0, 0 }
-    }, 
-    {  // down arrow
-    { 1024, 1024,    0,    0,    0,    0, 1024, 1024,
-      1024, 1024,    0,    0,    0,    0, 1024, 1024,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-         0, 1024, 1024,    0,    0, 1024, 1024,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0,
-         0,    0,    0, 1024, 1024,    0,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0, 0 }
-    }, 
-    {  // right arrow
-    { 1024, 1024,    0,    0,    0,    0,    0,    0,
-      1024, 1024, 1024, 1024,    0,    0,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0,    0,    0,    0, 1024, 1024, 1024,
-         0,    0,    0,    0,    0, 1024, 1024, 1024,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-      1024, 1024, 1024, 1024,    0,    0,    0,    0,
-      1024, 1024,    0,    0,    0,    0,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0, 0 }
-    }, 
-    {  // left arrow
-    {    0,    0,    0,    0,    0,    0, 1024, 1024,
-         0,    0,    0,    0, 1024, 1024, 1024, 1024,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-      1024, 1024, 1024,    0,    0,    0,    0,    0,
-      1024, 1024, 1024,    0,    0,    0,    0,    0,
-         0,    0, 1024, 1024, 1024, 1024,    0,    0,
-         0,    0,    0,    0, 1024, 1024, 1024, 1024,
-         0,    0,    0,    0,    0,    0, 1024, 1024 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024, 0 }
-    }, 
-    {  // blank
-    {    0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0,
-         0,    0,    0,    0,    0,    0,    0,    0 },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024 }
-    }, 
+unsigned char npattern[NUM_NPATTERNS * 8] = {
+    0x18, 0x7E, 0x7E, 0xFF, 0xFF, 0x7E, 0x7E, 0x18,  // solid ball
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // solid square
+    0x18, 0x18, 0x18, 0xFF, 0xFF, 0x18, 0x18, 0x18,  // cross
+    0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF,  // box
+    0x18, 0x7E, 0x66, 0xC3, 0xC3, 0x66, 0x7E, 0x18,  // circle
+    0xC3, 0xC3, 0x24, 0x18, 0x18, 0x24, 0xC3, 0xC3,  // xing
+    0x18, 0x3C, 0x66, 0xC3, 0xC3, 0x66, 0x3C, 0x18,  // diamond
+    0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00,  // horizontal line
+    0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C, 0x3C,  // vertical line
+    0x03, 0x03, 0x04, 0x18, 0x18, 0x20, 0xC0, 0xC0,  // slash
+    0xC0, 0xC0, 0x20, 0x18, 0x18, 0x04, 0x03, 0x03,  // backslash
+    0x18, 0x18, 0x3C, 0x3C, 0x66, 0x66, 0xC3, 0xC3,  // up arrow
+    0xC3, 0xC3, 0x66, 0x66, 0x3C, 0x3C, 0x18, 0x18,  // down arrow
+    0xC0, 0xF0, 0x3C, 0x07, 0x07, 0x3C, 0xF0, 0xC0,  // right arrow
+    0x03, 0x0F, 0x3C, 0xE0, 0xE0, 0x3C, 0x0F, 0x03,  // left arrow
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // blank
 };
 
-/*
- * The weights are saved in this array.
- * Access the weight through the macros below
- *
- * For accessing weight from input 2 to hidden 3 use:
- *    W_IN_HIDDEN(2,3)
- */
+unsigned char nmask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
 int weights[NUM_INPUT*NUM_HIDDEN + NUM_HIDDEN*NUM_OUTPUT];
-
-#define W_IN_HIDDEN(i, h)  weights[i*NUM_HIDDEN + h]
-#define W_HIDDEN_OUT(h, o) weights[NUM_INPUT*NUM_HIDDEN + h*NUM_OUTPUT + o]
-
 int neurons[NUM_INPUT + NUM_HIDDEN + NUM_OUTPUT];
 int teach_neurons[NUM_OUTPUT];
-
-#define N_IN(i)     neurons[i]
-#define N_HIDDEN(h) neurons[NUM_INPUT + h]
-#define N_OUT(o)    neurons[NUM_INPUT + NUM_HIDDEN + o]
-#define N_TEACH(o)  teach_neurons[o]
-
-int error[NUM_OUTPUT + NUM_HIDDEN];
-
-#define E_HIDDEN(h) error[h]
-#define E_OUT(o)    error[NUM_HIDDEN + o]
+int nerror[NUM_OUTPUT + NUM_HIDDEN];
 
 void
-init_network(void)
+nninit_network(void)
 {
-    int mod = 32, n, h, o;
+    int mod = 32, n;
     int w, x = 32;
 
     for(n=0; n < sizeof(weights) / sizeof(int); n++) {
         w = rand() % mod;
-        if(rand() < 0x00008000)
+        if(rand() & 0x8000000)
             w = -w;
 
         weights[n] = w * x;
@@ -250,30 +65,31 @@ init_network(void)
 }
 
 void
-init_pattern(void)
+nninit_pattern(void)
 {
-    int pat = rand() % NUM_PATTERNS;
-    int i, o;
-
-    for(i=0; i < NUM_INPUT; i++)
-        N_IN(i) = pattern[pat].p_in[i]; 
-
-    for(o=0; o < NUM_OUTPUT; o++)
-        N_TEACH(o) = pattern[pat].p_out[o];
-
-    return;
+    int pat = rand() % NUM_NPATTERNS;
+    nnset_pattern(pat);
 }
 
-void
-set_pattern(int pat)
-{
-    int i, o;
 
-    for(i=0; i < NUM_INPUT; i++)
-        N_IN(i) = pattern[pat].p_in[i]; 
+void
+nnset_pattern(int pat)
+{
+    int i, o, nx;
+
+    for(i=0; i < NUM_INPUT; i++) { 
+        nx = (pat * 8) + (i / 8);              // offset into npattern array
+        if (npattern[nx] & nmask[i % 8])       // now unpack individual bits
+            N_IN(i) = 1024;                    // expand a 1 to 1024
+        else
+            N_IN(i) = 0;
+    }
 
     for(o=0; o < NUM_OUTPUT; o++)
-        N_TEACH(o) = pattern[pat].p_out[o];
+        if (o == pat)
+            N_TEACH(o) = 1024;
+        else
+            N_TEACH(o) = 0;
 
     return;
 }
@@ -281,13 +97,10 @@ set_pattern(int pat)
 int
 f_logic(int x)
 {
-    /*
-     * Sigmoid function approximation using piecewise linear approximation 
-     * of a nonlinear function (PLAN) - proposed by Amin, Curtis & Hayes-Gill
-     * IEE Proc Circuits, 1997
-     */
+    // Sigmoid function approximation using piecewise linear approximation 
+    // of a nonlinear function (PLAN) - proposed by Amin, Curtis & Hayes-Gill
+    // IEE Proc Circuits, 1997
 
-    static int c = 1;
     int ret;
     int neg;
 
@@ -314,7 +127,7 @@ f_logic(int x)
 
 
 void
-calculate_network(void)
+nncalculate_network(void)
 {
     int i,h,o;
 
@@ -343,7 +156,7 @@ calculate_network(void)
 
 
 void
-calculate_errors(void)
+nncalculate_errors(void)
 {
     int h, o;
     int err;
@@ -363,7 +176,7 @@ calculate_errors(void)
 }
 
 void
-train_network(int num)
+nntrain_network(int num)
 {
     int i, h, o;
     unsigned int n;
@@ -371,9 +184,9 @@ train_network(int num)
 
     for(n = 0; n < num; n++) {
 
-        init_pattern();
-        calculate_network();
-        calculate_errors();
+        nninit_pattern();
+        nncalculate_network();
+        nncalculate_errors();
     
         for(h=0; h < NUM_HIDDEN; h++)
             for(o=0; o < NUM_OUTPUT; o++)

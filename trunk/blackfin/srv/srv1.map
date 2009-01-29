@@ -29,6 +29,9 @@ base                0x8               malloc.o
 follow_pv           0x4               chess.o
 sonar_data          0x14              srv.o
 lheap_2             0x4               lisp.o
+weights             0x1400            neural.o
+teach_neurons       0x40              neural.o
+nerror              0x80              neural.o
 y_acc0              0x4               srv.o
 sym_errobj          0x4               lisp.o
 Y4                  0x80              jpeg.o
@@ -60,6 +63,7 @@ heap_start          0x4               malloc.o
 local_var_stack     0x640             c.o
 pwm1_mode           0x4               srv.o
 save_dct_ptr        0x4               srv.o
+neurons             0x180             neural.o
 x_center            0x4               srv.o
 sym_progn           0x4               lisp.o
 lfailsafe           0x4               srv.o
@@ -174,207 +178,217 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x7eb4
+.l1code         0xffa00000     0x8530
  main.o(.text)
- .text          0xffa00000      0x2f0 main.o
+ .text          0xffa00000      0x2f8 main.o
                 0xffa00000                main
  math.o(.text)
- .text          0xffa002f0      0x200 math.o
-                0xffa003bc                __umodsi3
-                0xffa003ee                __divsi3
-                0xffa002f0                __udivsi3
+ .text          0xffa002f8      0x200 math.o
+                0xffa003c4                __umodsi3
+                0xffa003f6                __divsi3
+                0xffa002f8                __udivsi3
  malloc.o(.text)
- .text          0xffa004f0      0x1a4 malloc.o
-                0xffa005cc                morecore
-                0xffa00544                free
-                0xffa004f0                init_heap
-                0xffa00530                sbrk
-                0xffa00610                malloc
+ .text          0xffa004f8      0x1a4 malloc.o
+                0xffa005d4                morecore
+                0xffa0054c                free
+                0xffa004f8                init_heap
+                0xffa00538                sbrk
+                0xffa00618                malloc
  srv.o(.text)
- .text          0xffa00694     0x2f2c srv.o
-                0xffa014c0                motor_command
-                0xffa01f08                process_i2c
-                0xffa02004                restore_video
-                0xffa02280                xmodem_receive
-                0xffa00e44                clearRTC
-                0xffa02cdc                show_dct_coeff
-                0xffa00f64                delayUS
-                0xffa02244                start_lisp_from_buffer
-                0xffa02040                invert_video
-                0xffa008ec                grab_reference_frame
-                0xffa00e54                delayMS
-                0xffa016b8                set_edge_thresh
-                0xffa00fd8                delayNS
-                0xffa00b74                setPPM1
-                0xffa010ec                rand
-                0xffa0216c                read_user_sector
-                0xffa00db0                initRTC
-                0xffa025cc                serial_out_flashbuffer
-                0xffa022c4                camera_reset
-                0xffa0207c                write_boot_flash
-                0xffa00920                initPWM
-                0xffa009b8                init_sonar
-                0xffa02bb4                recv_grab_code
-                0xffa01068                check_failsafe
-                0xffa01a5c                show_stack_ptr
-                0xffa02e2c                process_colors
-                0xffa01a6c                laser_range
-                0xffa01a44                show_heap_ptr
-                0xffa01648                overlay_on
-                0xffa01980                lasers_off
-                0xffa00778                clear_sdram
-                0xffa007bc                led1_on
-                0xffa015c4                change_image_quality
-                0xffa007a0                stack_remaining
-                0xffa00cec                check_bounds_0_100
-                0xffa008c4                move_image
-                0xffa020e0                write_user_sector
-                0xffa01254                ppm2_command
-                0xffa00a88                setPWM
-                0xffa01ed0                show_laser_range
-                0xffa02204                crc_flash_buffer
-                0xffa02634                send_frame
-                0xffa01958                check_battery
-                0xffa01434                motor_increase_base_speed
-                0xffa017bc                ping_sonar
-                0xffa01590                clear_flash_buffer
-                0xffa011ec                enable_failsafe
-                0xffa019b0                lasers_on
-                0xffa012cc                ppm1_command
-                0xffa01344                motor_action
-                0xffa00dd0                readRTC
-                0xffa00d08                motor_trim_right
-                0xffa007ac                led0_on
-                0xffa00d5c                motor_trim_left
-                0xffa00694                init_io
-                0xffa019fc                serial_out_version
-                0xffa02258                start_cinterpreter
-                0xffa016fc                enable_dct_view
-                0xffa007cc                compute_frame_diff
-                0xffa02228                launch_editor
-                0xffa02538                grab_dct_coeff
-                0xffa01724                enable_edge_detect
-                0xffa02d84                grab_frame
-                0xffa0175c                enable_segmentation
-                0xffa02140                write_user_flash
-                0xffa00e84                motor_set
-                0xffa00984                initTMR4
-                0xffa009e0                initPPM1
-                0xffa02c48                grab_code_send
-                0xffa00c30                setPPM2
-                0xffa0139c                motor_decrease_base_speed
-                0xffa00a34                initPPM2
-                0xffa019e0                serial_out_time
-                0xffa00824                set_caption
-                0xffa01670                disable_frame_diff
-                0xffa0074c                reset_cpu
-                0xffa021c4                read_user_flash
-                0xffa01198                isqrt
-                0xffa01050                reset_failsafe_clock
-                0xffa02230                start_lisp_from_console
-                0xffa011c4                disable_failsafe
-                0xffa02c78                show_dct_coeff310
-                0xffa01620                overlay_off
-                0xffa01784                enable_frame_diff
-                0xffa02478                camera_setup
+ .text          0xffa0069c     0x31e8 srv.o
+                0xffa014e0                motor_command
+                0xffa021cc                process_i2c
+                0xffa022c8                restore_video
+                0xffa02544                xmodem_receive
+                0xffa00e4c                clearRTC
+                0xffa02fa0                show_dct_coeff
+                0xffa00f6c                delayUS
+                0xffa02508                start_lisp_from_buffer
+                0xffa02304                invert_video
+                0xffa008f4                grab_reference_frame
+                0xffa00e5c                delayMS
+                0xffa016d8                set_edge_thresh
+                0xffa00fe0                delayNS
+                0xffa00b7c                setPPM1
+                0xffa010f4                rand
+                0xffa02430                read_user_sector
+                0xffa00db8                initRTC
+                0xffa02890                serial_out_flashbuffer
+                0xffa02588                camera_reset
+                0xffa02340                write_boot_flash
+                0xffa00928                initPWM
+                0xffa009c0                init_sonar
+                0xffa02e78                recv_grab_code
+                0xffa01070                check_failsafe
+                0xffa01a7c                show_stack_ptr
+                0xffa030f0                process_colors
+                0xffa01d30                laser_range
+                0xffa01a64                show_heap_ptr
+                0xffa01668                overlay_on
+                0xffa019a0                lasers_off
+                0xffa00780                clear_sdram
+                0xffa007c4                led1_on
+                0xffa015e4                change_image_quality
+                0xffa007a8                stack_remaining
+                0xffa00cf4                check_bounds_0_100
+                0xffa008cc                move_image
+                0xffa023a4                write_user_sector
+                0xffa01a8c                process_neuralnet
+                0xffa01274                ppm2_command
+                0xffa00a90                setPWM
+                0xffa02194                show_laser_range
+                0xffa024c8                crc_flash_buffer
+                0xffa028f8                send_frame
+                0xffa011cc                ctoi
+                0xffa01978                check_battery
+                0xffa01454                motor_increase_base_speed
+                0xffa017dc                ping_sonar
+                0xffa015b0                clear_flash_buffer
+                0xffa0120c                enable_failsafe
+                0xffa019d0                lasers_on
+                0xffa012ec                ppm1_command
+                0xffa01364                motor_action
+                0xffa00dd8                readRTC
+                0xffa00d10                motor_trim_right
+                0xffa007b4                led0_on
+                0xffa00d64                motor_trim_left
+                0xffa0069c                init_io
+                0xffa01a1c                serial_out_version
+                0xffa0251c                start_cinterpreter
+                0xffa0171c                enable_dct_view
+                0xffa007d4                compute_frame_diff
+                0xffa024ec                launch_editor
+                0xffa027fc                grab_dct_coeff
+                0xffa01744                enable_edge_detect
+                0xffa03048                grab_frame
+                0xffa0177c                enable_segmentation
+                0xffa02404                write_user_flash
+                0xffa00e8c                motor_set
+                0xffa0098c                initTMR4
+                0xffa009e8                initPPM1
+                0xffa02f0c                grab_code_send
+                0xffa00c38                setPPM2
+                0xffa013bc                motor_decrease_base_speed
+                0xffa00a3c                initPPM2
+                0xffa01a00                serial_out_time
+                0xffa0082c                set_caption
+                0xffa01690                disable_frame_diff
+                0xffa00754                reset_cpu
+                0xffa02488                read_user_flash
+                0xffa011a0                isqrt
+                0xffa01058                reset_failsafe_clock
+                0xffa024f4                start_lisp_from_console
+                0xffa011e4                disable_failsafe
+                0xffa02f3c                show_dct_coeff310
+                0xffa01640                overlay_off
+                0xffa017a4                enable_frame_diff
+                0xffa0273c                camera_setup
  uart.o(.text)
- .text          0xffa035c0      0x314 uart.o
-                0xffa03768                uart1SendChar
-                0xffa037dc                uart1GetCh
-                0xffa03744                uart0GetChar
-                0xffa0360c                init_fast_uart0
-                0xffa03704                uart0SendChars
-                0xffa03728                uart0GetCh
-                0xffa036d8                uart0SendString
-                0xffa036a8                uart0SendChar
-                0xffa037b8                uart1SendChars
-                0xffa035c0                init_uart0
-                0xffa0381c                printNumber
-                0xffa0378c                uart1SendString
-                0xffa037f8                uart1GetChar
-                0xffa03658                init_uart1
+ .text          0xffa03884      0x314 uart.o
+                0xffa03a2c                uart1SendChar
+                0xffa03aa0                uart1GetCh
+                0xffa03a08                uart0GetChar
+                0xffa038d0                init_fast_uart0
+                0xffa039c8                uart0SendChars
+                0xffa039ec                uart0GetCh
+                0xffa0399c                uart0SendString
+                0xffa0396c                uart0SendChar
+                0xffa03a7c                uart1SendChars
+                0xffa03884                init_uart0
+                0xffa03ae0                printNumber
+                0xffa03a50                uart1SendString
+                0xffa03abc                uart1GetChar
+                0xffa0391c                init_uart1
  colors.o(.text)
- .text          0xffa038d4      0xcac colors.o
-                0xffa03a80                vmean
-                0xffa03cfc                edge_detect
-                0xffa03e9c                svs_segcode
-                0xffa03b48                color_segment
-                0xffa04090                vblob
-                0xffa03958                blob_merge
-                0xffa03ff4                svs_segview
-                0xffa038d4                init_colors
-                0xffa039b4                vhist
-                0xffa03924                vpix
+ .text          0xffa03b98      0xcac colors.o
+                0xffa03d44                vmean
+                0xffa03fc0                edge_detect
+                0xffa04160                svs_segcode
+                0xffa03e0c                color_segment
+                0xffa04354                vblob
+                0xffa03c1c                blob_merge
+                0xffa042b8                svs_segview
+                0xffa03b98                init_colors
+                0xffa03c78                vhist
+                0xffa03be8                vpix
  jpeg.o(.text)
- .text          0xffa04580      0xeb4 jpeg.o
-                0xffa051e4                DCT
-                0xffa04bd8                close_bitstream
-                0xffa051f8                encodeMCU
-                0xffa04710                huffman
-                0xffa04c4c                write_markers
-                0xffa0534c                encode_image
-                0xffa04e6c                initialize_quantization_tables
-                0xffa05030                read_422_format
-                0xffa04580                initialization
-                0xffa04658                levelshift
-                0xffa04f60                quantization
-                0xffa04fb0                read_400_format
-                0xffa04678                save_dct
+ .text          0xffa04844      0xeb4 jpeg.o
+                0xffa054a8                DCT
+                0xffa04e9c                close_bitstream
+                0xffa054bc                encodeMCU
+                0xffa049d4                huffman
+                0xffa04f10                write_markers
+                0xffa05610                encode_image
+                0xffa05130                initialize_quantization_tables
+                0xffa052f4                read_422_format
+                0xffa04844                initialization
+                0xffa0491c                levelshift
+                0xffa05224                quantization
+                0xffa05274                read_400_format
+                0xffa0493c                save_dct
  r8x8dct.o(.text)
- *fill*         0xffa05434        0x4 00
- .text          0xffa05438       0xf0 r8x8dct.o
-                0xffa05438                _r8x8dct
+ .text          0xffa056f8       0xf0 r8x8dct.o
+                0xffa056f8                _r8x8dct
  spi.o(.text)
- .text          0xffa05528      0x1e8 spi.o
-                0xffa05610                svs_master
-                0xffa05528                svs_slave
+ .text          0xffa057e8      0x1e8 spi.o
+                0xffa058d0                svs_master
+                0xffa057e8                svs_slave
  uart.o(.text)
  chess.o(.text)
- .text          0xffa05710     0x2620 chess.o
-                0xffa05e74                gen
-                0xffa073fc                init_mem
-                0xffa05918                attack
-                0xffa073bc                free_mem
-                0xffa05bb8                gen_caps
-                0xffa07350                open_book
-                0xffa072dc                hash_rand
-                0xffa0739c                flush_input
-                0xffa05a80                gen_promote
-                0xffa05710                parse_move
-                0xffa07450                scan
-                0xffa069a4                eval_dark_king
-                0xffa06d28                reps
-                0xffa0702c                book_match
-                0xffa0587c                init_board
-                0xffa0682c                eval_lkp
-                0xffa0688c                eval_light_king
-                0xffa07644                search
-                0xffa06d90                sort_pv
-                0xffa066c0                getline
-                0xffa06a78                eval
-                0xffa05a3c                in_check
-                0xffa07490                get_ms
-                0xffa0678c                eval_dark_pawn
-                0xffa07838                think
-                0xffa066f8                eval_light_pawn
-                0xffa074cc                quiesce
-                0xffa06954                eval_dkp
-                0xffa07070                move_str
-                0xffa06e1c                sort
-                0xffa07494                checkup
-                0xffa07a34                chess
-                0xffa072e0                init_hash
-                0xffa06e98                print_result
-                0xffa07148                book_move
-                0xffa05ae0                gen_push
-                0xffa057d8                set_hash
-                0xffa061e0                takeback
-                0xffa06350                makemove
-                0xffa06f70                print_board
+ .text          0xffa059d0     0x2620 chess.o
+                0xffa06134                gen
+                0xffa076bc                init_mem
+                0xffa05bd8                attack
+                0xffa0767c                free_mem
+                0xffa05e78                gen_caps
+                0xffa07610                open_book
+                0xffa0759c                hash_rand
+                0xffa0765c                flush_input
+                0xffa05d40                gen_promote
+                0xffa059d0                parse_move
+                0xffa07710                scan
+                0xffa06c64                eval_dark_king
+                0xffa06fe8                reps
+                0xffa072ec                book_match
+                0xffa05b3c                init_board
+                0xffa06aec                eval_lkp
+                0xffa06b4c                eval_light_king
+                0xffa07904                search
+                0xffa07050                sort_pv
+                0xffa06980                getline
+                0xffa06d38                eval
+                0xffa05cfc                in_check
+                0xffa07750                get_ms
+                0xffa06a4c                eval_dark_pawn
+                0xffa07af8                think
+                0xffa069b8                eval_light_pawn
+                0xffa0778c                quiesce
+                0xffa06c14                eval_dkp
+                0xffa07330                move_str
+                0xffa070dc                sort
+                0xffa07754                checkup
+                0xffa07cf4                chess
+                0xffa075a0                init_hash
+                0xffa07158                print_result
+                0xffa07408                book_move
+                0xffa05da0                gen_push
+                0xffa05a98                set_hash
+                0xffa064a0                takeback
+                0xffa06610                makemove
+                0xffa07230                print_board
  setjmp.o(.text)
- .text          0xffa07d30      0x184 setjmp.o
-                0xffa07d30                longjmp
-                0xffa07df8                setjmp
+ .text          0xffa07ff0      0x184 setjmp.o
+                0xffa07ff0                longjmp
+                0xffa080b8                setjmp
+ neural.o(.text)
+ .text          0xffa08174      0x3bc neural.o
+                0xffa084f8                nninit_network
+                0xffa0820c                f_logic
+                0xffa0826c                nncalculate_network
+                0xffa08354                nncalculate_errors
+                0xffa0841c                nntrain_network
+                0xffa08408                nninit_pattern
+                0xffa08174                nnset_pattern
 
 .text           0x00000000     0x5a4c
  .text          0x00000000       0xf0 camera.o
@@ -593,7 +607,7 @@ Linker script and memory map
                 0x000059e8                isdigit
                 0x00005900                strlen
 
-.l1data         0xff800000     0x2084
+.l1data         0xff800000     0x2110
  *(.data)
  .data          0xff800000        0x0 camera.o
  .data          0xff800000      0x194 c.o
@@ -655,60 +669,64 @@ Linker script and memory map
                 0xff80168c                offsets
                 0xff80186c                init_color
  .data          0xff802084        0x0 setjmp.o
- .data          0xff802084        0x0 init.o
- .data          0xff802084        0x0 string.o
+ .data          0xff802084       0x8c neural.o
+                0xff802088                npattern
+                0xff802108                nmask
+                0xff802084                learn
+ .data          0xff802110        0x0 init.o
+ .data          0xff802110        0x0 string.o
  *(.l1data)
  *(.l1data.a)
 
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff802084     0x1a54
+.rodata         0xff802110     0x1b30
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
-                0xff802084      0x2cd c.o
+                0xff802110      0x2cd c.o
                                 0x2dc (size before relaxing)
- *fill*         0xff802351        0x3 00
- .rodata        0xff802354       0x94 c.o
- .rodata        0xff8023e8       0xa8 lisp.o
+ *fill*         0xff8023dd        0x3 00
+ .rodata        0xff8023e0       0x94 c.o
+ .rodata        0xff802474       0xa8 lisp.o
  .rodata.str1.4
-                0xff802490      0x670 lisp.o
+                0xff80251c      0x670 lisp.o
                                 0x6cc (size before relaxing)
  .rodata.str1.4
-                0xff802b00       0xb2 edit.o
+                0xff802b8c       0xb2 edit.o
                                  0xb4 (size before relaxing)
- *fill*         0xff802bb2        0x2 00
- .rodata        0xff802bb4       0x5c edit.o
+ *fill*         0xff802c3e        0x2 00
+ .rodata        0xff802c40       0x5c edit.o
  .rodata.str1.4
-                0xff802c10        0x7 printf.o
+                0xff802c9c        0x7 printf.o
                                   0x8 (size before relaxing)
- *fill*         0xff802c17        0x1 00
- .rodata        0xff802c18      0x200 xmodem.o
+ *fill*         0xff802ca3        0x1 00
+ .rodata        0xff802ca4      0x200 xmodem.o
  .rodata.str1.4
-                0xff802e18       0x14 myfunc.o
+                0xff802ea4       0x14 myfunc.o
  .rodata.str1.4
-                0xff802e2c        0xb main.o
+                0xff802eb8        0xb main.o
                                   0xc (size before relaxing)
- *fill*         0xff802e37        0x1 00
- .rodata        0xff802e38      0x23c main.o
- .rodata        0xff803074       0xa8 srv.o
+ *fill*         0xff802ec3        0x1 00
+ .rodata        0xff802ec4      0x23c main.o
+ .rodata        0xff803100       0xfc srv.o
  .rodata.str1.4
-                0xff80311c      0x566 srv.o
-                                0x578 (size before relaxing)
- *fill*         0xff803682        0x2 00
- .rodata        0xff803684       0x10 uart.o
+                0xff8031fc      0x5f2 srv.o
+                                0x604 (size before relaxing)
+ *fill*         0xff8037ee        0x2 00
+ .rodata        0xff8037f0       0x10 uart.o
  .rodata.str1.4
-                0xff803694       0x27 colors.o
+                0xff803800       0x27 colors.o
                                  0x28 (size before relaxing)
- *fill*         0xff8036bb        0x1 00
- .rodata        0xff8036bc       0x40 jpeg.o
+ *fill*         0xff803827        0x1 00
+ .rodata        0xff803828       0x40 jpeg.o
  .rodata.str1.4
-                0xff8036fc       0x5b spi.o
+                0xff803868       0x5b spi.o
                                  0x5c (size before relaxing)
- *fill*         0xff803757        0x1 00
- .rodata        0xff803758       0x30 chess.o
+ *fill*         0xff8038c3        0x1 00
+ .rodata        0xff8038c4       0x30 chess.o
  .rodata.str1.4
-                0xff803788      0x350 chess.o
+                0xff8038f4      0x34c chess.o
                                 0x35c (size before relaxing)
 
 .data
@@ -732,7 +750,7 @@ Linker script and memory map
                 0x00005a4c                . = ALIGN (0x4)
                 0x00005a4c                __sdram_bss_end = .
 
-.bss            0xff900000     0x3d84
+.bss            0xff900000     0x53c4
                 0xff900000                __bss_start = .
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
@@ -761,6 +779,7 @@ Linker script and memory map
  .bss           0xff900024        0x0 spi.o
  .bss           0xff900024        0x8 chess.o
  .bss           0xff90002c        0x0 setjmp.o
+ .bss           0xff90002c        0x0 neural.o
  .bss           0xff90002c        0x0 init.o
  .bss           0xff90002c        0x0 string.o
  *(COMMON)
@@ -919,8 +938,13 @@ Linker script and memory map
                 0xff903d74                pawn_mat
                 0xff903d7c                gen_dat
                 0xff903d80                book_file
-                0xff903d84                . = ALIGN (0x4)
-                0xff903d84                __bss_end = .
+ COMMON         0xff903d84     0x1640 neural.o
+                0xff903d84                weights
+                0xff905184                teach_neurons
+                0xff9051c4                nerror
+                0xff905244                neurons
+                0xff9053c4                . = ALIGN (0x4)
+                0xff9053c4                __bss_end = .
                 0xffb00ffc                . = 0xffb00ffc
                 0xffb00ffc                PROVIDE (_supervisor_stack, .)
 LOAD init.o
@@ -942,12 +966,13 @@ LOAD c.o
 LOAD printf.o
 LOAD chess.o
 LOAD myfunc.o
+LOAD neural.o
 LOAD r8x8dct.o
 LOAD math.o
 LOAD setjmp.o
 OUTPUT(srv1.bin elf32-bfin)
 
-.comment        0x00000000      0x214
+.comment        0x00000000      0x230
  .comment       0x00000000       0x1c camera.o
  .comment       0x0000001c       0x1c c.o
  .comment       0x00000038       0x1c lisp.o
@@ -965,5 +990,6 @@ OUTPUT(srv1.bin elf32-bfin)
  .comment       0x00000188       0x1c jpeg.o
  .comment       0x000001a4       0x1c spi.o
  .comment       0x000001c0       0x1c chess.o
- .comment       0x000001dc       0x1c init.o
- .comment       0x000001f8       0x1c string.o
+ .comment       0x000001dc       0x1c neural.o
+ .comment       0x000001f8       0x1c init.o
+ .comment       0x00000214       0x1c string.o

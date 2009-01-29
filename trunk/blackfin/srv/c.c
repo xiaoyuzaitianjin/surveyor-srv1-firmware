@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *  c.c - C interpreter for SRV-1 robot
- *    Copyright (C) 2005-2007  Surveyor Corporation
+ *    Copyright (C) 2005-2009  Surveyor Corporation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

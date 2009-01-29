@@ -1,7 +1,7 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *  srv.c - routines to interface with the SRV-1 Blackfin robot.
  *    modified from main.c - main control loop for SRV-1 robot
- *    Copyright (C) 2005-2007  Surveyor Corporation
+ *    Copyright (C) 2005-2009  Surveyor Corporation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@
 #include "edit.h"
 #include "print.h"
 #include "string.h"
+#include "neural.h"
 
 #include "srv.h"
 
@@ -1489,6 +1490,81 @@ void process_colors() {
     }
 }
 
+void process_neuralnet() {
+    unsigned char ch;
+    unsigned int ix, i1, i2;
+              // neural net processing commands
+                    //    np = set pattern
+                    //    nd = display pattern
+                    //    ni = init network
+                    //    nt = train for 10000 iterations
+                    //    nx = test a pattern
+                    //    nc = scale and test pixels of by color #, x1, x2, y1, y2
+                    //    nb = match blob to patterns
+    ch = getch();
+    switch (ch) {
+        case 'p':  //    np = set pattern
+            ix = ctoi(getch());
+            if (ix > NUM_NPATTERNS) {
+                printf("##np - invalid index\n\r");
+                break;
+            }
+            for (i1=0; i1<8; i1++)
+                npattern[ix*8 + i1] = (ctoi(getch()) << 4) + ctoi(getch());
+            printf("##np %d\n\r", ix);
+            break;
+        case 'd':  //    nd = display pattern
+            ix = ctoi(getch());
+            if (ix > NUM_NPATTERNS) {
+                printf("##np - invalid index\n\r");
+                break;
+            }
+            printf("##nd %d\n\r", ix);
+            for (i1=0; i1<8; i1++) {
+                for (i2=0; i2<8; i2++) {
+                    if (npattern[ix*8 + i1] & nmask[i2])
+                        printf(" **");
+                    else
+                        printf("   ");
+                }
+                printf("\n\r");
+            }
+            break;
+        case 'i':  //    ni = init network
+            nninit_network();
+            printf("##ni - init neural net\n\r");
+            break;
+        case 't':  //    nt = train network
+            nntrain_network(10000);
+            printf("##nt - train 10000 iterations\n\r");
+            for (ix=0; ix<NUM_NPATTERNS; ix++) {
+                nnset_pattern(ix);
+                nncalculate_network();
+                for (i1=0; i1<NUM_OUTPUT; i1++) 
+                    printf(" %03d", N_OUT(i1)/10);
+                printf("\n\r");
+            }
+            break;
+        case 'x':  //    nx = test example pattern
+            ix = 0;
+            for (i1=0; i1<8; i1++) {   /// capture the test pattern and store in N_IN input neurons
+                ch = (ctoi(getch()) << 4) + ctoi(getch());
+                for (i2=0; i2<8; i2++) {
+                    if (ch & nmask[i2])
+                        N_IN(ix++) = 1024;
+                    else
+                        N_IN(ix++) = 0;
+                }
+            }
+            nncalculate_network();
+            printf("##nx\n\r");
+            for (i1=0; i1<NUM_OUTPUT; i1++) 
+                printf(" %3d", N_OUT(i1)/10);
+            printf("\n\r");
+            break;            
+    }
+}
+
 /* pseudo-random number generator based on Galois linear feedback shift register
      taps: 32 22 2 1; characteristic polynomial:  x^32 + x^22 + x^2 + x^1 + 1  */
 unsigned int rand() { 
@@ -1514,4 +1590,9 @@ unsigned int isqrt(unsigned int val) {
     return g;
 }
 
-
+unsigned int ctoi(unsigned char c) {
+    if (c > '9')
+        return (unsigned int)(c & 0x0F) + 9;
+    else
+        return (unsigned int)(c & 0x0F);
+}

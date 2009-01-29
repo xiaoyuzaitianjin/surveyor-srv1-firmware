@@ -46,6 +46,7 @@ void show_stack_ptr ();
 void show_heap_ptr ();
 void reset_cpu ();
 unsigned int stack_remaining();
+unsigned int ctoi(unsigned char);
 
 /* Serial outputs */
 void serial_out_version ();
@@ -95,6 +96,7 @@ void invert_video(), restore_video();
 
 /* Image Processing */
 void process_colors(), init_colors();
+void process_neuralnet();
 
 /* Failsafe */
 void enable_failsafe();

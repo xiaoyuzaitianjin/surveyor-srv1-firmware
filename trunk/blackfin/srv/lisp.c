@@ -4,7 +4,7 @@
  * derived from "Scheme In One Defun" (SIOD) by George J. Carrette
  * and modified for robotics application by Surveyor Corporation
  *
- * COPYRIGHT (c) 2005-2008 by Surveyor Corporation
+ * COPYRIGHT (c) 2005-2009 by Surveyor Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
