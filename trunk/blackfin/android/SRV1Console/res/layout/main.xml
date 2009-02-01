@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dip">
+
+    <TextView
+        android:id="@+id/server_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/server_name"/>
+    <EditText
+        android:id="@+id/server_field"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/editbox_background"
+        android:text="@string/default_server"
+        android:layout_below="@id/server_label"/>
+        
+    <TextView
+        android:id="@+id/status_label"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/server_field"/>
+        
+    <Button
+        android:id="@+id/state_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/server_field"
+        android:layout_alignParentRight="true"
+        android:layout_marginLeft="10dip"/>
+        
+	<ImageView android:id="@+id/picview"
+		android:layout_below="@id/state_button"
+		android:layout_width="320px"
+        android:layout_height="240px"/>
+        
+
+</RelativeLayout>
+

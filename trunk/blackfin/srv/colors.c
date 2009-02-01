@@ -67,7 +67,10 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
         bloby1[curBlob] = imgHeight;
         bloby2[curBlob] = 0;
     }
-        
+   // clear the blob_buf[] array
+   for (ix=0; ix<(imgWidth*imgHeight); ix++)
+        blob_buf[ix] = 0; 
+
     // tag all pixels in blob_buf[]    
     //     matching = 1  
     //     no color match = 0
@@ -80,20 +83,18 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
             u = (unsigned int)frame_buf[ix];
             v = (unsigned int)frame_buf[ix+2];
             if ((y >= ymin[ii])
-             && (y <= ymax[ii]) 
-             && (u >= umin[ii]) 
-             && (u <= umax[ii]) 
-             && (v >= vmin[ii]) 
-             && (v <= vmax[ii]))
+              && (y <= ymax[ii]) 
+              && (u >= umin[ii]) 
+              && (u <= umax[ii]) 
+              && (v >= vmin[ii]) 
+              && (v <= vmax[ii]))
                 blob_buf[iy] = 1;
-            else
-                blob_buf[iy] = 0;
         }
     }
 
-    curBlob = 1;
-    for (yy=1; yy<imgHeight; yy++) {
-        for (xx=2; xx<(imgWidth-2); xx+=2) {
+    curBlob = 2;
+    for (yy=1; yy<imgHeight-1; yy++) {   // don't go all the way to the image edge
+        for (xx=2; xx<(imgWidth-4); xx+=2) {
             ix = xx + (yy * imgWidth);
             vL = 0; vTL = 0; vT = 0; vTR = 0;
             vME = 0;
@@ -132,7 +133,6 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
             }
         }
     }
-
 
     // measure the blobs
     for (yy=0; yy<imgHeight; yy++) {

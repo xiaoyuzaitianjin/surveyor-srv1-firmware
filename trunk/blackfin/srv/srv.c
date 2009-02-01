@@ -1492,14 +1492,13 @@ void process_colors() {
 
 void process_neuralnet() {
     unsigned char ch;
-    unsigned int ix, i1, i2;
+    unsigned int ix, i1, i2, x1, x2, y1, y2;
               // neural net processing commands
                     //    np = set pattern
                     //    nd = display pattern
                     //    ni = init network
                     //    nt = train for 10000 iterations
                     //    nx = test a pattern
-                    //    nc = scale and test pixels of by color #, x1, x2, y1, y2
                     //    nb = match blob to patterns
     ch = getch();
     switch (ch) {
@@ -1562,6 +1561,17 @@ void process_neuralnet() {
                 printf(" %3d", N_OUT(i1)/10);
             printf("\n\r");
             break;            
+        case 'b':  //    nb = match blob to patterns
+            ix = ctoi(getch());    // grab the blob #
+            if (!blobcnt[ix]) { 
+                printf("##nb - not a valid blob\n\r");
+                return;
+            }
+            // use data still in blob_buf[] (FRAME_BUF3)
+            // square the aspect ratio of x1, x2, y1, y2
+            // then subsample blob pixels to populate N_IN(0:63) with 0:1024 values
+            // then nncalculate_network() and display the N_OUT() results
+            break;
     }
 }
 
