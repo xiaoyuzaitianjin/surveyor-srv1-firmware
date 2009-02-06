@@ -211,7 +211,7 @@ nndisplay(int ix)
 /* scale blob in blob_buf[] to 8x8 coordinates of N_IN(0:63)
    note that blob_buf[] only stores data in the even cells  */
 void
-nnscale8x8(unsigned char *blob_buf, unsigned int x1, unsigned int x2, 
+nnscale8x8(unsigned char *blob_buf, unsigned int blob_ix, unsigned int x1, unsigned int x2, 
     unsigned int y1, unsigned int y2, unsigned int iwidth, unsigned int iheight)
 {
     unsigned int ix, x, y, xsize, ysize;
@@ -222,13 +222,17 @@ nnscale8x8(unsigned char *blob_buf, unsigned int x1, unsigned int x2,
     if (x2 <= x1 || y2 <= y1)
         return;
 
-    xsize = (x2 - x1 + 1) / 8;   // careful - we will only get 1/2 as many hits as expected
-    ysize = (y2 - y1 + 1) / 8;
-    for (y=y1; y<=y2; y++)
-        for (x=x1; x<=x2; x+=2)
-            if (blob_buf[x + (y * iwidth)])  // note - overlapping blobs in the rectangle get counted as well
-                N_IN((((y - y1) * 8) / ysize) + ((x - x1) / xsize)) += 1024;
-
+    xsize = (x2 - x1 + 7) / 8;   // careful - we will only get 1/2 as many hits as expected
+    ysize = (y2 - y1 + 7) / 8;
+    for (y=y1; y<=y2; y++) {
+        for (x=x1; x<=x2; x+=2) {
+            if (blob_buf[x + (y * iwidth)] == blob_ix) { 
+                ix = (((y - y1) / ysize) * 8) + ((x - x1) / xsize);
+                N_IN(ix) += 1024;
+            }
+        }
+    }
+    
     ix = xsize * ysize / 2;  // adjust for even-only blob_buf[] values
     for (x=0; x<64; x++)
         N_IN(x) /= ix;  // normalize the result
@@ -240,10 +244,12 @@ nnpack8x8(int pat)
 {
     int i, nx;
 
+    for(i=0; i<8; i++)                    // clear out old pattern
+        npattern[pat*8 + i] = 0;
     for(i=0; i < NUM_INPUT; i++) { 
-        nx = (pat * 8) + (i / 8);              // offset into npattern array
-        if (N_IN(i) > 100) 
-            npattern[nx] |= nmask[i % 8];       // now pack individual bits
+        nx = (pat * 8) + (i / 8);         // offset into npattern array
+        if (N_IN(i) > 500) 
+            npattern[nx] |= nmask[i % 8]; // now pack individual bits
     }
 }
 

@@ -15,7 +15,7 @@ extern void color_segment(unsigned char *frame_buf);
 extern void edge_detect(unsigned char *frame_buf, unsigned char *frame_buf2, int threshold);
 
 extern unsigned int ymax[], ymin[], umax[], umin[], vmax[], vmin[];
-extern unsigned int blobx1[], blobx2[], bloby1[], bloby2[], blobcnt[];
+extern unsigned int blobx1[], blobx2[], bloby1[], bloby2[], blobcnt[], blobix[];
 extern unsigned int hist0[], hist1[], hist2[], mean[];
 
 void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh);

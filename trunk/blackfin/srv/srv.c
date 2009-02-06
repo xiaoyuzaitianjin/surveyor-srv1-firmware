@@ -1564,7 +1564,7 @@ void process_neuralnet() {
                square the aspect ratio of x1, x2, y1, y2
                then subsample blob pixels to populate N_IN(0:63) with 0:1024 values
                then nncalculate_network() and display the N_OUT() results */
-            nnscale8x8((unsigned char *)FRAME_BUF3, blobx1[ix], blobx2[ix], 
+            nnscale8x8((unsigned char *)FRAME_BUF3, blobix[ix], blobx1[ix], blobx2[ix], 
                     bloby1[ix], bloby2[ix], imgWidth, imgHeight);
             nncalculate_network();
             printf("##nb\n\r");
@@ -1578,7 +1578,7 @@ void process_neuralnet() {
                 printf("##ng - no blob to grab\n\r");
                 break;
             }
-            nnscale8x8((unsigned char *)FRAME_BUF3, blobx1[0], blobx2[0], 
+            nnscale8x8((unsigned char *)FRAME_BUF3, blobix[0], blobx1[0], blobx2[0], 
                     bloby1[0], bloby2[0], imgWidth, imgHeight);
             nnpack8x8(ix);
             nndisplay(ix);

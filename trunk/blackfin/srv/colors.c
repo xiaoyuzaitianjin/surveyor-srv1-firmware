@@ -20,7 +20,7 @@ extern unsigned int imgWidth, imgHeight;
 extern int silent_console;
 
 unsigned int ymax[MAX_COLORS], ymin[MAX_COLORS], umax[MAX_COLORS], umin[MAX_COLORS], vmax[MAX_COLORS], vmin[MAX_COLORS];
-unsigned int blobx1[MAX_BLOBS], blobx2[MAX_BLOBS], bloby1[MAX_BLOBS], bloby2[MAX_BLOBS], blobcnt[MAX_BLOBS];
+unsigned int blobx1[MAX_BLOBS], blobx2[MAX_BLOBS], bloby1[MAX_BLOBS], bloby2[MAX_BLOBS], blobcnt[MAX_BLOBS], blobix[MAX_BLOBS];
 unsigned int hist0[256], hist1[256], mean[3];
 
 void init_colors() {
@@ -66,6 +66,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
         blobx2[curBlob] = 0;
         bloby1[curBlob] = imgHeight;
         bloby2[curBlob] = 0;
+        blobix[curBlob] = 0;
     }
    // clear the blob_buf[] array
    for (ix=0; ix<(imgWidth*imgHeight); ix++)
@@ -167,6 +168,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                     blobx2[xx] = blobx2[yy];
                     bloby1[xx] = bloby1[yy];
                     bloby2[xx] = bloby2[yy];
+                    blobix[xx] = yy;   // this tells us the index of this blob in blob_buf[]
                     blobcnt[yy] = 0;
                     break;
                 }
@@ -206,6 +208,9 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                 tmp = bloby2[xx];
                 bloby2[xx] = bloby2[yy];
                 bloby2[yy] = tmp;
+                tmp = blobix[xx];
+                blobix[xx] = blobix[yy];
+                blobix[yy] = tmp;
             }
         }
     }

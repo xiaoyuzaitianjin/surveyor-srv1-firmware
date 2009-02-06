@@ -6,7 +6,7 @@ void nncalculate_network();
 void nncalculat_errors();
 void nntrain_network(int);
 void nndisplay(int);
-void nnscale8x8(unsigned char *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+void nnscale8x8(unsigned char *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
 void nnpack8x8(int);
 
 extern int weights[], neurons[], teach_neurons[], nerror[];
