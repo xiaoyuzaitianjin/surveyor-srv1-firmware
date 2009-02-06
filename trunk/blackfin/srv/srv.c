@@ -1492,7 +1492,7 @@ void process_colors() {
 
 void process_neuralnet() {
     unsigned char ch;
-    unsigned int ix, i1, i2, x1, x2, y1, y2;
+    unsigned int ix, i1, i2;
               // neural net processing commands
                     //    np = set pattern
                     //    nd = display pattern
@@ -1500,6 +1500,7 @@ void process_neuralnet() {
                     //    nt = train for 10000 iterations
                     //    nx = test a pattern
                     //    nb = match blob to patterns
+                    //    ng = create pattern from blob
     ch = getch();
     switch (ch) {
         case 'p':  //    np = set pattern
@@ -1519,15 +1520,7 @@ void process_neuralnet() {
                 break;
             }
             printf("##nd %d\n\r", ix);
-            for (i1=0; i1<8; i1++) {
-                for (i2=0; i2<8; i2++) {
-                    if (npattern[ix*8 + i1] & nmask[i2])
-                        printf(" **");
-                    else
-                        printf("   ");
-                }
-                printf("\n\r");
-            }
+            nndisplay(ix);
             break;
         case 'i':  //    ni = init network
             nninit_network();
@@ -1540,7 +1533,7 @@ void process_neuralnet() {
                 nnset_pattern(ix);
                 nncalculate_network();
                 for (i1=0; i1<NUM_OUTPUT; i1++) 
-                    printf(" %03d", N_OUT(i1)/10);
+                    printf(" %3d", N_OUT(i1)/10);
                 printf("\n\r");
             }
             break;
@@ -1565,12 +1558,30 @@ void process_neuralnet() {
             ix = ctoi(getch());    // grab the blob #
             if (!blobcnt[ix]) { 
                 printf("##nb - not a valid blob\n\r");
-                return;
+                break;
             }
-            // use data still in blob_buf[] (FRAME_BUF3)
-            // square the aspect ratio of x1, x2, y1, y2
-            // then subsample blob pixels to populate N_IN(0:63) with 0:1024 values
-            // then nncalculate_network() and display the N_OUT() results
+            /* use data still in blob_buf[] (FRAME_BUF3)
+               square the aspect ratio of x1, x2, y1, y2
+               then subsample blob pixels to populate N_IN(0:63) with 0:1024 values
+               then nncalculate_network() and display the N_OUT() results */
+            nnscale8x8((unsigned char *)FRAME_BUF3, blobx1[ix], blobx2[ix], 
+                    bloby1[ix], bloby2[ix], imgWidth, imgHeight);
+            nncalculate_network();
+            printf("##nb\n\r");
+            for (i1=0; i1<NUM_OUTPUT; i1++) 
+                printf(" %3d", N_OUT(i1)/10);
+            printf("\n\r");
+            break;
+        case 'g':  //     ng = create pattern from blob
+            ix = ctoi(getch());    // grab the new pattern #
+            if (!blobcnt[0]) { 
+                printf("##ng - no blob to grab\n\r");
+                break;
+            }
+            nnscale8x8((unsigned char *)FRAME_BUF3, blobx1[0], blobx2[0], 
+                    bloby1[0], bloby2[0], imgWidth, imgHeight);
+            nnpack8x8(ix);
+            nndisplay(ix);
             break;
     }
 }

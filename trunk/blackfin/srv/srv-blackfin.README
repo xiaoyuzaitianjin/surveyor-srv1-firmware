@@ -2,10 +2,10 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 1 February 2009 
+SRV-1 firmware test build for Blackfin - 5 February 2009 
     includes all changes since srv-blackfin-122908 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-020109.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-020509.zip
 
 * rewrote vblob() - now handles vertically overlapping blobs and is much more 
   accurate
@@ -22,8 +22,11 @@ SRV-1 firmware test build for Blackfin - 1 February 2009
   ni - initialize the network with random weights
   nt - train the network from stored patterns
   nx - test the network with sample pattern
-  nb - match pattern against specific blob from "vb" (not yet added)
 
+* added neural net console functions
+  nb - match pattern against specific blob from "vb"
+  ng - use largest blob as template for new pattern
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 29 December 2008 
@@ -411,17 +414,11 @@ SRV-1 firmware build for Blackfin - 16 December 2007
   
 * added vision functions to firmware: 
       vc = set colors
-
       vg = grab color sample
-
       vs = scan each pixel column until color mismatch
-
       vf = search each pixel column until color is found
-
       vn = count number of pixels that match color in each pixel column
-
       vb = find blobs
-
       vr = recall colors
   parameters are now decimal instead of hex (as in ARM7 version), this
   is less compact but a lot easier to read.  the functions are still based
@@ -437,7 +434,6 @@ SRV-1 firmware build for Blackfin - 16 December 2007
           of 40 columns, returned in _x, _y, _z
       blob(color) - searches for blob by color, returns center point _x, _y 
           and width _z
-
 
 * changed the motor settings so sufficient power is provided to motors 
   during cw/ccw rotation commands.

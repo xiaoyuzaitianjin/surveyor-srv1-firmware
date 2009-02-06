@@ -2,7 +2,7 @@ package com.macpod.srv1console;
 
 /*
  *  SRV1Client.java - Android interface to the SRV-1 Blackfin robot.
- *    Copyright (C) 2008-2009  Surveyor Corporation and Macpod Software
+ *    Copyright (C) 2008-2009  Surveyor Corporation and Jeffrey Nelson
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

@@ -19,6 +19,7 @@
 #include "srv.h"
 #include "print.h"
 
+
 int learn = 300;
 
 unsigned char npattern[NUM_NPATTERNS * 8] = {
@@ -60,8 +61,6 @@ nninit_network(void)
 
         weights[n] = w * x;
     }
-
-    return;
 }
 
 void
@@ -90,8 +89,6 @@ nnset_pattern(int pat)
             N_TEACH(o) = 1024;
         else
             N_TEACH(o) = 0;
-
-    return;
 }
 
 int
@@ -150,8 +147,6 @@ nncalculate_network(void)
 
         N_OUT(o) = f_logic(N_OUT(o));
     }
-        
-    return;
 }
 
 
@@ -171,8 +166,6 @@ nncalculate_errors(void)
 
         E_HIDDEN(h) = (((N_HIDDEN(h) * (1024 - N_HIDDEN(h))) / 1024) * err) / 1024;
     }
-
-    return;
 }
 
 void
@@ -195,9 +188,62 @@ nntrain_network(int num)
         for(i=0; i < NUM_INPUT; i++)
             for(h=0; h < NUM_HIDDEN; h++)
                 W_IN_HIDDEN(i, h) += (((learn * N_IN(i)) / 1024) * E_HIDDEN(h)) / 1024;
-
     }
+}
 
-    return;
+/* display a stored pattern */
+void 
+nndisplay(int ix)
+{
+    int i1, i2;
+
+    for (i1=0; i1<8; i1++) {
+        for (i2=0; i2<8; i2++) {
+            if (npattern[ix*8 + i1] & nmask[i2])
+                printf(" **");
+            else
+                printf("   ");
+        }
+        printf("\n\r");
+    }
+}
+
+/* scale blob in blob_buf[] to 8x8 coordinates of N_IN(0:63)
+   note that blob_buf[] only stores data in the even cells  */
+void
+nnscale8x8(unsigned char *blob_buf, unsigned int x1, unsigned int x2, 
+    unsigned int y1, unsigned int y2, unsigned int iwidth, unsigned int iheight)
+{
+    unsigned int ix, x, y, xsize, ysize;
+    
+    for (x=0; x<64; x++)  // clean the N_IN() input array
+        N_IN(x) = 0;
+          
+    if (x2 <= x1 || y2 <= y1)
+        return;
+
+    xsize = (x2 - x1 + 1) / 8;   // careful - we will only get 1/2 as many hits as expected
+    ysize = (y2 - y1 + 1) / 8;
+    for (y=y1; y<=y2; y++)
+        for (x=x1; x<=x2; x+=2)
+            if (blob_buf[x + (y * iwidth)])  // note - overlapping blobs in the rectangle get counted as well
+                N_IN((((y - y1) * 8) / ysize) + ((x - x1) / xsize)) += 1024;
+
+    ix = xsize * ysize / 2;  // adjust for even-only blob_buf[] values
+    for (x=0; x<64; x++)
+        N_IN(x) /= ix;  // normalize the result
+}
+
+/* save data from N_IN(0:63) to packed 8x8 binary pattern in npattern[] */
+void
+nnpack8x8(int pat)
+{
+    int i, nx;
+
+    for(i=0; i < NUM_INPUT; i++) { 
+        nx = (pat * 8) + (i / 8);              // offset into npattern array
+        if (N_IN(i) > 100) 
+            npattern[nx] |= nmask[i % 8];       // now pack individual bits
+    }
 }
 
