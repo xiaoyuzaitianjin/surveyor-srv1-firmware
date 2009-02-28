@@ -1,6 +1,8 @@
 CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c \
-  xmodem.c colors.c edit.c malloc.c string.c spi.c lisp.c c.o printf.c \
-  chess.c myfunc.c neural.c 
+  xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c \
+  picoc/clibrary.c picoc/heap.c picoc/lex.c picoc/parse.c picoc/picoc.c \
+  picoc/platform_library.c picoc/platform_support.c picoc/table.c picoc/type.c \
+  picoc/variable.c
   
 ASMSRCS = r8x8dct.asm math.asm setjmp.asm
 
@@ -33,10 +35,6 @@ srv.o:   srv.c config.h uart.h i2c.h ov9655.h camera.h jpeg.h xmodem.h  \
          stm_m25p32.h c.h lisp.h font8x8.h colors.h malloc.h spi.h print.h
 
 uart.o:  uart.c config.h
-
-lisp.o:  lisp.c srv.h malloc.h print.h string.h setjmp.h i2c.h colors.h
-
-c.o:     c.c srv.h malloc.h print.h string.h setjmp.h i2c.h colors.h
 
 srv1.ldr: srv1.bin init.o
 	$(LDR) -f -T BF537 -c srv1.ldr --initcode init.o srv1.bin

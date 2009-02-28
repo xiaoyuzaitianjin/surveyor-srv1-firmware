@@ -20,8 +20,6 @@
 #include "string.h"
 #include "myfunc.h"
 
-//#define SRV1X
-
 int main() {
     unsigned char ch;
     int ix;
@@ -46,12 +44,6 @@ int main() {
                 case 'I':
                     grab_frame();
                     send_frame();
-                    break;
-                case 'J':
-                    show_dct_coeff();
-                    break;
-                case 'j':
-                    show_dct_coeff310();
                     break;
                 case 'y':
                     invert_video();
@@ -78,9 +70,6 @@ int main() {
                 case 'A':   // 1280 x 1024
                     camera_reset(1280);
                     break;
-                case 'C':   // play chess
-                    chess();
-                    break;
                 case 'V':   // send version string
                     serial_out_version();
                     break;
@@ -99,14 +88,8 @@ int main() {
                 case 'X':  // xmodem receive
                     xmodem_receive();
                     break;
-                case 'P': // execute Lisp program from flash buffer
-                    start_lisp_from_buffer();
-                    break;
-                case '!': // execute Lisp program from console
-                    start_lisp_from_console();
-                    break;
                 case 'Q': // execute C program from flash buffer
-                    start_cinterpreter();
+                    picoc();
                     break;
                 case '$': // prototype zone
                     switch (getch()) {
@@ -120,12 +103,6 @@ int main() {
                             break;
                         case 'R':
                             svs_slave((unsigned short *)FLASH_BUFFER, 131072);
-                            break;
-                        case '1':
-                            grab_code_send();
-                            break;
-                        case '2':
-                            recv_grab_code();
                             break;
                         case 'g':  // gps test
                             printf("gps test\n\r");
@@ -250,8 +227,6 @@ int main() {
                         enable_segmentation();
                     if (ch == '2')
                         enable_edge_detect();
-                    if (ch == '3')
-                        enable_dct_view();
                     break;
                 case 'G':   // disable frame differencing and color segmentation
                     disable_frame_diff();
@@ -262,44 +237,6 @@ int main() {
                 case 'h':   // set serial port to high speed
                     init_fast_uart0();
                     break;
-                #ifdef SRV1X
-                case 'x':
-                    switch (getch()) {  
-                      case '?': // menu                
-                        printf("SRV1-X: (s)etup, (b)ootload, (f)lash, (C)onsole, (A)nalog, (G)PS\n");
-                        break;
-                      case 's': //setup and start app
-                        if (SRV1X_setup() == 0)
-                          printf("setup OK\n");
-                        else
-                          printf("setup fail\n");
-                        SRV1X_boot_application();
-                        SRV1X_get_version();
-                        break;
-                      case 'b': //setup and remain in bootloader
-                        if (SRV1X_setup() == 0)
-                          printf("setup OK\n");
-                        else
-                          printf("setup fail\n");
-                        SRV1X_get_bootloader_version();
-                        break;
-                      case 'f':
-                        SRV1X_write_flash();
-                        SRV1X_boot_application();
-                        SRV1X_get_version();
-                        break;
-                      case 'C':
-                        SRV1X_console();
-                        break;
-                      case 'G':
-                        SRV1X_stream_GPS();
-                        break;
-                      case 'A':
-                        SRV1X_read_analogs();
-                        break;
-                    }
-                    break;
-                #endif
             }
             reset_failsafe_clock();
             while (getchar(&ch)) // flush recv buffer
@@ -310,3 +247,5 @@ int main() {
         led0_on();
     }
 }
+
+

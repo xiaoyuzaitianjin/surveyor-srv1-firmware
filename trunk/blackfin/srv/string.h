@@ -1,6 +1,8 @@
 extern int  strcmp(char *, char *);
+int strncmp(char *, char *, int);
 extern char *strchr(char *, char);
 extern void strcpy(char *, char *);
+char *strncpy(char *, char *, int);
 extern char *strdup(char *);
 extern int strlen(char *);
 extern int isdigit(char);

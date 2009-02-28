@@ -89,10 +89,6 @@ UINT8* encodeMCU (JPEG_ENCODER_STRUCTURE *, UINT32, UINT8 *);
 void levelshift (INT16 *);
 void DCT (INT16 *);
 
-void save_dct();
-extern int save_dct_flag;
-extern unsigned char *save_dct_ptr;
-
 void quantization (INT16 *, UINT16 *);
 UINT8* huffman (JPEG_ENCODER_STRUCTURE *, UINT16, UINT8 *);
 
@@ -414,8 +410,6 @@ UINT8* encodeMCU (JPEG_ENCODER_STRUCTURE *jpeg_encoder_structure, UINT32 image_f
 {
     levelshift (Y1);
     DCT (Y1);
-    if (save_dct_flag)
-        save_dct(Y1);
     quantization (Y1, ILqt);
     output_ptr = huffman (jpeg_encoder_structure, 1, output_ptr);
 
@@ -423,22 +417,16 @@ UINT8* encodeMCU (JPEG_ENCODER_STRUCTURE *jpeg_encoder_structure, UINT32 image_f
     {
         levelshift (Y2);
         DCT (Y2);
-        if (save_dct_flag)
-            save_dct(Y2);
         quantization (Y2, ILqt);
         output_ptr = huffman (jpeg_encoder_structure, 1, output_ptr);
 
         levelshift (CB);
         DCT (CB);
-        if (save_dct_flag)
-            save_dct(CB);
         quantization (CB, ICqt);
         output_ptr = huffman (jpeg_encoder_structure, 2, output_ptr);
 
         levelshift (CR);
         DCT (CR);
-        if (save_dct_flag)
-            save_dct(CR);
         quantization (CR, ICqt);
         output_ptr = huffman (jpeg_encoder_structure, 3, output_ptr);
     }
@@ -452,30 +440,6 @@ void levelshift (INT16* const data)
 
     for (i=63; i>=0; i--)
         data [i] -= 128;
-}
-
-/* write DCT freq coefficients to memory pointed to by INT16 *save_dct_ptr */
-void save_dct(INT16 *data) {
-    int idx[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 16, 24, 32, 40, 48, 56, 9};
-    int ix;
-    int xx, yy;
-    
-    *save_dct_ptr++ = (unsigned char)((data[0] / 8) + 128);
-    for (ix=1; ix<16; ix++) {
-        xx = data[idx[ix]]; 
-        yy = (xx * xx) >> 8;
-        if (yy > 0x00FF)
-            yy = 0x000F; 
-        else if (yy > 0x007F)
-            yy = 0x0007;
-        else if (yy > 0x003F)
-            yy = 0x0003;
-        else if (yy > 0x0010)
-            yy = 0x0001;
-        else 
-            yy = 0;
-        *save_dct_ptr++ = (unsigned char) yy;
-    }
 }
 
 /* DCT for One block(8x8) */

@@ -28,7 +28,7 @@ public class SRV1Test
 
 	private static String ARCHIVE_PREFIX = "srv";
 
-	private static final int SO_TIMEOUT = 100;  // socket timeout (ms)
+	private static final int SO_TIMEOUT = 500;  // socket timeout (ms)
 	private static final int MTU = 2048; // must be >= SRV-1 WiPort MTU (which has a default of 1400)
 
 	private static PrintStream log = System.out;

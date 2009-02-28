@@ -23,8 +23,6 @@
 #include "jpeg.h"
 #include "xmodem.h"
 #include "stm_m25p32.h"
-#include "c.h"
-#include "lisp.h"
 #include "font8x8.h"
 #include "colors.h"
 #include "malloc.h"
@@ -48,15 +46,13 @@ unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
 
 /* Camera globals */
 unsigned int quality, framecount, ix, overlay_flag;
-unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, dct_view_flag;
+unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag;
 unsigned int edge_thresh;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
 char imgHead[11]; /* image frame header for I command */
 short hhpel[] = {0, -1, 0, 1, -1, 1, -1, 0, 1};
 short vhpel[] = {0, -1, -1, -1, 0, 0, 1, 1, 1};
-unsigned char *save_dct_ptr;
-int save_dct_flag = 0;
 
 /* Motor globals */
 int lspeed, rspeed, lspeed2, rspeed2, base_speed, err1;
@@ -99,8 +95,6 @@ void init_io() {
     pwm1_init = 0;
     pwm2_init = 0;
     silent_console = 0;
-    save_dct_flag = 0;
-    dct_view_flag = 0;
 }
 
 /* reset CPU */
@@ -128,7 +122,7 @@ void clear_sdram() {
 
 void show_stack_ptr() {
     int x = 0;
-    asm("%0 = SP" : "=r"(x) : "0"(x));
+    asm("%0 = SP;" : "=r"(x) : "0"(x));
     printf("stack_ptr = 0x%x\n\r", x);
     return;
 }
@@ -376,12 +370,6 @@ void enable_edge_detect() {
         printf("##g2");
 }
 
-void enable_dct_view() {
-    dct_view_flag = 1;
-    if (!silent_console)
-        printf("##g3");
-}
-
 void set_edge_thresh () {
     unsigned char ch;
     ch = getch();
@@ -395,7 +383,6 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     frame_diff_flag = 0;
     segmentation_flag = 0;
     edge_detect_flag = 0;
-    dct_view_flag = 0;
     if (!silent_console)
         printf("#G");
 }
@@ -415,82 +402,6 @@ void grab_frame () {
     }
 }
 
-/* save DCT coefficients from JPEG compression in FRAME_BUF2 */
-void grab_dct_coeff() {
-    if (imgWidth > 640)  // not enough memory to do this for 1280x1024
-        return;
-    save_dct_flag = 1;
-    save_dct_ptr = (unsigned char *)FRAME_BUF2;
-    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
-            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
-    output_start = (unsigned char *)JPEG_BUF;
-    output_end = encode_image((unsigned char *)FRAME_BUF, output_start, quality, 
-            FOUR_TWO_TWO, imgWidth, imgHeight); 
-    save_dct_flag = 0;
-}
-
-void show_dct_coeff() {
-    int i1, i2;
-    unsigned char *xx;
-    
-    grab_dct_coeff();
-    
-    i1 = ((getch() & 0x0F) * 1000) +  // which macroblock
-         ((getch() & 0x0F) * 100) +
-         ((getch() & 0x0F) * 10) +
-         (getch() & 0x0F);
-    printf("##j  macroblock %d\n\r", i1);
-    xx = (unsigned char *)(FRAME_BUF2 + (i1 * 64));  // 64 bytes per macroblock
-    for (i1=0; i1<4; i1++) {
-        for (i2=0; i2<16; i2++) {
-            printNumber(16, 4, 0, ' ', *xx++);
-        }
-        printf("\n\r");
-    }
-}
-
-void show_dct_coeff310() {
-    int i1, i2;
-    unsigned char *xx;
-    
-    grab_dct_coeff();
-    
-    i1 = 310;
-    printf("##j  macroblock %d\n\r", i1);
-    xx = (unsigned char *)(FRAME_BUF2 + (i1 * 64));  // 64 bytes per macroblock
-    for (i1=0; i1<4; i1++) {
-        for (i2=0; i2<16; i2++) {
-            printNumber(16, 4, 0, ' ', *xx++);
-        }
-        printf("\n\r");
-    }
-}
-
-
-
-void grab_code_send() {   // grab frame, send DCT coeffs to Blackfin #2
-    grab_dct_coeff();
-    svs_master((unsigned short *)FRAME_BUF2, imgWidth*(imgHeight/2)+8);
-}
-
-void recv_grab_code() {   // read DCT coeffs from Blackfin #1 => SPI_BUFFER1
-    int ones[] = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
-    int ix, hit1, hit2;
-    unsigned char *buf1, *buf2;
-    
-    svs_slave((unsigned short *)SPI_BUFFER1, imgWidth*(imgHeight/2)+8);
-    grab_dct_coeff();     // compute local DCT coeffs => FRAME_BUF2
-    buf1 = (unsigned char *)SPI_BUFFER1;
-    buf2 = (unsigned char *)FRAME_BUF2;
-    hit1 = hit2 = 0;
-    for (ix=0; ix<imgWidth*imgHeight/2; ix++) {  // count edge pixels in each buffer
-        if (buf1[ix] & 0xC0)
-            hit1++;
-        if (buf2[ix] & 0xC0)
-            hit2++;
-    }
-    printf("recv_grab_code() - %d hits on left, %d hits on right\n\r", hit1, hit2);
-}
 
 void grab_reference_frame () {
     move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
@@ -529,7 +440,7 @@ void send_frame () {
 
         i2c_data[0] = 0x41;  // read compass twice to clear last reading
         i2cread(0x21, (unsigned char *)i2c_data, 2, SCCB_ON);
-           i2c_data[0] = 0x41;
+        i2c_data[0] = 0x41;
         i2cread(0x21, (unsigned char *)i2c_data, 2, SCCB_ON);
         ix = ((i2c_data[0] << 8) + i2c_data[1]) / 10;
 
@@ -739,33 +650,8 @@ void xmodem_receive () {
   if (err1 < 0) {
     printf("##Xmodem receive error: %d\n\r", err1);
   } else {
-      printf("##Xmodem success. Count: %d\n\r");
+      printf("##Xmodem success. Count: %d\n\r", err1);
   }
-}
-
-/* Execute C program from flash buffer
-   Serial protocol char: Q */
-void start_cinterpreter () {
-    unsigned int save_console_flag;
-    
-    save_console_flag = silent_console;
-    silent_console = 1;  // turn off console messages during C program execution
-    c((char *)FLASH_BUFFER);
-    silent_console = save_console_flag;
-}
-
-/* Execute Lisp program from flash buffer
-   Serial protocol char: P */
-void start_lisp_from_buffer () {
-    init_heap();
-    lisp((char *)FLASH_BUFFER);
-}
-
-/* Execute Lisp program from console, ESC to exit
-   Serial protocol char: '!' */
-void start_lisp_from_console () {
-    init_heap();
-    lisp((char *)0);
 }
 
 void launch_editor() {
@@ -1617,3 +1503,4 @@ unsigned int ctoi(unsigned char c) {
     else
         return (unsigned int)(c & 0x0F);
 }
+

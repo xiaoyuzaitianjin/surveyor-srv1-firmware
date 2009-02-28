@@ -7,7 +7,7 @@
 
 //Application definitions
 
-#define    NUM_SECTORS     64    /* number of sectors */
+#define NUM_SECTORS        64    /* number of sectors */
 #define SECTOR_SIZE        0x10000
 #define NOP_NUM            1000
 #define CONFIG_CCLK_HZ  MASTER_CLOCK

@@ -22,8 +22,10 @@
 
 /* SDRAM allocation */
 #define FLASH_BUFFER 0x00100000  // address in SDRAM for buffering flash and xmodem 
-#define SPI_BUFFER1  0x00200000  // 512kB buffer for transfer of data via SPI bus
-#define SPI_BUFFER2  0x00280000  // 512kB buffer for transfer of data via SPI bus
+#define C_HEAPSTART  0x00200000  // 512kB buffer for picoC
+#define C_HEAPSIZE   0x00080000
+#define SPI_BUFFER1  0x00280000  // 256kB buffer for transfer of data via SPI bus
+#define SPI_BUFFER2  0x002C0000  // 256kB buffer for transfer of data via SPI bus
 #define HEAPSTART    0x00300000  // put this above FLASH_BUFFER 
 #define HEAPSIZE     0x00C00000  // 12MB for now - leave 1MB for JPEG buffer
 #define DMA_BUF1     0x01000000  // address in SDRAM for DMA transfer of frames from camera
@@ -81,9 +83,6 @@ void enable_edge_detect();
 void set_edge_thresh();
 void grab_code_send();
 void recv_grab_code();
-void grab_dct_coeff();
-void show_dct_coeff(), show_dct_coeff310();
-void enable_dct_view();
 void disable_frame_diff ();
 void overlay_on ();
 void overlay_off ();
@@ -107,10 +106,6 @@ void check_battery();
 
 /* Transfer */
 void xmodem_receive ();
-
-void start_cinterpreter ();
-void start_lisp_from_buffer ();
-void start_lisp_from_console ();
 
 /* Flash */
 void read_user_flash ();

@@ -58,7 +58,15 @@ void blob_merge(unsigned char *blob_buf, unsigned char old_blob, unsigned char n
 //    http://www.mit.edu/~alexgru/vision/
 unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned int ii) {
     unsigned int ix, iy, xx, yy, y, u, v, tmp;
-    unsigned char curBlob, vL, vTL, vT, vTR, vME;
+    unsigned char *bbp, curBlob, vL, vTL, vT, vTR, vME;
+
+    register int y1, y2, u1, u2, v1, v2;
+    y1 = ymin[ii];
+    y2 = ymax[ii];
+    u1 = umin[ii];
+    u2 = umax[ii];
+    v1 = vmin[ii];
+    v2 = vmax[ii];
 
     for (curBlob=0; curBlob<MAX_BLOBS; curBlob++) {
         blobcnt[curBlob] = 0;
@@ -68,29 +76,24 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
         bloby2[curBlob] = 0;
         blobix[curBlob] = 0;
     }
-   // clear the blob_buf[] array
-   for (ix=0; ix<(imgWidth*imgHeight); ix++)
-        blob_buf[ix] = 0; 
+
+    bbp = blob_buf;
+    for (ix=0; ix<imgWidth*imgHeight; ix++)
+        *bbp++ = 0;
 
     // tag all pixels in blob_buf[]    
     //     matching = 1  
     //     no color match = 0
     // thus all matching pixels will belong to blob #1
-    for (yy=0; yy<imgHeight; yy++) {
-        for (xx=0; xx<imgWidth; xx+=2) {   
-            ix = index(xx,yy);
-            iy = xx + (yy * imgWidth);
-            y = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
-            u = (unsigned int)frame_buf[ix];
-            v = (unsigned int)frame_buf[ix+2];
-            if ((y >= ymin[ii])
-              && (y <= ymax[ii]) 
-              && (u >= umin[ii]) 
-              && (u <= umax[ii]) 
-              && (v >= vmin[ii]) 
-              && (v <= vmax[ii]))
-                blob_buf[iy] = 1;
-        }
+    bbp = blob_buf;
+    for (ix=0; ix<(imgWidth*imgHeight*2); ix+=4){
+        y = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
+        u = (unsigned int)frame_buf[ix];
+        v = (unsigned int)frame_buf[ix+2];
+
+        if ((y > y1) && (y < y2) && (u > u1) && (u < u2) && (v > v1) && (v < v2))
+            *bbp = 1;
+        bbp += 2;
     }
 
     curBlob = 2;
@@ -101,9 +104,9 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
             vME = 0;
             if (blob_buf[ix] == 1) {
                 vL =  blob_buf[ix-2];    // left
-                vTL = blob_buf[(ix - imgWidth) - 2];   // top left
-                vT =  blob_buf[ix - imgWidth];  // top
-                vTR = blob_buf[(ix - imgWidth) + 2];   // top right
+                vTL = blob_buf[(ix - (imgWidth>>1)) - 2];   // top left
+                vT =  blob_buf[ix - (imgWidth>>1)];  // top
+                vTR = blob_buf[(ix - (imgWidth>>1)) + 2];   // top right
                 
                 if (vL)
                     vME = vL;

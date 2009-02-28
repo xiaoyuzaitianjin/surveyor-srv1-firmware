@@ -17,10 +17,25 @@
 
 int strcmp(char *s1, char *s2)
 {
-        while (*s1 == *s2++)
-                if (*s1++ == 0)
-                        return (0);
-        return (*s1 - *--s2);
+  while (*s1 == *s2++)
+    if (*s1++ == 0)
+        return (0);
+  return (*s1 - *--s2);
+}
+
+int strncmp(char *s1, char *s2, int n)
+{
+  unsigned char u1, u2;
+  while (n-- > 0)
+    {
+      u1 = (unsigned char) *s1++;
+      u2 = (unsigned char) *s2++;
+      if (u1 != u2)
+    return u1 - u2;
+      if (u1 == '\0')
+    return 0;
+  }
+  return 0;
 }
 
 char *strchr(char *s, char c)
@@ -40,6 +55,22 @@ void strcpy(char *pDst, char *pSrc)
                 continue;
 }
 
+char *strncpy(char *dst, const char *src, int n)
+{
+  if (n != 0) {
+    char *d = dst;
+    char *s = src;
+    do {
+      if ((*d++ = *s++) == 0) {
+        /* NUL pad the remaining n-1 bytes */
+        while (--n != 0)
+          *d++ = 0;
+        break;
+      }
+    } while (--n != 0);
+  }
+  return (dst);
+}
 
 int atoi(char *p)
 {
