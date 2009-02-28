@@ -120,7 +120,7 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x5e40
+.l1code         0xffa00000     0x5e38
  main.o(.text)
  .text          0xffa00000      0x2b0 main.o
                 0xffa00000                main
@@ -233,7 +233,7 @@ Linker script and memory map
                 0xffa03884                uart1GetChar
                 0xffa036e4                init_uart1
  colors.o(.text)
- .text          0xffa03960      0xcf8 colors.o
+ .text          0xffa03960      0xcf4 colors.o
                 0xffa03b0c                vmean
                 0xffa03d88                edge_detect
                 0xffa03f28                svs_segcode
@@ -245,44 +245,43 @@ Linker script and memory map
                 0xffa03a40                vhist
                 0xffa039b0                vpix
  jpeg.o(.text)
- .text          0xffa04658      0xdc4 jpeg.o
-                0xffa05224                DCT
-                0xffa04c18                close_bitstream
-                0xffa05238                encodeMCU
-                0xffa04750                huffman
-                0xffa04c8c                write_markers
-                0xffa05334                encode_image
-                0xffa04eac                initialize_quantization_tables
-                0xffa05070                read_422_format
-                0xffa04658                initialization
-                0xffa04730                levelshift
-                0xffa04fa0                quantization
-                0xffa04ff0                read_400_format
+ .text          0xffa04654      0xdc4 jpeg.o
+                0xffa05220                DCT
+                0xffa04c14                close_bitstream
+                0xffa05234                encodeMCU
+                0xffa0474c                huffman
+                0xffa04c88                write_markers
+                0xffa05330                encode_image
+                0xffa04ea8                initialize_quantization_tables
+                0xffa0506c                read_422_format
+                0xffa04654                initialization
+                0xffa0472c                levelshift
+                0xffa04f9c                quantization
+                0xffa04fec                read_400_format
  r8x8dct.o(.text)
- *fill*         0xffa0541c        0x4 00
- .text          0xffa05420       0xf0 r8x8dct.o
-                0xffa05420                _r8x8dct
+ .text          0xffa05418       0xf0 r8x8dct.o
+                0xffa05418                _r8x8dct
  spi.o(.text)
- .text          0xffa05510      0x1e8 spi.o
-                0xffa055f8                svs_master
-                0xffa05510                svs_slave
+ .text          0xffa05508      0x1e8 spi.o
+                0xffa055f0                svs_master
+                0xffa05508                svs_slave
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa056f8      0x184 setjmp.o
-                0xffa056f8                longjmp
-                0xffa057c0                setjmp
+ .text          0xffa056f0      0x184 setjmp.o
+                0xffa056f0                longjmp
+                0xffa057b8                setjmp
  neural.o(.text)
- .text          0xffa0587c      0x5c4 neural.o
-                0xffa05c1c                nnpack8x8
-                0xffa05e08                nninit_network
-                0xffa05c98                nndisplay
-                0xffa05914                f_logic
-                0xffa05974                nncalculate_network
-                0xffa05a5c                nncalculate_errors
-                0xffa05d2c                nntrain_network
-                0xffa05d18                nninit_pattern
-                0xffa0587c                nnset_pattern
-                0xffa05b10                nnscale8x8
+ .text          0xffa05874      0x5c4 neural.o
+                0xffa05c14                nnpack8x8
+                0xffa05e00                nninit_network
+                0xffa05c90                nndisplay
+                0xffa0590c                f_logic
+                0xffa0596c                nncalculate_network
+                0xffa05a54                nncalculate_errors
+                0xffa05d24                nntrain_network
+                0xffa05d10                nninit_pattern
+                0xffa05874                nnset_pattern
+                0xffa05b08                nnscale8x8
 
 .text           0x00000000     0x48a8
  .text          0x00000000       0xf0 camera.o

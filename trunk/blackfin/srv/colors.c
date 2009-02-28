@@ -104,9 +104,9 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
             vME = 0;
             if (blob_buf[ix] == 1) {
                 vL =  blob_buf[ix-2];    // left
-                vTL = blob_buf[(ix - (imgWidth>>1)) - 2];   // top left
-                vT =  blob_buf[ix - (imgWidth>>1)];  // top
-                vTR = blob_buf[(ix - (imgWidth>>1)) + 2];   // top right
+                vTL = blob_buf[(ix - imgWidth) - 2];   // top left
+                vT =  blob_buf[ix - imgWidth];  // top
+                vTR = blob_buf[(ix - imgWidth) + 2];   // top right
                 
                 if (vL)
                     vME = vL;

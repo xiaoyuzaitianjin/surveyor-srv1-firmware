@@ -14,7 +14,6 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "srv.h"
-#include "srv1x.h"
 #include "print.h"
 #include "spi.h"
 #include "string.h"
