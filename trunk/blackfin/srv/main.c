@@ -18,6 +18,7 @@
 #include "spi.h"
 #include "string.h"
 #include "myfunc.h"
+extern int picoc(char *);
 
 int main() {
     unsigned char ch;
@@ -88,7 +89,7 @@ int main() {
                     xmodem_receive();
                     break;
                 case 'Q': // execute C program from flash buffer
-                    picoc();
+                    picoc((char *)FLASH_BUFFER);
                     break;
                 case '$': // prototype zone
                     switch (getch()) {

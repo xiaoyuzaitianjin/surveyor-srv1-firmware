@@ -347,7 +347,7 @@ struct LibraryFunction PlatformLibrary[] =
 {
     { Cdelay,       "void delay(int)" },
     { Crand,        "int rand(int)" },
-    { Cdelay,       "int time()" },
+    { Ctime,        "int time()" },
     { Cmotors,      "void motors(int, int)" },
     { Cservo,       "void servo(int, int)" },
     { Cservo2,      "void servo2(int, int)" },

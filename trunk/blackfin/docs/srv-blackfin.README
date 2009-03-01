@@ -2,15 +2,18 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 28 February 2009 
+SRV-1 firmware test build for Blackfin - 1 March 2009 
     includes all changes since srv-blackfin-020609 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-022809.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-030109.zip
+
+* removed chess(), lisp() and original c() 
 
 * added picoc() C-interpreter - http://code.google.com/p/picoc/
 
-* removed chess(), lisp() and original c()
-
+* added initial set of robot functions to picoc -
+    motors(), delay(), laser(), servo(), servo2(), time(), rand()
+     
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 6 February 2009 

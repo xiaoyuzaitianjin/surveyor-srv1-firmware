@@ -30,29 +30,24 @@ int main(int argc, char **argv)
 }
 #else
 # ifdef SURVEYOR_HOST
-static char *SourceStr = "\n\
-int Count;\n\
-int i;\n\
-\n\
-i = time();\n\
-printf(\"time = %d\n\", i);\n\
-i = rand(10);\n\
-printf(\"rand = %d\n\", i);\n\
-printf(\"This is a test program\n\");\n\
-for (Count = 1; Count <= 10; Count++)\n\
-    printf(\"%d\n\", Count);\n\
-laser(1);\n\
-motors(50, -50);\n\
-delay(500);\n\
-motors(0, 0);\n\
-laser(0);\n\
-";
+int errjmp[41];
 
-int picoc()
+int picoc(char *SourceStr)
 {    
+    int ix;
+    
     Initialise();
-    if (PlatformSetExitPoint())
+    for (ix=0; ix<strlen(SourceStr); ix++)  // clear out ctrl-z from XMODEM transfer
+        if (SourceStr[ix] == 0x1A)
+            SourceStr[ix] = 0x20;
+    printf("%s\n\r", SourceStr);  // display program source
+    printf("=====================\n");
+    errjmp[40] = 0;
+    setjmp(errjmp);
+    if (errjmp[40]) {
+        printf("goodbye ...\n\r");
         return 1;
+    }
         
     Parse("test.c", SourceStr, strlen(SourceStr), TRUE);
     return 0;
