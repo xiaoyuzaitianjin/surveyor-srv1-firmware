@@ -65,19 +65,19 @@ void PlatformExit()
 /* get a line of interactive input */
 char *PlatformGetLine(char *Buf, int MaxLen)
 {
-    return NULL;
+   return NULL;
 }
 
 /* write a character to the console */
 void PlatformPutc(unsigned char OutCh)
 {
-    putchar(OutCh);
+   putchar(OutCh);
 }
 
 /* mark where to end the program for platforms which require this */
 int PlatformSetExitPoint()
 {
-    return 0;
+ return 0;
 }
 
 /* exit the program */
@@ -85,8 +85,8 @@ extern int errjmp[];
 
 void PlatformExit()
 {
-    errjmp[40] = 1;
-    longjmp(errjmp, 1);
+   errjmp[40] = 1;
+   longjmp(errjmp, 1);
 }
 #endif
 

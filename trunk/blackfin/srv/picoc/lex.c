@@ -329,7 +329,7 @@ enum LexToken LexScanGetToken(struct LexState *Lexer, struct Value **Value)
             case '.': NEXTISEXACTLY3('.', '.', TokenEllipsis, TokenDot); break;
             case '?': GotToken = TokenQuestionMark; break;
             case ':': GotToken = TokenColon; break;
-            default:  LexFail(Lexer, "illegal character '%d'", ThisChar); break;
+            default:  LexFail(Lexer, "illegal character '%c'", ThisChar); break;
         }
     } while (GotToken == TokenNone);
     

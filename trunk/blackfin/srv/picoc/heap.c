@@ -17,7 +17,6 @@ static void *StackFrame = &HeapMemory[0];           /* the current stack frame *
 static void *StackTop = &HeapMemory[0];             /* the top of the stack */
 #endif
 
-
 static struct AllocNode *FreeListBucket[FREELIST_BUCKETS];      /* we keep a pool of freelist buckets to reduce fragmentation */
 static struct AllocNode *FreeListBig;                           /* free memory which doesn't fit in a bucket */
 
@@ -26,8 +25,8 @@ void HeapInit()
 {
     int Count;
     
-    StackFrame = HeapMemory;
-    StackTop = HeapMemory;
+    StackFrame = &HeapMemory[0];
+    StackTop = &HeapMemory[0];
     *(void **)StackFrame = NULL;
     HeapBottom = &HeapMemory[HEAP_SIZE];
     FreeListBig = NULL;

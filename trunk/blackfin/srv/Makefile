@@ -40,5 +40,5 @@ srv1.ldr: srv1.bin init.o
 	$(LDR) -f -T BF537 -c srv1.ldr --initcode init.o srv1.bin
     
 clean:
-	rm -f *.o *.bin *.ldr 
+	rm -f *.o *.bin *.ldr picoc/*.o
 
