@@ -12,11 +12,11 @@ SRV-1 firmware test build for Blackfin - 1 March 2009
 * added picoc() C-interpreter - http://code.google.com/p/picoc/
 
 * added initial set of robot functions to picoc() -
-    motors(), delay(), laser(), servo(), servo2(), time(), rand()
-    
-* added more functions to picoc() - 
+    motors(), delay(), laser(), servo(), servo2(), time(), rand(),
     signal(), input(), sonar(), range(), color(), blob(), imgcap(), 
     imgrcap(), imgdiff(), compass(), readi2c(), readi2c2(), writei2c()
+
+* added floating point emulation libary by "Lefteris"
     
 ============================================================================
 

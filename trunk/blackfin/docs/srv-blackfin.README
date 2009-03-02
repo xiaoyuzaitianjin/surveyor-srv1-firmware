@@ -2,10 +2,10 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 1 March 2009 
+SRV-1 firmware test build for Blackfin - 2 March 2009 
     includes all changes since srv-blackfin-020609 release
     
-    http://www.surveyor.com/blackfin/srv-blackfin-030109.zip
+    http://www.surveyor.com/blackfin/srv-blackfin-030209.zip
 
 * removed chess(), lisp() and original c() 
 

@@ -250,13 +250,12 @@ void Cwritei2c(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
 
 void Cblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)    //    search for blob by color, index;  return center point X,Y and width Z
 {
-    int ix, iblob;
+    int ix, iblob, numblob;
 
     ix = Param[0]->Val->Integer;
     iblob = Param[1]->Val->Integer;
         
-    if (iblob == 0)
-        vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
+    numblob = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
 
     if (blobcnt[iblob] == 0) {
         Blobcnt = 0;
@@ -267,7 +266,7 @@ void Cblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
         Bloby1 = bloby1[iblob];
         Bloby2 = bloby2[iblob];
     }
-    ReturnValue->Val->Integer = blobcnt[iblob];
+    ReturnValue->Val->Integer = numblob;
 }
 
 /* list of all library functions and their prototypes */
@@ -285,7 +284,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Cservo2,      "void servo2(int, int)" },
     { Claser,       "void laser(int)" },
     { Csonar,       "void sonar(int)" },
-    { Crange,       "void range(int)" },
+    { Crange,       "int range()" },
     { Ccolor,       "void color(int, int, int, int, int, int, int)" },
     { Cblob,         "int blob(int, int)" },
     { Cimgcap,      "void imgcap()" },

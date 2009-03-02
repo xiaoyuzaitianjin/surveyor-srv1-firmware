@@ -31,6 +31,7 @@
 #include "print.h"
 #include "string.h"
 #include "neural.h"
+#include "float.h"
 
 #include "srv.h"
 
