@@ -42,11 +42,15 @@
 #  ifdef SURVEYOR_HOST
 #   define NO_FP
 #   define NO_CTYPE
+#   include <cdefBF537.h>
 #   include "../string.h"
 #   include "../print.h"
 #   include "../srv.h"
 #   include "../setjmp.h"
 #   include "../stdarg.h"
+#   include "../colors.h"
+#   include "../neural.h"
+#   include "../i2c.h"
 #   define assert(x)
 #  endif
 # endif

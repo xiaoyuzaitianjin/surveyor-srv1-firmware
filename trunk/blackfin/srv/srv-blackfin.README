@@ -2,10 +2,8 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 1 March 2009 
-    includes all changes since srv-blackfin-020609 release
-    
-    http://www.surveyor.com/blackfin/srv-blackfin-030109.zip
+SRV-1 firmware test build for Blackfin - 4 March 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * removed chess(), lisp() and original c() 
 
@@ -17,11 +15,13 @@ SRV-1 firmware test build for Blackfin - 1 March 2009
     imgrcap(), imgdiff(), compass(), readi2c(), readi2c2(), writei2c()
 
 * added floating point emulation libary by "Lefteris"
+
+* added sin(), cos(), tan() and atan() functions to C interpreter
     
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 6 February 2009 
-    http://www.surveyor.com/blackfin/srv-blackfin-020609.zip
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * rewrote vblob() - now handles vertically overlapping blobs and is much more 
   accurate
@@ -46,7 +46,7 @@ SRV-1 firmware test build for Blackfin - 6 February 2009
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 29 December 2008 
-    http://www.surveyor.com/blackfin/srv-blackfin-122908.zip
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed heap size to 12MB, flash buffer size to 1MB.  added
   two 512kb buffers for SPI transfers

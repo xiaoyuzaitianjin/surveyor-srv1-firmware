@@ -19,6 +19,7 @@
 #include "uart.h"
 #include "i2c.h"
 #include "ov9655.h"
+//#include "ov7725.h"
 #include "camera.h"
 #include "jpeg.h"
 #include "xmodem.h"
@@ -520,8 +521,10 @@ void camera_setup () {
     imgWidth = 320;
     imgHeight = 240;
     strcpy(imgHead, "##IMJ5    ");
+    //i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
     i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
     delayMS(100);
+    //i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
     i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
     camera_init((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, imgWidth, imgHeight);
     camera_start();
@@ -558,13 +561,15 @@ void camera_reset (unsigned int width) {
         imgHeight = 240;
         strcpy(imgHead, "##IMJ5    ");
         camera_stop();
-        i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
+       //i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
+       i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
         if (!silent_console)
             printf("#b");
     } else if (width == 640) {
         imgHeight = 480;
         strcpy(imgHead, "##IMJ7    ");
         camera_stop();
+        //i2cwrite(0x21, ov7725_vga, sizeof(ov7725_vga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_vga, sizeof(ov9655_vga)>>1, SCCB_ON);
         if (!silent_console)
             printf("#c");

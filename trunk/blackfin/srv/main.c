@@ -35,7 +35,7 @@ int main() {
     disable_failsafe();
     serial_out_version();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
-    camera_setup(); // Sets up the camera to 320x256
+    camera_setup(); // Sets up the camera to 320x240
     led1_on();
 
     while (1) {

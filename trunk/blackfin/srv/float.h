@@ -54,3 +54,4 @@ void printLLong(unsigned long long a);
 //The power(x,y) function I use here is just a function I have to find the power of x raised to y(for ints)
 //it's not include in this library, but you can make one quite easily.
 void printFloat(_float f,int decimaldigits); 
+

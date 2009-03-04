@@ -7,6 +7,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "float.h"
+#include "print.h"
 
 int power( int x,int p)
 {
@@ -389,9 +390,9 @@ void printBinary(unsigned char b,int startbit,int endbit)
     for(i = startbit; i <= endbit; i++)
     {
         if(isOne(b,i))
-            uart0SendChar('1');
+            putchar('1');
         else
-            uart0SendChar('0');
+            putchar('0');
     }
 
 
@@ -450,19 +451,18 @@ void printMantissa(_float f)
     unsigned long m = f.float_parts.mantissa;
     unsigned char* bytes = (unsigned char*)&m;
 
-    uart0SendChar('\n');
+    putchar('\n');
     printBinary(bytes[2],1,7);
     printBinary(bytes[1],0,7);
     printBinary(bytes[0],0,7);
-   uart0SendChar('\n');
+    putchar('\n');
 }
 
 
 void printExponent(_float f)
 {
     unsigned char e =(unsigned char) f.float_parts.exponent;
-    float a = f.all;
-    uart0SendString("The exponent is: \n");
+    printf("The exponent is: \n");
     printBinary(e,0,7);
 }
 
@@ -471,12 +471,12 @@ void floatInBinary(float a)
     unsigned char* bytes = (unsigned char*)&a;
     
 
-    uart0SendString("Float in Binary is: \n");
+    printf("Float in Binary is: \n");
     printBinary(bytes[3],0,0);//sign
-    uart0SendChar(' ');
+    printf(' ');
     printBinary(bytes[3],1,7);//exponent
     printBinary(bytes[2],0,0);
-    uart0SendChar(' ');
+    putchar(' ');
     printBinary(bytes[2],1,7);
     printBinary(bytes[1],0,7);//mantissa
     printBinary(bytes[0],0,7);
@@ -485,9 +485,9 @@ void floatInBinary(float a)
 
 void printLong(unsigned long a)
 {
-     unsigned char* bytes = (unsigned char*)&a;
+    unsigned char* bytes = (unsigned char*)&a;
 
-    uart0SendString("\nLong is: \n");
+    printf("\nLong is: \n");
     printBinary(bytes[3],0,7);
     printBinary(bytes[2],0,7);
     printBinary(bytes[1],0,7);
@@ -498,7 +498,7 @@ void printLLong(unsigned long long a)
 {
     unsigned char* bytes = (unsigned char*)&a;
 
-    uart0SendString("\nBig Long is: \n");
+    printf("\nBig Long is: \n");
     printBinary(bytes[7],0,7);
     printBinary(bytes[6],0,7);
     printBinary(bytes[5],0,7);
@@ -580,10 +580,10 @@ void printFloat(_float f,int ddigits)
 
     //uart printing ...
     if(f.float_parts.sign == 1)
-        uart0SendChar('-');
+        putchar('-');
 
     printNumber(10, 12, 0 , ' ', (int)bradix);
-    uart0SendChar('.'); printNumber(10, 12, 0 , ' ', (int)aradix);
+    putchar('.'); printNumber(10, 12, 0 , ' ', (int)aradix);
 
 }
 

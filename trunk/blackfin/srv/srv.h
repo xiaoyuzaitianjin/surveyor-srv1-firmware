@@ -150,5 +150,11 @@ void delayMS (int delay);  // delay up to 100000 millisecs (100 secs)
 void delayUS (int delay);  // delay up to 100000 microseconds (.1 sec)
 void delayNS (int delay);  // delay up to 100000 nanoseconds (.0001 sec)
 
+/* Globals */
+extern int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
+extern int lspeed, rspeed, lspeed2, rspeed2, base_speed;
+extern int sonar_data[];
+extern unsigned int imgWidth, imgHeight, frame_diff_flag;
+
 #endif
 
