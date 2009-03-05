@@ -18,6 +18,11 @@ SRV-1 firmware test build for Blackfin - 4 March 2009
 
 * added sin(), cos(), tan() and atan() functions to C interpreter
     
+* added vpix(), vmean(), asin(), acos()
+  renamed servo() to servos(), servo2() to servos2(), color() to vcolor(),
+    imgcap() to vcap(), imgrcap() to vrcap(), imgdiff() to vdiff(), 
+    blob() to vblob()
+
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 6 February 2009 
