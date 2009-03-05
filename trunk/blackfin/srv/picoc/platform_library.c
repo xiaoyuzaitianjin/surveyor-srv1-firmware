@@ -349,90 +349,90 @@ void Ctan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **P
 void Casin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // asin(y,hyp)
 {
     int y, hyp, quot, sgn, ix;
-	y = Param[0]->Val->Integer;
-	hyp = Param[1]->Val->Integer;
+    y = Param[0]->Val->Integer;
+    hyp = Param[1]->Val->Integer;
     if (y > hyp)
         ProgramFail(NULL, "asin():  opposite greater than hypotenuse");
-	if (y == 0) {
+    if (y == 0) {
         ReturnValue->Val->Integer = 0;
-	    return;
-	}
-	sgn = hyp * y;
-	if (hyp < 0) 
-	    hyp = -hyp;
-	if (y < 0)
-	    y = -y;
-	quot = (y * 10000) / hyp;
-	if (quot > 9999)
-	    quot = 9999;
-	for (ix=0; ix<90; ix++)
-	    if ((quot < cosine[ix]) && (quot >= cosine[ix+1]))
-	        break;
-	if (sgn < 0)
-	    ReturnValue->Val->Integer = -(90-ix);
-	else
-	    ReturnValue->Val->Integer = 90-ix;
+        return;
+    }
+    sgn = hyp * y;
+    if (hyp < 0) 
+        hyp = -hyp;
+    if (y < 0)
+        y = -y;
+    quot = (y * 10000) / hyp;
+    if (quot > 9999)
+        quot = 9999;
+    for (ix=0; ix<90; ix++)
+        if ((quot < cosine[ix]) && (quot >= cosine[ix+1]))
+            break;
+    if (sgn < 0)
+        ReturnValue->Val->Integer = -(90-ix);
+    else
+        ReturnValue->Val->Integer = 90-ix;
 }
 
 void Cacos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // acos(x,hyp)
 {
     int x, hyp, quot, sgn, ix;
-	x = Param[0]->Val->Integer;
-	hyp = Param[1]->Val->Integer;
+    x = Param[0]->Val->Integer;
+    hyp = Param[1]->Val->Integer;
     if (x > hyp)
         ProgramFail(NULL, "acos():  adjacent greater than hypotenuse");
-	if (x == 0) {
-	    if (hyp < 0)
+    if (x == 0) {
+        if (hyp < 0)
             ReturnValue->Val->Integer = -90;
         else
             ReturnValue->Val->Integer = 90;
-	    return;
-	}
-	sgn = hyp * x;
-	if (hyp < 0) 
-	    hyp = -hyp;
-	if (x < 0)
-	    x = -x;
-	quot = (x * 10000) / hyp;
-	if (quot > 9999)
-	    quot = 9999;
-	for (ix=0; ix<90; ix++)
-	    if ((quot < cosine[ix]) && (quot >= cosine[ix+1]))
-	        break;
-	if (sgn < 0)
-	    ReturnValue->Val->Integer = -ix;
-	else
-	    ReturnValue->Val->Integer = ix;
+        return;
+    }
+    sgn = hyp * x;
+    if (hyp < 0) 
+        hyp = -hyp;
+    if (x < 0)
+        x = -x;
+    quot = (x * 10000) / hyp;
+    if (quot > 9999)
+        quot = 9999;
+    for (ix=0; ix<90; ix++)
+        if ((quot < cosine[ix]) && (quot >= cosine[ix+1]))
+            break;
+    if (sgn < 0)
+        ReturnValue->Val->Integer = -ix;
+    else
+        ReturnValue->Val->Integer = ix;
 }
 
 void Catan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // atan(y,x)
 {
     int x,y, angle, coeff_1, coeff_2, r;
-	y = Param[0]->Val->Integer;
-	x = Param[1]->Val->Integer;
-	if (x == 0) {
-	    if (y >= 0)
-	        ReturnValue->Val->Integer = 90;
-	    else
-	        ReturnValue->Val->Integer = -90;
-	    return;
-	}
-	coeff_1 = 3141/4;
-	coeff_2 = coeff_1*3;
+    y = Param[0]->Val->Integer;
+    x = Param[1]->Val->Integer;
+    if (x == 0) {
+        if (y >= 0)
+            ReturnValue->Val->Integer = 90;
+        else
+            ReturnValue->Val->Integer = -90;
+        return;
+    }
+    coeff_1 = 3141/4;
+    coeff_2 = coeff_1*3;
     if (y < 0)
         y = -y;
-	if (x >= 0) {
-		r = (x - y)*1000 / (x + y);
-		angle = (coeff_1*1000 - coeff_1 * r);
-	} else {
-		r = (x + y)*1000 / (y - x);
-		angle = (coeff_2*1000 - coeff_1 * r);
-	}
-	angle = angle*57/1000000;
-	if (y < 0)
-	    ReturnValue->Val->Integer = -angle;
-	else
-	    ReturnValue->Val->Integer = angle;
+    if (x >= 0) {
+        r = (x - y)*1000 / (x + y);
+        angle = (coeff_1*1000 - coeff_1 * r);
+    } else {
+        r = (x + y)*1000 / (y - x);
+        angle = (coeff_2*1000 - coeff_1 * r);
+    }
+    angle = angle*57/1000000;
+    if (y < 0)
+        ReturnValue->Val->Integer = -angle;
+    else
+        ReturnValue->Val->Integer = angle;
 } 
 
 /* list of all library functions and their prototypes */

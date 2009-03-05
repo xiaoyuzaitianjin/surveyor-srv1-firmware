@@ -1,28 +1,23 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *  A floating point emulation library. It emulates in software what an
- *  an FPU would do with the floats. Because the blackfin does not support
- *  64 bit calculations the mantissas in multiplication and division are
- *  shortened, losing some precision around the 4th-6th decimal digits
- *  STILL TESTING ... so far all the calculations have been correct but you never know
+ *  an FPU would do with the floats. It still needs to take in account the 
+ *  special cases of NAN, +INF and -INF. Other than that, it seems to work fine
+ *  Still in Testing mode so please, report any problems, with it to elefkar@it.teithe.gr 
+ *  or http://www.surveyor.com/cgi-bin/yabb2/YaBB.pl forum
+ *
+ *  There are five distinct numerical ranges that single-precision floating-point 
+ *  numbers are not able to represent:
+ *
+ *  1. Negative numbers less than -(2-2-23) × 2127 (negative overflow)
+ *  2. Negative numbers greater than -2-149 (negative underflow)
+ *  3. Zero
+ *  4. Positive numbers less than 2-149 (positive underflow)
+ *  5. Positive numbers greater than (2-2-23) × 2127 (positive overflow)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "float.h"
 #include "print.h"
 
-int power( int x,int p)
-{
-    int res = 1;
-    
-    if (p !=0) {
-        while(p != 0) {
-            res *= x;
-            p--;
-        }
-        return res;
-    } else
-        return 1;
-}
- 
 void bytesToFloat(unsigned char* buffer, _float* f)
 {
     //f->all = *(float*)&bytes[0];
@@ -103,10 +98,8 @@ _float divFloat(_float f1,_float f2)
     result.float_parts.mantissa <<=1;
 
 
-
-    if(f1.float_parts.sign & 0x01 || f2.float_parts.sign &0x01)
-        result.float_parts.sign = 1;
-
+    //the new sign is the xor of the sign of the two numbers
+    result.float_parts.sign = f1.float_parts.sign ^ f2.float_parts.sign;
 
 
 
@@ -118,27 +111,18 @@ _float divFloat(_float f1,_float f2)
 
 _float mulFloat(_float f1,_float f2)
 {
-    unsigned long m,m1,m2;
-   // unsigned long long gig,mm1,mm2; |NOT SUPPORTED BY BLACKFIN|
+    unsigned long m;
+    unsigned long long gig,mm1,mm2;
     char texp1,texp2;
-
     _float result;
 
-    //getting the hidden bit out for both of them
-    f1.float_parts.mantissa = ((f1.float_parts.mantissa)>>1) | (0x01<<22);
-    f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-
-    m1 = f1.float_parts.mantissa>>12;//shitinf them to the right by 12 since blackfin won't take
-    m2 = f2.float_parts.mantissa>>12;//calculations of 64bit numbers
-  //  mm1 = f1.float_parts.mantissa;
-  //  mm2 = f2.float_parts.mantissa; |NOT SUPPORTED BY BLACKFIN|
-
-    m = (m1 * m2)<<1;
-   // gig = (mm1*mm2);|NOT SUPPORTED BY BLACKFIN|
-
-
-    result.float_parts.mantissa = m;
-
+    //multiplication by zero needs to be handled like this
+    if( (f1.float_parts.mantissa == 0 && f1.float_parts.exponent == 0) ||
+        (f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0))
+        {
+            parseFloat(0.0,&result);
+            return result;
+        }
 
 
     texp1 = f1.float_parts.exponent-127;
@@ -149,31 +133,37 @@ _float mulFloat(_float f1,_float f2)
 
 
 
-    if(f1.float_parts.sign & 0x01 || f2.float_parts.sign &0x01)
-        result.float_parts.sign = 1;
+    mm1 =  f1.float_parts.mantissa|(0x01<<(23));
+    mm2 =  f2.float_parts.mantissa|(0x01<<(23));
+
+    //gig = mm1*mm2; //blackfin will not accept this so ...
+    bigMulti(mm1,mm2,&gig);
 
 
 
 
-    //if first bit is set
-    if(result.float_parts.mantissa & (0x01<<22)) //if(manBitSet(result,0))
-    {
-    result.float_parts.mantissa <<=1;
+int i =0;
+//while(!( gig &  (0x8000000000000000)))
+while(!( (gig>>32) &  (0x80000000)))
+{
+    i++;
+    gig <<=1;
+}
+gig <<=1;//hide the hidden bit
+
+if( i == 16)
     result.float_parts.exponent +=1;
-    }
-    else
-    {
-        //hide the hidden bit
-        while(1)
-        {
-            result.float_parts.mantissa <<=1;
-            if(result.float_parts.mantissa & (0x01<<22))//if(manBitSet(result,0))
-            {
-                result.float_parts.mantissa <<=1;
-                break;
-            }
-        }
-    }
+
+m = gig >>41;
+
+result.float_parts.mantissa = m;
+
+//result.float_parts.mantissa +=1; //testing
+
+//lastly adding the new sign
+result.float_parts.sign = f1.float_parts.sign ^ f2.float_parts.sign;
+
+
 
     return result;
 
@@ -181,9 +171,32 @@ _float mulFloat(_float f1,_float f2)
 
 _float subFloat(_float f1,_float f2)
 {
+    
     unsigned char diff;
-    unsigned long m;
+    unsigned long m,m1,m2;
     _float result;
+     result.float_parts.sign = 0; //default sign is positive, and should be set here
+
+  //if one of the numbers is zero
+    if( (f1.float_parts.mantissa == 0 && f1.float_parts.exponent == 0 && f1.float_parts.sign == 0) ||
+        (f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0))
+        {
+            if(f1.float_parts.mantissa == 0 && f1.float_parts.exponent == 0 && f1.float_parts.sign == 0)
+            {
+                //flip the other number's sign
+                //if the other number is not zero
+                if(!(f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0))
+                {
+                    f2.float_parts.sign ^= 0x01;
+                    return f2; //and return the other number
+                }
+                else
+                    return f2; //zero minus zero is zero
+            }
+            else if(f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0)
+                return f1;
+        }
+
 
     if(f1.float_parts.sign == 1 &&   //negative f1 subtracting positive f2 ...is adding two same-sign numbers
        f2.float_parts.sign == 0)
@@ -199,6 +212,10 @@ _float subFloat(_float f1,_float f2)
             f2.float_parts.sign = 0;
             return addFloat(f1,f2);
        }
+
+
+
+
     //first see whose exponent is greater
     if(f1.float_parts.exponent > f2.float_parts.exponent)
     {
@@ -209,8 +226,32 @@ _float subFloat(_float f1,_float f2)
 
         //now shift f2's mantissa by the difference of their exponent to the right
         //adding the hidden bit
-        f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-        f2.float_parts.mantissa >>= (int)(diff);//was (diff-1)
+        //f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
+       // f2.float_parts.mantissa >>= (int)(diff);//was (diff-1)
+
+        m1 = f1.float_parts.mantissa | (0x01<<(23));
+        m2 = f2.float_parts.mantissa | (0x01<<(23));
+
+        if(diff > 8)
+        {
+            m1<<=8;
+            m2>>=(int)(diff-8);
+
+        }
+        else
+            m1 <<=(int)diff;
+
+        m = m1-m2;
+
+       if(diff <=8)
+            m>>= (int)diff;
+        else
+            m>>= 8;
+
+        if(f1.float_parts.sign == 1)
+            result.float_parts.sign = 1;
+        else
+            result.float_parts.sign = 0;
 
         //also increase its exponent by the difference shifted
         f2.float_parts.exponent = f2.float_parts.exponent + diff;
@@ -220,16 +261,36 @@ _float subFloat(_float f1,_float f2)
     {
         diff = f2.float_parts.exponent - f1.float_parts.exponent;
 
-         if(diff > 22)
+         if(diff > 22)//if the difference is huge return the number unaltered
             return f2;
+
         result = f1;
         f1 = f2;        //swap them
         f2 = result;
 
+
         //now shift f2's mantissa by the difference of their exponent to the right
         //adding the hidden bit
-        f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-        f2.float_parts.mantissa >>= (int)(diff);
+       // f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
+       // f2.float_parts.mantissa >>= (int)(diff);
+        m1 = f1.float_parts.mantissa | (0x01<<(23));
+        m2 = f2.float_parts.mantissa | (0x01<<(23));
+
+        if(diff > 8)
+        {
+            m1<<=8;
+            m2>>=(int)(diff-8);
+
+        }
+        else
+            m1 <<=(int)diff;
+
+        m = m1-m2;
+
+       if(diff <=8)
+            m>>= (int)diff;
+        else
+            m>>= 8;
 
         //also increase its exponent by the difference shifted
         f2.float_parts.exponent = f2.float_parts.exponent + diff;
@@ -238,55 +299,79 @@ _float subFloat(_float f1,_float f2)
          result.float_parts.sign = f1.float_parts.sign^0x01;//flip the sign
     }
     else//if the exponents were equal
-      f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22); //bring out the hidden bit
+    {
+      if(f2.float_parts.mantissa > f1.float_parts.mantissa)
+      {
+         result = f1;
+        f1 = f2;        //swap them
+        f2 = result;
+
+         result.float_parts.sign = f1.float_parts.sign^0x01;//flip the sign
+      }
+
+        m1 = f1.float_parts.mantissa | (0x01<<(23));
+        m2 = f2.float_parts.mantissa | (0x01<<23);
+        m = m1-m2;
 
 
-     //this brings out the hidden bit of the f1 mantissa too  //ELEOS MALAKA AYTO EIXA KSEXASEI TOSI WRA
-     f1.float_parts.mantissa = ((f1.float_parts.mantissa)>>1) | (0x01<<22);
-
-
+    }
 
     result.float_parts.exponent = f1.float_parts.exponent;
 
 
 
-    m = f1.float_parts.mantissa - f2.float_parts.mantissa ;//subtracting mantissas
-    result.float_parts.mantissa = m;
 
 
-    int index = 0;
-    int i;
-    for(i = 0; i < 7; i++)
+  //if we got an all zero mantissa
+  if(m == 0)
+  {//SPECIAL CASE .... ZERO
+        result.float_parts.mantissa = 0;
+        result.float_parts.sign =0;
+        result.float_parts.exponent = 0;
+        return result;
+  }
+
+
+
+int i = 0;
+   while(!(m & (0x01<<31)) && (i < 32)) //i > 31 means mantissa is completely zero
     {
-        if(result.float_parts.mantissa & (0x01<<(22-i)))//if(!manBitSet(result,i))
-            index++;
-        else
-        {
-            index++;
-            break;
-        }
-    }
+        i++;
 
-    if(index >0)
-    {
-        if(index >1)
-            result.float_parts.exponent -=1;
-      result.float_parts.mantissa <<=index;
+        m <<=1;
     }
+    m>>=8;//fit back into the mantissa
+    if(i > 8)
+        result.float_parts.exponent -=(i-8);
+    //Maybe a pattern here?
+   /* if(i == 12)
+        result.float_parts.exponent -=4;
+   if(i == 10)
+    result.float_parts.exponent -=2;
+
+    if(i == 9)
+        result.float_parts.exponent -=1;*/
+   result.float_parts.mantissa = m;
 
 
     return result;
 }
 
 
-/*Bug spotted: Mantissa, hence the result itself gets wrong for VERY small numbers, like 0.000001*/
-//Well being an idiot helps with these problems, for such a small number you shift the mantissa
-//by more than 30 bits, think about it a little bit, shifting a 24 bit word, for 32 bit gives you ...
-//hmm.... hmm ..... yeah there's your problem!
+
 _float addFloat(_float f1,_float f2)
 {
+    //Reason why I added big longs in here is because there was a case
+    //where addition was so long that the most significant 1 bit went out of long scope
+    //hence literally killing the result
+    unsigned long long f1_mantissa ;
+    unsigned long long f2_mantissa;
+    unsigned long long bigm;
     unsigned char diff;
     _float result;
+
+    unsigned long m;
+
 
     //addition of different signed numbers is subtraction
     if( f1.float_parts.sign == 1 && f2.float_parts.sign == 0)
@@ -312,69 +397,115 @@ _float addFloat(_float f1,_float f2)
             return f1; //return the first number unaltered
         //now shift f2's mantissa by the difference of their exponent to the right
         //adding the hidden bit
-        f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-        f2.float_parts.mantissa >>= (int)(diff);//was (diff-1)
 
-        //also increase its exponent by the difference shifted
-        f2.float_parts.exponent = f2.float_parts.exponent + diff;
+        f1_mantissa = f1.float_parts.mantissa;
+        f2_mantissa = f2.float_parts.mantissa;
+
+        f1_mantissa = f1_mantissa | (0x01<<(23));
+        f2_mantissa = f2_mantissa | (0x01<<(23));
+
+
+
+         if(diff > 8)
+        {
+            f1_mantissa<<=8;
+            f2_mantissa>>=(int)(diff-8);
+
+        }
+        else
+            f1_mantissa <<=(int)diff;
+
+
+
+       if(diff > 8)
+            bigm = f1_mantissa + f2_mantissa+(1<<(diff-8)); //maybe this aint's right?
+        else
+            bigm = f1_mantissa + f2_mantissa+(1<<(diff-1));
+
+
+       if(diff <=8)
+            bigm>>= (int)diff;
+        else
+            bigm>>= 8;
 
     }
     else if(f1.float_parts.exponent < f2.float_parts.exponent)
     {
         diff = f2.float_parts.exponent - f1.float_parts.exponent;
 
-        if(diff > 22)
+         if(diff > 22)
             return f2; //return the second number unaltered
 
         result = f1;
         f1 = f2;        //swap them
         f2 = result;
 
-       // floatInBinary(f2);
 
-        //now shift f2's mantissa by the difference of their exponent to the right
-        //adding the hidden bit
-        f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-        f2.float_parts.mantissa >>= (int)(diff); //was (diff-1)
-
-        //also increase its exponent by the difference shifted
-        f2.float_parts.exponent = f2.float_parts.exponent + diff;
-
-    }
-    else//if the exponents were equal
-      f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22); //bring out the hidden bit
+        f1_mantissa = f1.float_parts.mantissa;
+        f2_mantissa = f2.float_parts.mantissa;
 
 
+        f2_mantissa = f2_mantissa | (0x01<<(23));
+        f1_mantissa = f1_mantissa | (0x01<<(23));
 
 
-        //this brings out the hidden bit of the f1 mantissa too
-        f1.float_parts.mantissa = ((f1.float_parts.mantissa)>>1) | (0x01<<22);
-
-       // printf("\nAfter shifting...\n");
-        //floatInBinary(f1.all); //is as it should be ... hm what the heck is wrong then?
-
-
-
-
-
-        result.float_parts.sign = f1.float_parts.sign;  //they are the same anyway :)
-        result.float_parts.exponent = f1.float_parts.exponent;
-        result.float_parts.mantissa = f1.float_parts.mantissa +f2.float_parts.mantissa;
-
-        if(result.float_parts.mantissa & (0x01<<22))
+         if(diff > 8)
         {
-             result.float_parts.mantissa <<= 1;  //hide the hidden bit
+            f1_mantissa<<=8;
+            f2_mantissa>>=(int)(diff-8);
 
         }
         else
-           result.float_parts.exponent +=1;
+            f1_mantissa <<=(int)diff;
+
+
+       if(diff > 8)
+            bigm = f1_mantissa + f2_mantissa+(1<<(diff-8));//maybe this aint's right?
+        else
+            bigm = f1_mantissa + f2_mantissa+(1<<(diff-1));
 
 
 
+       if(diff <=8)
+            bigm>>= (int)diff;
+        else
+            bigm>>= 8;
+    }
+    else //if the exponents were equal
+    {
 
-        return result;
+        f1_mantissa = f1.float_parts.mantissa;
+        f2_mantissa = f2.float_parts.mantissa;
 
+        f2_mantissa = f2_mantissa | (0x01<<(23));
+        f1_mantissa = f1_mantissa | (0x01<<(23));
+        bigm = f1_mantissa + f2_mantissa;
+
+    }
+
+
+    result.float_parts.sign = f1.float_parts.sign;  //they are the same anyway :)
+    result.float_parts.exponent = f1.float_parts.exponent;
+
+    m = bigm;
+    int i =0;
+    while(!(m & 0x01<<31) && (i < 32))
+   // while(!( (m>>24) & (0x8000000000) ) && (i < 64))
+    {
+        m<<=1;
+        i++;
+    }
+    if(i <8)
+        result.float_parts.exponent +=1;
+
+    m>>=8; //shift to fit into the mantissa
+    result.float_parts.mantissa = m;
+
+
+
+    return result;
 }
+
 
 int isOne(unsigned char b,int bit)
 {
@@ -400,17 +531,23 @@ void printBinary(unsigned char b,int startbit,int endbit)
 
 
 
-int     ltFloat(_float f1,_float f2)
+int     lteFloat(_float f1,_float f2)
 {
-    return gtFloat(f2,f1);
+    return gteFloat(f2,f1);
 }
 
-int     gtFloat(_float f1,_float f2)
+int     gteFloat(_float f1,_float f2)
 {
     if(f1.float_parts.sign == 1 && f2.float_parts.sign == 0)
         return 0;
     else if(f1.float_parts.sign == 0 && f2.float_parts.sign ==1)
         return 1;
+        
+     //check for equality
+    if( (f1.float_parts.sign == f2.float_parts.sign) &&
+        (f1.float_parts.mantissa == f2.float_parts.mantissa) &&
+        (f1.float_parts.exponent == f2.float_parts.exponent) )
+        return 1;    
 
     //if same signed and negative
     if(f1.float_parts.sign == 1)
@@ -455,7 +592,7 @@ void printMantissa(_float f)
     printBinary(bytes[2],1,7);
     printBinary(bytes[1],0,7);
     printBinary(bytes[0],0,7);
-    putchar('\n');
+   putchar('\n');
 }
 
 
@@ -473,7 +610,7 @@ void floatInBinary(float a)
 
     printf("Float in Binary is: \n");
     printBinary(bytes[3],0,0);//sign
-    printf(' ');
+    putchar(' ');
     printBinary(bytes[3],1,7);//exponent
     printBinary(bytes[2],0,0);
     putchar(' ');
@@ -483,31 +620,6 @@ void floatInBinary(float a)
 }
 
 
-void printLong(unsigned long a)
-{
-    unsigned char* bytes = (unsigned char*)&a;
-
-    printf("\nLong is: \n");
-    printBinary(bytes[3],0,7);
-    printBinary(bytes[2],0,7);
-    printBinary(bytes[1],0,7);
-    printBinary(bytes[0],0,7);
-}
-
-void printLLong(unsigned long long a)
-{
-    unsigned char* bytes = (unsigned char*)&a;
-
-    printf("\nBig Long is: \n");
-    printBinary(bytes[7],0,7);
-    printBinary(bytes[6],0,7);
-    printBinary(bytes[5],0,7);
-    printBinary(bytes[4],0,7);
-    printBinary(bytes[3],0,7);
-    printBinary(bytes[2],0,7);
-    printBinary(bytes[1],0,7);
-    printBinary(bytes[0],0,7);
-}
 
 void printFloat(_float f,int ddigits)
 {
@@ -517,12 +629,13 @@ void printFloat(_float f,int ddigits)
 
     e = f.float_parts.exponent;
     e -=127; //get true exponent
+    aradix = 0;
 
     _float sum;
     parseFloat(0.0,&sum);
 
 
-    if(e > 0)
+    if(e >= 0)
     {
         bradix = (f.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
 
@@ -533,9 +646,13 @@ void printFloat(_float f,int ddigits)
         //now going for the real thing,let's get what the bits after the radix sum up to
         for(i = e,j=1; i < 23; i ++,j++)
         {
-            if(f.float_parts.mantissa & (0x01<<(22-i)) )//if(manBitSet(f,i))
+            //gets stuck inside this for, for number:f1 = 1.0001;
+
+            if(f.float_parts.mantissa & (0x01<<(22-i)) )//was 22-i
             {
                 //sum += bigptwo/power(2,j);
+                if(i >=22)
+                    e = 1;
                 eleos = intToFloat(power(2,j));
                 division = divFloat(one,eleos);
                 sum = addFloat(sum,division);
@@ -564,26 +681,39 @@ void printFloat(_float f,int ddigits)
         }
     }
 
-    int decimaldigits = power(10,ddigits);
-    sum = mulFloat(sum,intToFloat(decimaldigits));
-    e = sum.float_parts.exponent;
-    e -=127; //get true exponent
-    aradix = (sum.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
 
-
-   /*//printf printing 
-   if(f.float_parts.sign == 0)
-        printf("\n%d.%d",bradix,aradix);
+    /*if(f.float_parts.sign == 0)
+        printf("\n%d.",bradix);
     else
-        printf("\n-%d.%d\n",bradix,aradix);
-*/
-
-    //uart printing ...
-    if(f.float_parts.sign == 1)
+        printf("\n-%d.",bradix);
+    */
+    
+    //UART printing
+      if(f.float_parts.sign == 1)
         putchar('-');
+    printf("%08d", (int)bradix);
+    putchar('.');
 
-    printNumber(10, 12, 0 , ' ', (int)bradix);
-    putchar('.'); printNumber(10, 12, 0 , ' ', (int)aradix);
+    for(i = 0; i < ddigits; i ++)
+    {
+         sum = mulFInt(sum,10);
+         e = sum.float_parts.exponent;
+         e -=127; //get true exponent
+         if(e >= 0)
+            aradix = (sum.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
+         else
+         {//that is to print the leading zeros after the radix if there are any ofcourse
+            aradix = 0;
+            //printf("%d",aradix);
+            putchar('0');
+         }
+
+    }
+
+        //lastly print the rest of the number after the radix
+        //printf("%d",aradix);
+        //uart printing ...
+        printf("%08d", (int)aradix);
 
 }
 
@@ -611,26 +741,6 @@ _float intToFloat(int number)
     {
         if(bytes[i/8] & (0x01 << (i-((i/8)*8))))
             break;
-        /*if(i >= 24)
-        {
-            if(bytes[3] & (0x01<<(i-24)))
-                break;
-        }
-        else if( i <24 && i >= 16)
-        {
-            if(bytes[2] & (0x01<<(i-16)))
-                break;
-        }
-        else if(i<16 && i >=8)
-        {
-            if(bytes[1] & (0x01<<(i-8)))
-                break;
-        }
-        else
-        {
-            if(bytes[0] & (0x01<<i))
-                break;
-        }*/
     }
 
     result.float_parts.exponent = i+127;
@@ -638,9 +748,12 @@ _float intToFloat(int number)
 
 
     result.float_parts.mantissa = (bytes[2] <<  16 | bytes[1] << 8 | bytes[0]);
-    while(!(result.float_parts.mantissa & (0x01<<22)))
-    {
-        result.float_parts.mantissa <<=1;
+
+    i= 0;
+    while(!(result.float_parts.mantissa & (0x01<<22)) && i<23) //the i is to make sure that
+    {                                                          //for all zero mantissas we don't
+        result.float_parts.mantissa <<=1;                      //get infinite loop
+        i++;
     }
     result.float_parts.mantissa <<=1;
 
@@ -649,3 +762,38 @@ _float intToFloat(int number)
     return result;
 }
 
+
+void bigMulti(unsigned long long mm1,unsigned long long mm2,unsigned long long* res)
+{
+    int i;
+    *res = 0;
+
+    for(i = 0; i < 24; i++) //24 is since we have 24 bit mantissa (+the hidden bit)
+    {
+
+        if(mm2 & 0x01)
+            *res += (mm1<<(i));//*res += (mm1<<i);
+
+        mm2 >>=1;
+    }
+}
+
+//I put this function here so that it won't have any external dependencies, it is just a power(x raised to y)
+// for integers function, which I usually have in my math.h . IF you have anything better just link to it
+int power( int x,int p)
+{
+     int res = 1;
+    
+    if(p !=0)
+    {
+        while(p != 0)
+        {
+            res *= x;
+            p--;
+        }
+
+        return res;
+    }
+    else
+        return 1;
+}

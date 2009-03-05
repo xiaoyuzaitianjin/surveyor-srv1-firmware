@@ -120,7 +120,7 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x6828
+.l1code         0xffa00000     0x69f8
  main.o(.text)
  .text          0xffa00000      0x2b4 main.o
                 0xffa00000                main
@@ -233,76 +233,76 @@ Linker script and memory map
                 0xffa03888                uart1GetChar
                 0xffa036e8                init_uart1
  float.o(.text)
- .text          0xffa03964      0x9ec float.o
-                0xffa04270                printLong
-                0xffa03efc                ltFloat
-                0xffa0397c                bytesToFloat
-                0xffa04070                printFloat
-                0xffa03964                power
-                0xffa03e6c                isOne
-                0xffa039ac                minus
-                0xffa03fec                printBinary
-                0xffa03e7c                gtFloat
-                0xffa03f08                intToFloat
-                0xffa041f4                printLLong
-                0xffa039b8                divFloat
-                0xffa039a0                parseFloat
-                0xffa04328                printExponent
-                0xffa0402c                printMantissa
-                0xffa03b3c                addFloat
-                0xffa03a7c                mulFloat
-                0xffa03cc0                subFloat
-                0xffa042b8                floatInBinary
+ .text          0xffa03964      0xbb8 float.o
+                0xffa03964                bytesToFloat
+                0xffa042e0                printFloat
+                0xffa0409c                bigMulti
+                0xffa04244                power
+                0xffa03f04                isOne
+                0xffa03994                minus
+                0xffa0425c                printBinary
+                0xffa03fb0                intToFloat
+                0xffa039a0                divFloat
+                0xffa03988                parseFloat
+                0xffa044f4                printExponent
+                0xffa0429c                printMantissa
+                0xffa03fa4                lteFloat
+                0xffa03a5c                addFloat
+                0xffa04120                mulFloat
+                0xffa03f14                gteFloat
+                0xffa03d50                subFloat
+                0xffa04484                floatInBinary
  colors.o(.text)
- .text          0xffa04350      0xcf4 colors.o
-                0xffa044fc                vmean
-                0xffa04778                edge_detect
-                0xffa04918                svs_segcode
-                0xffa045c4                color_segment
-                0xffa04b0c                vblob
-                0xffa043d4                blob_merge
-                0xffa04a70                svs_segview
-                0xffa04350                init_colors
-                0xffa04430                vhist
-                0xffa043a0                vpix
+ .text          0xffa0451c      0xcf4 colors.o
+                0xffa046c8                vmean
+                0xffa04944                edge_detect
+                0xffa04ae4                svs_segcode
+                0xffa04790                color_segment
+                0xffa04cd8                vblob
+                0xffa045a0                blob_merge
+                0xffa04c3c                svs_segview
+                0xffa0451c                init_colors
+                0xffa045fc                vhist
+                0xffa0456c                vpix
  jpeg.o(.text)
- .text          0xffa05044      0xdc4 jpeg.o
-                0xffa05c10                DCT
-                0xffa05604                close_bitstream
-                0xffa05c24                encodeMCU
-                0xffa0513c                huffman
-                0xffa05678                write_markers
-                0xffa05d20                encode_image
-                0xffa05898                initialize_quantization_tables
-                0xffa05a5c                read_422_format
-                0xffa05044                initialization
-                0xffa0511c                levelshift
-                0xffa0598c                quantization
-                0xffa059dc                read_400_format
+ .text          0xffa05210      0xdc4 jpeg.o
+                0xffa05ddc                DCT
+                0xffa057d0                close_bitstream
+                0xffa05df0                encodeMCU
+                0xffa05308                huffman
+                0xffa05844                write_markers
+                0xffa05eec                encode_image
+                0xffa05a64                initialize_quantization_tables
+                0xffa05c28                read_422_format
+                0xffa05210                initialization
+                0xffa052e8                levelshift
+                0xffa05b58                quantization
+                0xffa05ba8                read_400_format
  r8x8dct.o(.text)
- .text          0xffa05e08       0xf0 r8x8dct.o
-                0xffa05e08                _r8x8dct
+ *fill*         0xffa05fd4        0x4 00
+ .text          0xffa05fd8       0xf0 r8x8dct.o
+                0xffa05fd8                _r8x8dct
  spi.o(.text)
- .text          0xffa05ef8      0x1e8 spi.o
-                0xffa05fe0                svs_master
-                0xffa05ef8                svs_slave
+ .text          0xffa060c8      0x1e8 spi.o
+                0xffa061b0                svs_master
+                0xffa060c8                svs_slave
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa060e0      0x184 setjmp.o
-                0xffa060e0                longjmp
-                0xffa061a8                setjmp
+ .text          0xffa062b0      0x184 setjmp.o
+                0xffa062b0                longjmp
+                0xffa06378                setjmp
  neural.o(.text)
- .text          0xffa06264      0x5c4 neural.o
-                0xffa06604                nnpack8x8
-                0xffa067f0                nninit_network
-                0xffa06680                nndisplay
-                0xffa062fc                f_logic
-                0xffa0635c                nncalculate_network
-                0xffa06444                nncalculate_errors
-                0xffa06714                nntrain_network
-                0xffa06700                nninit_pattern
-                0xffa06264                nnset_pattern
-                0xffa064f8                nnscale8x8
+ .text          0xffa06434      0x5c4 neural.o
+                0xffa067d4                nnpack8x8
+                0xffa069c0                nninit_network
+                0xffa06850                nndisplay
+                0xffa064cc                f_logic
+                0xffa0652c                nncalculate_network
+                0xffa06614                nncalculate_errors
+                0xffa068e4                nntrain_network
+                0xffa068d0                nninit_pattern
+                0xffa06434                nnset_pattern
+                0xffa066c8                nnscale8x8
 
 .text           0x00000000     0x5490
  .text          0x00000000       0xf0 camera.o
@@ -550,7 +550,7 @@ Linker script and memory map
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff8014e0     0x1f04
+.rodata         0xff8014e0     0x1ef0
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
                 0xff8014e0       0xb2 edit.o
@@ -576,56 +576,56 @@ Linker script and memory map
  *fill*         0xff80211a        0x2 00
  .rodata        0xff80211c       0x10 uart.o
  .rodata.str1.4
-                0xff80212c       0x47 float.o
-                                 0x48 (size before relaxing)
- *fill*         0xff802173        0x1 00
+                0xff80212c       0x33 float.o
+                                 0x34 (size before relaxing)
+ *fill*         0xff80215f        0x1 00
  .rodata.str1.4
-                0xff802174       0x27 colors.o
+                0xff802160       0x27 colors.o
                                  0x28 (size before relaxing)
- *fill*         0xff80219b        0x1 00
+ *fill*         0xff802187        0x1 00
  .rodata.str1.4
-                0xff80219c       0x5b spi.o
+                0xff802188       0x5b spi.o
                                  0x5c (size before relaxing)
- *fill*         0xff8021f7        0x1 00
+ *fill*         0xff8021e3        0x1 00
  .rodata.str1.4
-                0xff8021f8        0x8 neural.o
+                0xff8021e4        0x8 neural.o
                                   0xc (size before relaxing)
  .rodata.str1.4
-                0xff802200       0x29 picoc/clibrary.o
+                0xff8021ec       0x29 picoc/clibrary.o
                                  0x2c (size before relaxing)
- *fill*         0xff802229        0x3 00
- .rodata        0xff80222c      0x2cc picoc/lex.o
+ *fill*         0xff802215        0x3 00
+ .rodata        0xff802218      0x2cc picoc/lex.o
  .rodata.str1.4
-                0xff8024f8       0xf2 picoc/lex.o
+                0xff8024e4       0xf2 picoc/lex.o
                                  0xfc (size before relaxing)
- *fill*         0xff8025ea        0x2 00
+ *fill*         0xff8025d6        0x2 00
  .rodata.str1.4
-                0xff8025ec      0x451 picoc/parse.o
+                0xff8025d8      0x451 picoc/parse.o
                                 0x464 (size before relaxing)
- *fill*         0xff802a3d        0x3 00
- .rodata        0xff802a40      0x1f0 picoc/parse.o
+ *fill*         0xff802a29        0x3 00
+ .rodata        0xff802a2c      0x1f0 picoc/parse.o
  .rodata.str1.4
-                0xff802c30       0x4b picoc/picoc.o
+                0xff802c1c       0x4b picoc/picoc.o
                                  0x58 (size before relaxing)
- *fill*         0xff802c7b        0x1 00
+ *fill*         0xff802c67        0x1 00
  .rodata.str1.4
-                0xff802c7c      0x44b picoc/platform_library.o
+                0xff802c68      0x44b picoc/platform_library.o
                                 0x454 (size before relaxing)
- *fill*         0xff8030c7        0x1 00
- .rodata        0xff8030c8      0x16c picoc/platform_library.o
+ *fill*         0xff8030b3        0x1 00
+ .rodata        0xff8030b4      0x16c picoc/platform_library.o
  .rodata.str1.4
-                0xff803234        0x8 picoc/platform_support.o
+                0xff803220        0x8 picoc/platform_support.o
                                   0xc (size before relaxing)
  .rodata.str1.4
                 0x00000000        0x8 picoc/table.o
                                  0x14 (size before relaxing)
  .rodata.str1.4
-                0xff80323c       0xd9 picoc/type.o
+                0xff803228       0xd9 picoc/type.o
                                  0xec (size before relaxing)
- *fill*         0xff803315        0x3 00
- .rodata        0xff803318       0x88 picoc/type.o
+ *fill*         0xff803301        0x3 00
+ .rodata        0xff803304       0x88 picoc/type.o
  .rodata.str1.4
-                0xff8033a0       0x44 picoc/variable.o
+                0xff80338c       0x44 picoc/variable.o
                                  0x6c (size before relaxing)
 
 .data
