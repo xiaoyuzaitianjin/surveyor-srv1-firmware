@@ -91,6 +91,9 @@ int main() {
                 case 'Q': // execute C program from flash buffer
                     picoc((char *)FLASH_BUFFER);
                     break;
+                case '!': // run C interpreter interactively
+                    picoc((char *)0);
+                    break;
                 case '$': // prototype zone
                     switch (getch()) {
                         case '!':  // reset processor

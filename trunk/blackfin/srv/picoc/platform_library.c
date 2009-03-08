@@ -435,6 +435,96 @@ void Catan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **
         ReturnValue->Val->Integer = angle;
 } 
 
+void Cnnset(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    int ix, i1;
+    
+    ix = Param[0]->Val->Integer;
+    if (ix > NUM_NPATTERNS)
+        ProgramFail(NULL, "nnset():  invalid index");
+    for (i1=0; i1<8; i1++)
+        npattern[ix*8 + i1] = (unsigned char)Param[i1+1]->Val->Integer;
+}
+
+void Cnnshow(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    int ix;
+    
+    ix = Param[0]->Val->Integer;
+    if (ix > NUM_NPATTERNS)
+        ProgramFail(NULL, "nnshow():  invalid index");
+    nndisplay(ix);
+}
+
+void Cnninit(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    nninit_network();
+}
+
+void Cnntrain(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    int ix, i1;
+
+    nntrain_network(10000);
+    for (ix=0; ix<NUM_NPATTERNS; ix++) {
+        nnset_pattern(ix);
+        nncalculate_network();
+        for (i1=0; i1<NUM_OUTPUT; i1++) 
+            printf(" %3d", N_OUT(i1)/10);
+        printf("\n\r");
+    }
+}
+
+void Cnntest(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    int ix, i1, i2;
+    unsigned char ch;
+    
+    ix = 0;
+    for (i1=0; i1<8; i1++) {
+        ch = (unsigned char)Param[i1]->Val->Integer;
+        for (i2=0; i2<8; i2++) {
+            if (ch & nmask[i2])
+                N_IN(ix++) = 1024;
+            else
+                N_IN(ix++) = 0;
+        }
+    }
+    nncalculate_network();
+    for (i1=0; i1<NUM_OUTPUT; i1++) 
+        printf(" %3d", N_OUT(i1)/10);
+    printf("\n\r");
+}
+
+void Cnnmatchblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {            
+    int ix, i1;
+    
+    ix = Param[0]->Val->Integer;
+    if (ix > MAX_BLOBS)
+        ProgramFail(NULL, "nnmatchblob():  invalid blob index");
+    if (!blobcnt[ix])
+        ProgramFail(NULL, "nnmatchblob():  not a valid blob");
+    /* use data still in blob_buf[] (FRAME_BUF3)
+       square the aspect ratio of x1, x2, y1, y2
+       then subsample blob pixels to populate N_IN(0:63) with 0:1024 values
+       then nncalculate_network() and display the N_OUT() results */
+    nnscale8x8((unsigned char *)FRAME_BUF3, blobix[ix], blobx1[ix], blobx2[ix], 
+            bloby1[ix], bloby2[ix], imgWidth, imgHeight);
+    nncalculate_network();
+    for (i1=0; i1<NUM_OUTPUT; i1++) 
+        printf(" %3d", N_OUT(i1)/10);
+    printf("\n\r");
+}
+
+void Cnnlearnblob (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    int ix;
+    
+    ix = Param[0]->Val->Integer;
+    if (ix > NUM_NPATTERNS)
+        ProgramFail(NULL, "nnlearnblob():  invalid index");
+    if (!blobcnt[0])
+        ProgramFail(NULL, "nnlearnblob():  no blob to grab");
+    nnscale8x8((unsigned char *)FRAME_BUF3, blobix[0], blobx1[0], blobx2[0], 
+            bloby1[0], bloby2[0], imgWidth, imgHeight);
+    nnpack8x8(ix);
+    nndisplay(ix);
+}
+
 /* list of all library functions and their prototypes */
 struct LibraryFunction PlatformLibrary[] =
 {
@@ -458,7 +548,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Cvpix,        "void vpix(int, int)" },
     { Cvmean,       "void vmean()" },
     { Cvblob,       "int vblob(int, int)" },
-    { Ccompass,     "int compass(int)" },
+    { Ccompass,     "int compass()" },
     { Creadi2c,     "int readi2c(int, int)" },
     { Creadi2c2,    "int readi2c2(int, int)" },
     { Cwritei2c,    "void writei2c(int, int, int)" },
@@ -468,6 +558,13 @@ struct LibraryFunction PlatformLibrary[] =
     { Casin,        "int asin(int, int)" },
     { Cacos,        "int acos(int, int)" },
     { Catan,        "int atan(int, int)" },
+    { Cnnshow,      "void nnshow(int)" },
+    { Cnnset,       "void nnset(int, int, int, int, int, int, int, int, int)" },
+    { Cnninit,      "void nninit()" },
+    { Cnntrain,     "void nntrain()" },
+    { Cnntest,      "void nntest(int, int, int, int, int, int, int, int)" },
+    { Cnnmatchblob, "void nnmatchblob(int)" },
+    { Cnnlearnblob, "void nnlearnblob(int)" },
     { NULL,         NULL }
 };
 #endif

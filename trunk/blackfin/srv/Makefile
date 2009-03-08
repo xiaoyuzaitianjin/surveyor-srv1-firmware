@@ -2,7 +2,7 @@ CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c 
   xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c \
   picoc/clibrary.c picoc/heap.c picoc/lex.c picoc/parse.c picoc/picoc.c \
   picoc/platform_library.c picoc/platform_support.c picoc/table.c picoc/type.c \
-  picoc/variable.c
+  picoc/variable.c picoc/expression.c
   
 ASMSRCS = r8x8dct.asm math.asm setjmp.asm
 

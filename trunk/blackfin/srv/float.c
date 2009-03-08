@@ -169,49 +169,49 @@ result.float_parts.sign = f1.float_parts.sign ^ f2.float_parts.sign;
 
 }
 
-_float subFloat(_float f1,_float f2)
+_float subFloat(_float f1, _float f2)
 {
-    
+	
     unsigned char diff;
     unsigned long m,m1,m2;
     _float result;
-     result.float_parts.sign = 0; //default sign is positive, and should be set here
+	result.float_parts.sign = 0; //default sign is positive, and should be set here
 
   //if one of the numbers is zero
     if( (f1.float_parts.mantissa == 0 && f1.float_parts.exponent == 0 && f1.float_parts.sign == 0) ||
-        (f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0))
-        {
-            if(f1.float_parts.mantissa == 0 && f1.float_parts.exponent == 0 && f1.float_parts.sign == 0)
-            {
-                //flip the other number's sign
-                //if the other number is not zero
-                if(!(f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0))
-                {
-                    f2.float_parts.sign ^= 0x01;
-                    return f2; //and return the other number
-                }
-                else
-                    return f2; //zero minus zero is zero
-            }
-            else if(f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0)
-                return f1;
-        }
+	  (f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0))
+	  {
+		if(f1.float_parts.mantissa == 0 && f1.float_parts.exponent == 0 && f1.float_parts.sign == 0)
+		{
+		    //flip the other number's sign
+		    //if the other number is not zero
+		    if(!(f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0))
+		    {
+			  f2.float_parts.sign ^= 0x01;
+			  return f2; //and return the other number
+		    }
+		    else
+			  return f2; //zero minus zero is zero
+		}
+		else if(f2.float_parts.mantissa == 0 && f2.float_parts.exponent == 0 && f2.float_parts.sign == 0)
+		    return f1;
+	  }
 
 
     if(f1.float_parts.sign == 1 &&   //negative f1 subtracting positive f2 ...is adding two same-sign numbers
-       f2.float_parts.sign == 0)
-       {
-           f2.float_parts.sign = 1; //negate f2
-           //add them
-           return addFloat(f1,f2);
-       }
+	 f2.float_parts.sign == 0)
+	 {
+	     f2.float_parts.sign = 1; //negate f2
+	     //add them
+	     return addFloat(f1,f2);
+	 }
 
     if(f1.float_parts.sign == 0 && //positive f1, subtracting negative f2, is same sign addition
-       f2.float_parts.sign == 1)
-       {
-            f2.float_parts.sign = 0;
-            return addFloat(f1,f2);
-       }
+	 f2.float_parts.sign == 1)
+	 {
+		f2.float_parts.sign = 0;
+		return addFloat(f1,f2);
+	 }
 
 
 
@@ -219,99 +219,103 @@ _float subFloat(_float f1,_float f2)
     //first see whose exponent is greater
     if(f1.float_parts.exponent > f2.float_parts.exponent)
     {
-        diff = f1.float_parts.exponent - f2.float_parts.exponent;
+	  diff = f1.float_parts.exponent - f2.float_parts.exponent;
 
-          if(diff > 22)
-            return f1;
+	    if(diff > 22)
+		return f1;
 
-        //now shift f2's mantissa by the difference of their exponent to the right
-        //adding the hidden bit
-        //f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-       // f2.float_parts.mantissa >>= (int)(diff);//was (diff-1)
+	  //now shift f2's mantissa by the difference of their exponent to the right
+	  //adding the hidden bit
+	  //f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
+	 // f2.float_parts.mantissa >>= (int)(diff);//was (diff-1)
 
-        m1 = f1.float_parts.mantissa | (0x01<<(23));
-        m2 = f2.float_parts.mantissa | (0x01<<(23));
+	  m1 = f1.float_parts.mantissa | (0x01<<(23));
+	  m2 = f2.float_parts.mantissa | (0x01<<(23));
 
-        if(diff > 8)
-        {
-            m1<<=8;
-            m2>>=(int)(diff-8);
+	  if(diff > 8)
+	  {
+		m1<<=8;
+		m2>>=(int)(diff-8);
 
-        }
-        else
-            m1 <<=(int)diff;
+	  }
+	  else
+		m1 <<=(int)diff;
 
-        m = m1-m2;
+	  m = m1-m2;
 
-       if(diff <=8)
-            m>>= (int)diff;
-        else
-            m>>= 8;
+	 if(diff <=8)
+		m>>= (int)diff;
+	  else
+		m>>= 8;
 
-        if(f1.float_parts.sign == 1)
-            result.float_parts.sign = 1;
-        else
-            result.float_parts.sign = 0;
+	  if(f1.float_parts.sign == 1)
+		result.float_parts.sign = 1;
+	  else
+		result.float_parts.sign = 0;
 
-        //also increase its exponent by the difference shifted
-        f2.float_parts.exponent = f2.float_parts.exponent + diff;
+	  //also increase its exponent by the difference shifted
+	  f2.float_parts.exponent = f2.float_parts.exponent + diff;
 
     }
     else if(f1.float_parts.exponent < f2.float_parts.exponent)
     {
-        diff = f2.float_parts.exponent - f1.float_parts.exponent;
+	  diff = f2.float_parts.exponent - f1.float_parts.exponent;
 
-         if(diff > 22)//if the difference is huge return the number unaltered
-            return f2;
+	    if(diff > 22)//if the difference is huge return the number unaltered
+	   {
+		//and since it is subtraction flip its sign
+		f2.float_parts.sign ^= 0x01;
+		return f2;
+	   }
 
-        result = f1;
-        f1 = f2;        //swap them
-        f2 = result;
-
-
-        //now shift f2's mantissa by the difference of their exponent to the right
-        //adding the hidden bit
-       // f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
-       // f2.float_parts.mantissa >>= (int)(diff);
-        m1 = f1.float_parts.mantissa | (0x01<<(23));
-        m2 = f2.float_parts.mantissa | (0x01<<(23));
-
-        if(diff > 8)
-        {
-            m1<<=8;
-            m2>>=(int)(diff-8);
-
-        }
-        else
-            m1 <<=(int)diff;
-
-        m = m1-m2;
-
-       if(diff <=8)
-            m>>= (int)diff;
-        else
-            m>>= 8;
-
-        //also increase its exponent by the difference shifted
-        f2.float_parts.exponent = f2.float_parts.exponent + diff;
+	  result = f1;
+	  f1 = f2;	  //swap them
+	  f2 = result;
 
 
-         result.float_parts.sign = f1.float_parts.sign^0x01;//flip the sign
+	  //now shift f2's mantissa by the difference of their exponent to the right
+	  //adding the hidden bit
+	 // f2.float_parts.mantissa = ((f2.float_parts.mantissa)>>1) | (0x01<<22);
+	 // f2.float_parts.mantissa >>= (int)(diff);
+	  m1 = f1.float_parts.mantissa | (0x01<<(23));
+	  m2 = f2.float_parts.mantissa | (0x01<<(23));
+
+	  if(diff > 8)
+	  {
+		m1<<=8;
+		m2>>=(int)(diff-8);
+
+	  }
+	  else
+		m1 <<=(int)diff;
+
+	  m = m1-m2;
+
+	 if(diff <=8)
+		m>>= (int)diff;
+	  else
+		m>>= 8;
+
+	  //also increase its exponent by the difference shifted
+	  f2.float_parts.exponent = f2.float_parts.exponent + diff;
+
+
+	   result.float_parts.sign = f1.float_parts.sign^0x01;//flip the sign
     }
     else//if the exponents were equal
     {
-      if(f2.float_parts.mantissa > f1.float_parts.mantissa)
-      {
-         result = f1;
-        f1 = f2;        //swap them
-        f2 = result;
+	if(f2.float_parts.mantissa > f1.float_parts.mantissa)
+	{
+	   result = f1;
+	  f1 = f2;	  //swap them
+	  f2 = result;
 
-         result.float_parts.sign = f1.float_parts.sign^0x01;//flip the sign
-      }
+	   result.float_parts.sign = f1.float_parts.sign^0x01;//flip the sign
+	}
 
-        m1 = f1.float_parts.mantissa | (0x01<<(23));
-        m2 = f2.float_parts.mantissa | (0x01<<23);
-        m = m1-m2;
+	  m1 = f1.float_parts.mantissa | (0x01<<(23));
+	  m2 = f2.float_parts.mantissa | (0x01<<23);
+	  m = m1-m2;
 
 
     }
@@ -325,10 +329,10 @@ _float subFloat(_float f1,_float f2)
   //if we got an all zero mantissa
   if(m == 0)
   {//SPECIAL CASE .... ZERO
-        result.float_parts.mantissa = 0;
-        result.float_parts.sign =0;
-        result.float_parts.exponent = 0;
-        return result;
+	  result.float_parts.mantissa = 0;
+	  result.float_parts.sign =0;
+	  result.float_parts.exponent = 0;
+	  return result;
   }
 
 
@@ -336,27 +340,19 @@ _float subFloat(_float f1,_float f2)
 int i = 0;
    while(!(m & (0x01<<31)) && (i < 32)) //i > 31 means mantissa is completely zero
     {
-        i++;
+	  i++;
 
-        m <<=1;
+	  m <<=1;
     }
     m>>=8;//fit back into the mantissa
     if(i > 8)
-        result.float_parts.exponent -=(i-8);
-    //Maybe a pattern here?
-   /* if(i == 12)
-        result.float_parts.exponent -=4;
-   if(i == 10)
-    result.float_parts.exponent -=2;
-
-    if(i == 9)
-        result.float_parts.exponent -=1;*/
+	  result.float_parts.exponent -=(i-8);
+   
    result.float_parts.mantissa = m;
 
 
     return result;
-}
-
+} 
 
 
 _float addFloat(_float f1,_float f2)

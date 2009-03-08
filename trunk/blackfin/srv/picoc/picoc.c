@@ -18,14 +18,23 @@ void Initialise()
 int main(int argc, char **argv)
 {
     if (argc < 2)
-        ProgramFail(NULL, "Format: picoc <program.c> <args>...\n");
+    {
+        PlatformPrintf("Format: picoc <program.c> - run a program\n        picoc -i          - interactive mode\n");
+        exit(1);
+    }
     
     Initialise();
-    if (PlatformSetExitPoint())
-        return 1;
     
-    PlatformScanFile(argv[1]);
-    
+    if (strcmp(argv[1], "-i") == 0)
+        ParseInteractive();
+    else
+    {
+        if (PlatformSetExitPoint())
+            return 1;
+        
+        PlatformScanFile(argv[1]);
+    }
+        
     return 0;
 }
 #else
@@ -37,19 +46,24 @@ int picoc(char *SourceStr)
     int ix;
     
     Initialise();
-    for (ix=0; ix<strlen(SourceStr); ix++)  // clear out ctrl-z from XMODEM transfer
-        if (SourceStr[ix] == 0x1A)
-            SourceStr[ix] = 0x20;
-    printf("%s\n\r", SourceStr);  // display program source
-    printf("=====================\n");
+    printf("starting picoC\n\r");
+    if (SourceStr) {
+        for (ix=0; ix<strlen(SourceStr); ix++)  // clear out ctrl-z from XMODEM transfer
+            if (SourceStr[ix] == 0x1A)
+                SourceStr[ix] = 0x20;
+        printf("%s\n\r", SourceStr);  // display program source
+        printf("=====================\n");
+    }
     errjmp[40] = 0;
     setjmp(errjmp);
     if (errjmp[40]) {
-        printf("goodbye ...\n\r");
+        printf("leaving picoC\n\r");
         return 1;
     }
         
-    Parse("test.c", SourceStr, strlen(SourceStr), TRUE);
+    if (SourceStr)    
+        Parse("test.c", SourceStr, strlen(SourceStr), TRUE);
+    ParseInteractive();
     return 0;
 }
 # endif

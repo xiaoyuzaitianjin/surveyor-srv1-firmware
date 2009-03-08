@@ -31,6 +31,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <setjmp.h>
+#define INTERACTIVE_PROMPT_STATEMENT "picoc> "
+#define INTERACTIVE_PROMPT_LINE "     > "
 #ifndef NO_FP
 #include <math.h>
 #endif
@@ -42,6 +45,8 @@
 #  ifdef SURVEYOR_HOST
 #   define NO_FP
 #   define NO_CTYPE
+#   define INTERACTIVE_PROMPT_STATEMENT "> "
+#   define INTERACTIVE_PROMPT_LINE "> "
 #   include <cdefBF537.h>
 #   include "../string.h"
 #   include "../print.h"

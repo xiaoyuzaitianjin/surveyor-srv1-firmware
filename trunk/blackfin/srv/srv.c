@@ -1503,10 +1503,4 @@ unsigned int isqrt(unsigned int val) {
     return g;
 }
 
-unsigned int ctoi(unsigned char c) {
-    if (c > '9')
-        return (unsigned int)(c & 0x0F) + 9;
-    else
-        return (unsigned int)(c & 0x0F);
-}
 

@@ -11,6 +11,7 @@ extern void itoa(int, char *);
 extern void reverse(char *);
 extern void memcpy(unsigned char *, unsigned char *, int);
 extern void memset(unsigned char*, unsigned char, int);
+unsigned int ctoi(unsigned char);
 #define xmemset memset
 #define xmemcpy memcpy
 

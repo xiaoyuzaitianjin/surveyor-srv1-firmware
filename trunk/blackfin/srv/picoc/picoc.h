@@ -20,6 +20,7 @@
 #define MEM_ALIGN(x) (((x) + ARCH_ALIGN_WORDSIZE - 1) & ~(ARCH_ALIGN_WORDSIZE-1))
 
 #define LOG10E 0.43429448190325182765
+#define INTERACTIVE_FILE_NAME "input"
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
@@ -54,7 +55,7 @@ enum LexToken
     TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
     TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
     TokenHashDefine, TokenHashInclude,
-    TokenNone, TokenEOF, TokenEndOfLine
+    TokenNone, TokenEOF, TokenEndOfLine, TokenEndOfFunction
 };
 
 /* used in dynamic memory allocation */
@@ -254,22 +255,32 @@ char *TableSetIdentifier(struct Table *Tbl, const char *Ident, int IdentLen);
 
 /* lex.c */
 void LexInit(void);
-void *LexAnalyse(const char *FileName, const char *Source, int SourceLen);
+void *LexAnalyse(const char *FileName, const char *Source, int SourceLen, int *TokenLen);
 void LexInitParser(struct ParseState *Parser, void *TokenSource, const char *FileName, int Line, int RunIt);
 enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int IncPos);
+void LexToEndOfLine(struct ParseState *Parser);
+void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser);
+void LexInteractiveClear(struct ParseState *Parser);
+void LexInteractiveCompleted(struct ParseState *Parser);
+void LexInteractiveStatementPrompt();
 
 /* parse.c */
-int ParseExpression(struct ParseState *Parser, struct Value **Result);
-int ParseIntExpression(struct ParseState *Parser);
 int ParseStatement(struct ParseState *Parser);
 struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueType *ReturnType, char *Identifier, int IsProtoType);
 void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt);
+void ParseInteractive();
+
+/* expression.c */
+int ExpressionParse(struct ParseState *Parser, struct Value **Result);
+int ExpressionParseInt(struct ParseState *Parser);
 
 /* type.c */
 void TypeInit();
 int TypeSize(struct ValueType *Typ, int ArraySize);
 int TypeSizeValue(struct Value *Val);
 int TypeStackSizeValue(struct Value *Val);
+int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ);
+void TypeParseIdentPart(struct ParseState *Parser, struct ValueType *BasicTyp, struct ValueType **Typ, char **Identifier);
 void TypeParse(struct ParseState *Parser, struct ValueType **Typ, char **Identifier);
 struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *ParentType, enum BaseType Base, int ArraySize, const char *Identifier);
 

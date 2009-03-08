@@ -2,27 +2,32 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 4 March 2009 
+SRV-1 firmware test build for Blackfin - 8 March 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * removed chess(), lisp() and original c() 
 
 * added picoc() C-interpreter - http://code.google.com/p/picoc/
 
-* added initial set of robot functions to picoc() -
-    motors(), delay(), laser(), servo(), servo2(), time(), rand(),
-    signal(), input(), sonar(), range(), color(), blob(), imgcap(), 
-    imgrcap(), imgdiff(), compass(), readi2c(), readi2c2(), writei2c()
-
 * added floating point emulation libary by "Lefteris"
 
-* added sin(), cos(), tan() and atan() functions to C interpreter
-    
-* added vpix(), vmean(), asin(), acos()
-  renamed servo() to servos(), servo2() to servos2(), color() to vcolor(),
-    imgcap() to vcap(), imgrcap() to vrcap(), imgdiff() to vdiff(), 
-    blob() to vblob()
+* added initial set of robot functions to picoC -
+  motors(), delay(), laser(), servo(), servo2(), time(), rand(),
+  signal(), input(), sonar(), range(), color(), blob(), imgcap(), 
+  imgrcap(), imgdiff(), compass(), readi2c(), readi2c2(), writei2c()
 
+* added sin(), cos(), tan(), asin(), acos() atan(), vpix() and vmean()
+  functions to picoC.  renamed servo() to servos(), servo2() 
+  to servos2(), color() to vcolor(), imgcap() to vcap(), imgrcap() 
+  to vrcap(), imgdiff() to vdiff(), blob() to vblob()
+
+* added neural net functions nnset(), nnshow(), nninit(), nntrain(),
+  nntest(), nnmatchblob(), nnlearnblob() to picoc()
+  
+* added interactive mode for picoC - invoked with '!'.  once stored
+  program (launched by 'Q') completes, picoC continues in interactive
+  mode until 'ESC' character received
+   
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 6 February 2009 
