@@ -91,14 +91,24 @@ int HeapPopStackFrame()
 /* allocate some dynamically allocated memory. memory is cleared. can return NULL if out of memory */
 void *HeapAlloc(int Size)
 {
+#ifdef USE_MALLOC_HEAP
+    return calloc(Size, 1);
+#else
     struct AllocNode *NewMem = NULL;
     struct AllocNode **FreeNode;
     int AllocSize = MEM_ALIGN(Size) + sizeof(NewMem->Size);
-    int Bucket = AllocSize >> 2;
+    int Bucket;
     
     if (Size == 0)
         return NULL;
     
+    assert(Size > 0);
+    
+    /* make sure we have enough space for an AllocNode */
+    if (AllocSize < sizeof(struct AllocNode))
+        AllocSize = sizeof(struct AllocNode);
+    
+    Bucket = AllocSize >> 2;
     if (Bucket < FREELIST_BUCKETS && FreeListBucket[Bucket] != NULL)
     { /* try to allocate from a freelist bucket first */
 #ifdef DEBUG_HEAP
@@ -133,7 +143,7 @@ void *HeapAlloc(int Size)
 #ifdef DEBUG_HEAP
                 printf("allocating %d(%d) from freelist, split chunk (%d)", Size, AllocSize, (*FreeNode)->Size);
 #endif
-                NewMem = *FreeNode + (*FreeNode)->Size - AllocSize;
+                NewMem = (void *)*FreeNode + (*FreeNode)->Size - AllocSize;
                 assert((unsigned long)NewMem >= (unsigned long)&HeapMemory[0] && (unsigned char *)NewMem - &HeapMemory[0] < HEAP_SIZE);
                 (*FreeNode)->Size -= AllocSize;
                 NewMem->Size = AllocSize;
@@ -159,11 +169,15 @@ void *HeapAlloc(int Size)
     printf(" = %lx\n", (unsigned long)&NewMem->NextFree);
 #endif
     return (void *)&NewMem->NextFree;
+#endif
 }
 
 /* free some dynamically allocated memory */
 void HeapFree(void *Mem)
 {
+#ifdef USE_MALLOC_HEAP
+    return free(Mem);
+#else
     struct AllocNode *MemNode = (struct AllocNode *)(Mem-sizeof(int));
     int Bucket = MemNode->Size >> 2;
     
@@ -197,4 +211,5 @@ void HeapFree(void *Mem)
         MemNode->NextFree = FreeListBig;
         FreeListBig = MemNode;
     }
+#endif
 }

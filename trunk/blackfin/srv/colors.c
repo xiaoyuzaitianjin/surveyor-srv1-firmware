@@ -17,7 +17,6 @@
 #include "print.h"
 
 extern unsigned int imgWidth, imgHeight;
-extern int silent_console;
 
 unsigned int ymax[MAX_COLORS], ymin[MAX_COLORS], umax[MAX_COLORS], umin[MAX_COLORS], vmax[MAX_COLORS], vmin[MAX_COLORS];
 unsigned int blobx1[MAX_BLOBS], blobx2[MAX_BLOBS], bloby1[MAX_BLOBS], bloby2[MAX_BLOBS], blobcnt[MAX_BLOBS], blobix[MAX_BLOBS];
@@ -128,8 +127,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                     vME = curBlob;
                     curBlob++;
                     if (curBlob >= MAX_BLOBS) { // max blob limit exceeded
-                        if (!silent_console)
-                            printf("  vblob #%d: max blob limit exceeded\n\r", ii);
+                        printf("  vblob #%d: max blob limit exceeded\n\r", ii);
                         return 0;
                     }
                 }

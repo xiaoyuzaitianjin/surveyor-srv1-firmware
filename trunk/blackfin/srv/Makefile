@@ -1,9 +1,9 @@
 CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c \
-  xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c \
-  picoc/clibrary.c picoc/heap.c picoc/lex.c picoc/parse.c picoc/picoc.c \
-  picoc/platform_library.c picoc/platform_support.c picoc/table.c picoc/type.c \
-  picoc/variable.c picoc/expression.c
-  
+  xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c gps.c \
+  picoc/picoc.c picoc/table.c picoc/lex.c picoc/parse.c picoc/expression.c \
+  picoc/heap.c picoc/type.c picoc/variable.c picoc/clibrary.c \
+  picoc/library_surveyor.c picoc/platform.c picoc/platform_surveyor.c
+ 
 ASMSRCS = r8x8dct.asm math.asm setjmp.asm
 
 CPUDEFINES = -D__ADSPBF537__ -D__ADSPLPBLACKFIN__

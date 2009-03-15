@@ -1,5 +1,15 @@
 #include "picoc.h"
 
+/* a chunk of heap-allocated tokens we should cleanup when we're done */
+static void *CleanupTokens = NULL;
+
+/* deallocate any memory */
+void ParseCleanup()
+{
+    if (CleanupTokens != NULL)
+        HeapFree(CleanupTokens);
+}
+
 /* parse a statement, but only run it if Condition is TRUE */
 int ParseStatementMaybeRun(struct ParseState *Parser, int Condition)
 {
@@ -89,7 +99,7 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
 }
 
 /* declare a variable or function */
-void ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
+int ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
 {
     char *Identifier;
     struct ValueType *BasicType;
@@ -100,19 +110,22 @@ void ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
     do
     {
         TypeParseIdentPart(Parser, BasicType, &Typ, &Identifier);
-        if (Token == TokenVoidType && Identifier != StrEmpty)
-            ProgramFail(Parser, "can't define a void variable");
-            
-        if ((Token != TokenVoidType && Token != TokenStructType && Token != TokenUnionType) && Identifier == StrEmpty)
+        if ((Token != TokenVoidType && Token != TokenStructType && Token != TokenUnionType && Token != TokenEnumType) && Identifier == StrEmpty)
             ProgramFail(Parser, "identifier expected");
             
         if (Identifier != StrEmpty)
         {
             /* handle function definitions */
             if (LexGetToken(Parser, NULL, FALSE) == TokenOpenBracket)
+            {
                 ParseFunctionDefinition(Parser, Typ, Identifier, FALSE);
+                return FALSE;
+            }
             else
             {
+                if (Token == TokenVoidType && Identifier != StrEmpty)
+                    ProgramFail(Parser, "can't define a void variable");
+                    
                 if (LexGetToken(Parser, NULL, FALSE) != TokenAssign)
                     VariableDefine(Parser, Identifier, VariableAllocValueFromType(Parser, Typ, TRUE, NULL));
                 else
@@ -133,6 +146,8 @@ void ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
             LexGetToken(Parser, NULL, TRUE);
             
     } while (Token == TokenComma);
+    
+    return TRUE;
 }
 
 /* parse a #define macro definition and store it for later */
@@ -174,9 +189,6 @@ void ParseFor(struct ParseState *Parser)
                         
     if (!ParseStatement(Parser))
         ProgramFail(Parser, "statement expected");
-    
-    if (LexGetToken(Parser, NULL, TRUE) != TokenSemicolon)
-        ProgramFail(Parser, "';' expected");
     
     ParserCopyPos(&PreConditional, Parser);
     Condition = ExpressionParseInt(Parser);
@@ -253,7 +265,9 @@ enum RunMode ParseBlock(struct ParseState *Parser, int AbsorbOpenBrace, int Cond
 int ParseStatement(struct ParseState *Parser)
 {
     struct Value *CValue;
+    struct Value *LexerValue;
     int Condition;
+    int CheckTrailingSemicolon = TRUE;
     struct ParseState PreState = *Parser;
     enum LexToken Token = LexGetToken(Parser, NULL, TRUE);
     
@@ -271,6 +285,7 @@ int ParseStatement(struct ParseState *Parser)
             
         case TokenLeftBrace:
             ParseBlock(Parser, FALSE, TRUE);
+            CheckTrailingSemicolon = FALSE;
             break;
             
         case TokenIf:
@@ -291,6 +306,7 @@ int ParseStatement(struct ParseState *Parser)
                 if (!ParseStatementMaybeRun(Parser, !Condition))
                     ProgramFail(Parser, "statement expected");
             }
+            CheckTrailingSemicolon = FALSE;
             break;
         
         case TokenWhile:
@@ -309,6 +325,8 @@ int ParseStatement(struct ParseState *Parser)
                 
                 if (Parser->Mode == RunModeBreak)
                     Parser->Mode = RunModeRun;
+
+                CheckTrailingSemicolon = FALSE;
             }
             break;
                 
@@ -337,6 +355,7 @@ int ParseStatement(struct ParseState *Parser)
                 
         case TokenFor:
             ParseFor(Parser);
+            CheckTrailingSemicolon = FALSE;
             break;
 
         case TokenSemicolon: break;
@@ -348,23 +367,25 @@ int ParseStatement(struct ParseState *Parser)
         case TokenVoidType:
         case TokenStructType:
         case TokenUnionType:
+        case TokenEnumType:
             *Parser = PreState;
-            ParseDeclaration(Parser, Token);
+            CheckTrailingSemicolon = ParseDeclaration(Parser, Token);
             break;
         
         case TokenHashDefine:
             ParseMacroDefinition(Parser);
+            CheckTrailingSemicolon = FALSE;
             break;
             
+#ifndef NO_HASH_INCLUDE
         case TokenHashInclude:
-        {
-            struct Value *LexerValue;
             if (LexGetToken(Parser, &LexerValue, TRUE) != TokenStringConstant)
                 ProgramFail(Parser, "\"filename.h\" expected");
             
-            //ScanFile(LexerValue->Val->String); // XXX - need to dereference char * here
+            PlatformScanFile(LexerValue->Val->Pointer.Segment->Val->Array.Data);
+            CheckTrailingSemicolon = FALSE;
             break;
-        }
+#endif
 
         case TokenSwitch:
             if (LexGetToken(Parser, NULL, TRUE) != TokenOpenBracket)
@@ -389,6 +410,8 @@ int ParseStatement(struct ParseState *Parser)
                 Parser->Mode = OldMode;
                 Parser->SearchLabel = OldSearchLabel;
             }
+
+            CheckTrailingSemicolon = FALSE;
             break;
 
         case TokenCase:
@@ -406,6 +429,8 @@ int ParseStatement(struct ParseState *Parser)
             
             if (Parser->Mode == RunModeCaseSearch && Condition == Parser->SearchLabel)
                 Parser->Mode = RunModeRun;
+
+            CheckTrailingSemicolon = FALSE;
             break;
             
         case TokenDefault:
@@ -414,6 +439,8 @@ int ParseStatement(struct ParseState *Parser)
             
             if (Parser->Mode == RunModeCaseSearch)
                 Parser->Mode = RunModeRun;
+                
+            CheckTrailingSemicolon = FALSE;
             break;
 
         case TokenBreak:
@@ -440,12 +467,29 @@ int ParseStatement(struct ParseState *Parser)
                 memcpy(TopStackFrame->ReturnValue->Val, CValue->Val, TypeSizeValue(CValue));
                 Parser->Mode = RunModeReturn;
             }
+            else
+                ExpressionParse(Parser, &CValue);
             break;
+        
+        case TokenDelete:
+            if (LexGetToken(Parser, &LexerValue, TRUE) != TokenIdentifier)
+                ProgramFail(Parser, "identifier expected");
+                
+            CValue = TableDelete(&GlobalTable, LexerValue->Val->Identifier);
+
+            if (CValue == NULL)
+                ProgramFail(Parser, "'%s' is not defined", LexerValue->Val->Identifier);
             
+            VariableFree(CValue);
+            break;
+        
         default:
             *Parser = PreState;
             return FALSE;
     }
+    
+    if (CheckTrailingSemicolon && LexGetToken(Parser, NULL, FALSE) == TokenSemicolon)
+        LexGetToken(Parser, NULL, TRUE);
     
     return TRUE;
 }
@@ -455,7 +499,11 @@ void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt)
 {
     struct ParseState Parser;
     
+    void *OldCleanupTokens = CleanupTokens;
     void *Tokens = LexAnalyse(FileName, Source, SourceLen, NULL);
+    if (OldCleanupTokens == NULL)
+        CleanupTokens = Tokens;
+
     LexInitParser(&Parser, Tokens, FileName, 1, RunIt);
 
     while (ParseStatement(&Parser))
@@ -465,6 +513,8 @@ void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt)
         ProgramFail(&Parser, "parse error");
     
     HeapFree(Tokens);
+    if (OldCleanupTokens == NULL)
+        CleanupTokens = NULL;
 }
 
 /* parse interactively */
@@ -473,6 +523,7 @@ void ParseInteractive()
     struct ParseState Parser;
     int Ok;
     
+    PlatformPrintf(INTERACTIVE_PROMPT_START);
     LexInitParser(&Parser, NULL, StrEmpty, 1, TRUE);
     PlatformSetExitPoint();
     LexInteractiveClear(&Parser);

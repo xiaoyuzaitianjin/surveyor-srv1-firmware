@@ -13,12 +13,17 @@
 #define LARGE_INT_POWER_OF_TEN 1000000000   /* the largest power of ten which fits in an int on this architecture */
 #define ARCH_ALIGN_WORDSIZE sizeof(int)     /* memory alignment boundary on this architecture */
 
-#define GLOBAL_TABLE_SIZE 397               /* global variable table */
+#define GLOBAL_TABLE_SIZE 97                /* global variable table */
 #define STRING_TABLE_SIZE 97                /* shared string table size */
+#define STRING_LITERAL_TABLE_SIZE 97        /* string literal table size */
 #define PARAMETER_MAX 16                    /* maximum number of parameters to a function */
 #define LINEBUFFER_MAX 256                  /* maximum number of characters on a line */
 #define LOCAL_TABLE_SIZE 11                 /* size of local variable table (can expand) */
 #define STRUCT_TABLE_SIZE 11                /* size of struct/union member table (can expand) */
+
+#define INTERACTIVE_PROMPT_START "starting picoc\n"
+#define INTERACTIVE_PROMPT_STATEMENT "picoc> "
+#define INTERACTIVE_PROMPT_LINE "     > "
 
 /* host platform includes */
 #ifdef UNIX_HOST
@@ -32,8 +37,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <setjmp.h>
-#define INTERACTIVE_PROMPT_STATEMENT "picoc> "
-#define INTERACTIVE_PROMPT_LINE "     > "
 #ifndef NO_FP
 #include <math.h>
 #endif
@@ -45,8 +48,7 @@
 #  ifdef SURVEYOR_HOST
 #   define NO_FP
 #   define NO_CTYPE
-#   define INTERACTIVE_PROMPT_STATEMENT "> "
-#   define INTERACTIVE_PROMPT_LINE "> "
+#   define NO_HASH_INCLUDE
 #   include <cdefBF537.h>
 #   include "../string.h"
 #   include "../print.h"
@@ -55,8 +57,13 @@
 #   include "../stdarg.h"
 #   include "../colors.h"
 #   include "../neural.h"
+#   include "../gps.h"
 #   include "../i2c.h"
 #   define assert(x)
+#   undef INTERACTIVE_PROMPT_STATEMENT
+#   undef INTERACTIVE_PROMPT_LINE
+#   define INTERACTIVE_PROMPT_STATEMENT "> "
+#   define INTERACTIVE_PROMPT_LINE "- "
 #  endif
 # endif
 #endif

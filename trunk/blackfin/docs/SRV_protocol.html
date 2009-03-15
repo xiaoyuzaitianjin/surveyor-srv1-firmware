@@ -2,7 +2,8 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 6 February 2009</h3>
+<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 
+15 March 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -193,205 +194,24 @@ return the colors stored in color bin #0 - e.g. '##vr0 127 176 86 111 154 200\n'
 <tr><td>'nb'</td><td</td><td>match pattern against specific blob from "vb"</td></tr>
 </th></tr><tr><th></th><th></th><th>
 
-</th></tr><tr><th>Lisp Commands</th><th></th><th>
-</th></tr><tr><th></th><th></th><th>
-</th></tr><tr><td>'P'</td><td>execute Lisp from flash buffer</td><td>runs Lisp program stored in flash buffer, which got there via the 'zr' command (which reads user flash sector into flash buffer), 'X' command (XMODEM file transfer), or 'E' line editor.  The interpreter is based on the Scheme dialect of Lisp, using code from <a href="http://www.cs.indiana.edu/scheme-repository/imp/siod.html">"Scheme In One Defun" (SIOD)</a> by George J. Carrette. 
-</th></tr><tr><td>'!'</td><td>execute Lisp interactively</td><td>runs Lisp interactively from console;  ESC character (0x1B) terminates interpreter and returns to main firmware control loop<br><br>
-
-</th></tr><tr><th></th><th></th><th>
-</th></tr><tr><td>Lisp primitives</td><th></th><th>
-
-</td></tr><tr><th></th><td>built-in functions</td><td>
-+  -  *  /  =  &gt;  &lt; eq? eqv? null? pair? symbol? number? and or not
-<br>car cdr cons set-car! set-cdr! set! print eval define lambda
-<br>while quote if begin reverse 
-
-</td></tr><tr><th></th><td>special functions</td><td>
-(console) - pass interpreter control to console
-<br>(dump) - show current heap and stack pointers
-<br>(quit) - exit Lisp
-<br>(read) - input and process
-<br>(error) - throw error message
-<br>(oblist) - list all stored objects
-
-</td></tr><tr><th></th><td>robot functions</td><td>
-(time) - returns time since last reset in milliseconds
-<br>(input) - reads from keyboard numbers 0-9 (blocking read)
-<br>(compass) - reads heading from HMC6352 compass (option)
-<br>(signal) - returns true on any input from console (non-blocking)
-<br>(rand x) - returns random value ranging from 0 to x
-<br>(range) - uses laser pointers to distance to nearest obstacle in cm's
-<br>(delay x) - wait x milliseconds
-<br>(lasers x) - non-zero value turns lasers on
-<br>(robot x) - move robot ... 2=back 5=stop 8=fwd 4=left 6=right
-<br>(ping x) - read from sonar module 1-4
-<br>(color x '(ymin ymax umin umax vmin vmax)) - set color bin 0-16
-<br>(blob x) - search on color bin x
-
-</td></tr><tr><th></th><td>; comment</td><td>no processing of characters to end of line, e.g.<br>  ; this is a comment
-
-</td></tr><tr><th></th><th></th><th>
 </th></tr><tr><th></th><th></th><th>
 
-</th></tr><tr><th>C Language Commands</th><th></th><th>
+</th></tr><tr><th>C interpreter</th><th></th><th>
 </th></tr><tr><th></th><th></th><th>
 
-</th></tr><tr><td>'Q'</td><td>execute C program</td><td>runs C program stored in flash buffer, which got there via the 'E' line editor, the 'zr' command (which reads user flash sector into flash buffer) or 'X' command (XMODEM file transfer)<br><br>
+</th></tr><tr><td>'Q'</td><td>execute C program</td><td>runs C program 
+stored in flash buffer, which got there via the 'E' line editor, the 
+'zr' or 'zRxx' command (which reads a flash sector into flash 
+buffer) or 'X' command (XMODEM file transfer)<br><br>
 </th></tr><tr><th></th><th></th><th>
-
-</th></tr><tr><td>C primitives</td><th></th><th>
-
-</td></tr><tr><th></th><td>assignments</td><td>a = b / 20; &nbsp;&nbsp;&nbsp;a = a - 0x55;
-
-</td></tr><tr><th></th><td>operators</td><td>+  -  *  /  %  &amp;  |  ^ =  (  )  &gt;  &gt;=  &lt;  &lt;=  ==  !=
-
-</td></tr><tr><th></th><td>int, char</td><td>'int' is 32-bit signed
-integer, 'char' is 8 bit unsigned chars. variables declared locally or
-globally - variable names can be up to 31 characters in length
-</td></tr><tr><th></th><td>/* comment */</td><td>no processing of characters, e.g.<br>
-/* this is a comment */<br>/* this is a <br> &nbsp;&nbsp;  two line comment */
-
-</td></tr><tr><th></th><td>for()</td><td>for() loop, can be nested 15 deep, e.g. <br><br>
-main()<br>
-{<br>
-&nbsp;&nbsp;  int i, j, k;<br>
-&nbsp;&nbsp;  for(i = 0; i &lt; 5; i = i + 1) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;    for(j = 0; j &lt; 3; j = j + 1) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      for(k = 3; k ; k = k - 1) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        print(i);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        print(j);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        print(k);<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      }<br>
-&nbsp;&nbsp;&nbsp;&nbsp;    }<br>
-&nbsp;&nbsp;  }<br>
-}
-
-</td></tr><tr><th></th><td>int|char|void function() ... return</td><td>up to 25 functions can be defined, function name length up to 25 characters, and functions can be called recursively e.g.<br><br>
-factr(int i)<br>
-{<br>
-&nbsp;&nbsp;  if (i &lt; 2) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;    return 1;<br>
-&nbsp;&nbsp;  }<br>
-&nbsp;&nbsp;  else {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;    return i * factr(i-1);<br>
-&nbsp;&nbsp;  }<br>
-}
-
-</td></tr><tr><th></th><td>if () ... else</td><td>
-int x;<br>
-x = sonar(1);  &nbsp;&nbsp;&nbsp;&nbsp; /* read sonar range */<br>
-if (x &lt; 500) {<br>
-&nbsp;&nbsp;motors(50, -50);  &nbsp;&nbsp; /* if obstacle detected, turn right */<br>
-} else {<br>
-&nbsp;&nbsp;motors(50, 50);<br>
-}
-
-</td></tr><tr><th></th><td>char input()</td><td>checks the serial port (radio channel) for a single incoming character.  <br><br>
-&nbsp;&nbsp;ch = input()  /* if no data is found, ch = 0  */
-
-</td></tr><tr><th></th><td>void print()</td><td>prints a set of strings and variables, followed by a newline ('\n'), e.g. <br>
-&nbsp;&nbsp;print("hello");<br>
-&nbsp;&nbsp;print("test" x y z);
-
-</td></tr><tr><th></th><td>while()<br>while() ... do<br>do ... while()</td><td>
-&nbsp;&nbsp;count = a;<br>
-&nbsp;&nbsp;  do {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;    print(count); <br>
-&nbsp;&nbsp;  } while(count=count-1);<br>
-
-</th></tr><tr><th></th><th></th><th>
-</th></tr><tr><th></th><th></th><th>
-
-</th></tr><tr><td>C - robot control/sense</td><th></th><th>
-
-</td></tr><tr><th></th><td>void delay(milliseconds)</td><td>program delay in milliseconds, e.g.<br><br>
-&nbsp;&nbsp;delay(500);
-
-</td></tr><tr><th></th><td>int get(location)</td><td>pointer operation - gets int data from memory location <br><br>
-&nbsp;&nbsp;&nbsp;int S; S = get(0x00100000);&nbsp;&nbsp;&nbsp; /* sets S from memory location 0x00100000 */<br>
-&nbsp;&nbsp;&nbsp;int S; int T = 0x00100000; S = get(T);&nbsp;&nbsp;&nbsp; /* sets S from memory location pointed to by T */<br>
-
-</td></tr><tr><th></th><td>void laser(on/off)</td><td>laser(1); turns on laser pointers, laser(0); turns them off
-
-</td></tr><tr><th></th><td>void motors(left, right)</td><td>sets left and right motor output, e.g.  <br><br>
-&nbsp;&nbsp;motors(50, -50); /* spin right */<br>
-&nbsp;&nbsp;motors(-50, 50); /* spin left */<br>
-&nbsp;&nbsp;motors(-50, -50); /* go backwards */<br>
-&nbsp;&nbsp;motors(50, 50); /* go forwards */
-
-</td></tr><tr><th></th><td>int rand()</td><td>returns a pseudo-random number between 0 and 65535
-
-</td></tr><tr><th></th><td>int range()</td><td>computes distance to nearest obstacle using laser pointers
-
-</td></tr><tr><th></th><td>int readi2c(channel, register)</td><td>same as 'ir' command - returns 8-bit value
-
-</td></tr><tr><th></th><td>int readi2c2(channel, register)</td><td>same as 'iR' command - returns 16-bit value
-
-</td></tr><tr><th></th><td>void servo(left, right)</td><td>sets left and right servo output, e.g.  <br><br>
-&nbsp;&nbsp;servo(50, 50); /* stop */<br>
-&nbsp;&nbsp;servo(25, 75); /* spin left */<br>
-&nbsp;&nbsp;servo(25, 25); /* go backwards */<br>
-&nbsp;&nbsp;servo(75, 75); /* go forward */
-
-</td></tr><tr><th></th><td>void servo2(left, right)</td><td>same as servo() command, but supports a 2nd set of servos on timer ports 6 & 7
-
-</td></tr><tr><th></th><td>int sonar(channel)</td><td>if sonar transducers are installed, returns measured range in channels 1-4.  return value of 0 means there is no active transducer on that channel
-
-</td></tr><tr><th></th><td>void set(location, value)</td><td>pointer operation - write int data to memory location <br><br>
-&nbsp;&nbsp;&nbsp;set(0x00100000, 555);&nbsp;&nbsp;&nbsp; /* writes 555 to memory location 0x00100000 */<br>
-&nbsp;&nbsp;&nbsp;int S = 0x00100000; set(S, 555);&nbsp;&nbsp;&nbsp; /* writes 555 to memory location pointed to by S */<br>
-&nbsp;&nbsp;&nbsp;int T = 555; set(0x00100000, T);&nbsp;&nbsp;&nbsp; /* writes value of T to memory 0x00100000 */<br>
-&nbsp;&nbsp;&nbsp;int S=0x00100000; int T = 555; set(S, T);&nbsp;&nbsp;&nbsp; /* writes value of T to memory location pointed to by S */<br>
-
-</td></tr><tr><th></th><td>int time()</td><td>get current time (milliseconds since startup) -<br><br>
-&nbsp;&nbsp;int t1;<br>
-&nbsp;&nbsp;t1 = time();
-
-</td></tr><tr><th></th><td>int writei2c(channel, register, value)</td><td>same as 'iw' command
-</th></tr><tr><th></th><th></th><th>
-</th></tr><tr><th></th><th></th><th>
-
-</th></tr><tr><td>C - robot vision</td><th></th><th>
-
-</td></tr><tr><th></th><td>int blob(color, num)</td><td>size = blob(colorbin, blobnum); -
-similar to the "vb" Blob function above, but only returns the selected blob[blobnum] matching the specified color (0 - 9), using reserved variables x, y and z, where x = centroid x coordinate, y = centroid y coordinate, z = blob width. Note that calling blob() with blobnum=0 will compute a new blob search, but calling blob() with blobnum>0 will only retrieve previous located blobs rather than triggering a new search<br>
-e.g.<br><br>
-
-main() {<br>
-&nbsp;&nbsp;int x, y, z;<br>
-&nbsp;&nbsp;color(2, 100, 140, 90, 110, 130, 160);<br>
-&nbsp;&nbsp;imgcap();<br>
-&nbsp;&nbsp;if (blob(2, 0))<br>
-&nbsp;&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;print("blob 0" x y z);
-&nbsp;&nbsp;}<br>
-&nbsp;&nbsp;if (blob(2, 1))<br>
-&nbsp;&nbsp;{<br>
-&nbsp;&nbsp;&nbsp;&nbsp;print("blob 1" x y z);
-&nbsp;&nbsp;}<br>
-}<br><br>
-
-which might output<br>
-&nbsp;&nbsp;&nbsp;blob 0   40    30    15<br>
-&nbsp;&nbsp;&nbsp;blob 1   60    25     8<br>
-for one blob centered at (40,30) with a width of 15 pixels and another blob centered at (60,25) with a width of 8 pixels<br><br>
-a returned size of 0 would indicate that no matching blob was found
-
-</td></tr><tr><th></th><td>void color(bin, y0, y1, u0, u1, v0, v1)</td><td>sets the y, u, v color range for a color bin, e.g. <br><br>
-&nbsp;&nbsp;&nbsp;&nbsp;color(0, 100, 140, 90, 110, 130, 160);<br><br>
-would set color bin #0 with y ranging 100-140, u 90-110, v 130-160.  functionally equivalent to 'vc' color set function, and results can be confirmed with 'vr' command
-
-</td></tr><tr><th></th><td>void imgcap()</td><td>captures image at default resolution
-
-</td></tr><tr><th></th><td>void imgrcap()</td><td>captures and stores reference frame at default resolution
-
-</td></tr><tr><th></th><td>void imgdiff(flag)</td><td>enables image differencing on captured images at default resolution.  imgdiff(1) causes imgcap() to compute difference between latest captured frame and reference frame, imgdiff(0) turns off frame differencing
-
-</td></tr><tr><th></th><td>void resolution('abcA')</td><td>changes capture resolution 'a' = 160x128, 'b' = 320x256, 'c' = 640x512, 'A' = 1280x1024
-
+</th></tr><tr><td>'!'</td><td>run C interactively</td><td>send ESC to 
+exit<br>
+</td></tr><tr><th>
+See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a> 
+for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 27 February 2009 - 23:50 GMT
+last updated 15 March 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

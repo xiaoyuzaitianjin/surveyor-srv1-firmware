@@ -19,7 +19,7 @@
 #include "uart.h"
 #include "i2c.h"
 #include "ov9655.h"
-//#include "ov7725.h"
+#include "ov7725.h"
 #include "camera.h"
 #include "jpeg.h"
 #include "xmodem.h"
@@ -78,8 +78,8 @@ unsigned int rand_seed = 0x55555555;
 /* General globals */
 unsigned char *cp;
 unsigned int i, j; // Loop counter.
-unsigned int silent_console;
 unsigned int master;  // SVS master or slave ?
+unsigned int uart1_flag = 0;
 
 void init_io() {
     *pPORTGIO_DIR = 0x0300;   // LEDs (PG8 and PG9)
@@ -96,7 +96,6 @@ void init_io() {
     pwm2_mode = PWM_OFF;
     pwm1_init = 0;
     pwm2_init = 0;
-    silent_console = 0;
 }
 
 /* reset CPU */
@@ -173,23 +172,20 @@ void serial_out_flashbuffer () {
    Serial protocol char: l */
 void lasers_on () {
     *pPORTHIO |= 0x0380;
-    if (!silent_console)
-        printf("#l");
+    printf("#l");
 }
 
 /* Turn lasers off
    Serial protocol char: L */
 void lasers_off () {
     *pPORTHIO &= 0xFC7F;
-    if (!silent_console)
-        printf("#L");
+    printf("#L");
 }
 
 /* Show laser range
    Serial protocol char: R */
 void show_laser_range(int flag) {
-    if (!silent_console)
-        printf("##Range(cm) = %d\n\r", laser_range(flag));
+    printf("##Range(cm) = %d\n\r", laser_range(flag));
 }
 
 /* Compute laser range 
@@ -306,6 +302,10 @@ void init_sonar() {
 }
 
 void ping_sonar() {
+    printf("##ping %d %d %d %d\n\r", sonar_data[1], sonar_data[2], sonar_data[3], sonar_data[4]);
+}
+
+void sonar() {
     int t0, t1, t2, t3, t4, x1, x2, x3, x4, imask;
     
     imask = *pPORTHIO & 0x3C00;
@@ -347,46 +347,37 @@ void ping_sonar() {
     sonar_data[2] = x2;
     sonar_data[3] = x3;
     sonar_data[4] = x4;
-    if (!silent_console) {
-        printf("##ping %d %d %d %d\n\r", x1, x2, x3, x4);
-    }
 }
 
 void enable_frame_diff() {
     frame_diff_flag = 1;
     grab_reference_frame();
-    if (!silent_console)
-        printf("##g0");
+    printf("##g0");
 }
 
 void enable_segmentation() {
     segmentation_flag = 1;
-    if (!silent_console)
-        printf("##g1");
+    printf("##g1");
 }
 
 void enable_edge_detect() {
     edge_detect_flag = 1;
     edge_thresh = 3200;
-    if (!silent_console)
-        printf("##g2");
+    printf("##g2");
 }
 
 void set_edge_thresh () {
     unsigned char ch;
     ch = getch();
     edge_thresh = (unsigned int)(ch & 0x0f) * 800;
-    if (!silent_console) {
-        printf("#T");
-    }
+    printf("#T");
 }
 
 void disable_frame_diff() {  // disables frame differencing, edge detect and color segmentation
     frame_diff_flag = 0;
     segmentation_flag = 0;
     edge_detect_flag = 0;
-    if (!silent_console)
-        printf("#G");
+    printf("#G");
 }
 
 void grab_frame () {
@@ -441,9 +432,9 @@ void send_frame () {
         //frame[7] = ((framecount/100)% 10) + 0x30;
 
         i2c_data[0] = 0x41;  // read compass twice to clear last reading
-        i2cread(0x21, (unsigned char *)i2c_data, 2, SCCB_ON);
+        i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
         i2c_data[0] = 0x41;
-        i2cread(0x21, (unsigned char *)i2c_data, 2, SCCB_ON);
+        i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
         ix = ((i2c_data[0] << 8) + i2c_data[1]) / 10;
 
         frame[2] = (ix % 10) + 0x30;
@@ -501,8 +492,7 @@ void send_frame () {
    Serial protocol char: o */
 void overlay_on () {
     overlay_flag = 1;
-    if (!silent_console)
-        printf("#o");
+    printf("#o");
 }
 
 
@@ -510,76 +500,78 @@ void overlay_on () {
    Serial protocol char: O */
 void overlay_off () {
     overlay_flag = 0;
-    if (!silent_console)
-        printf("#O");
+    printf("#O");
 }
 
 /* Camera initial setup */
 void camera_setup () {
+    int ix;
+    
+    /* Initialise camera-related globals */
+    framecount = 0;
+    overlay_flag = 0;
+    quality = 4; // Default JPEG quality - range is 1-8 (1 is highest)
     frame_diff_flag = 0;
     segmentation_flag = 0;
     imgWidth = 320;
     imgHeight = 240;
     strcpy(imgHead, "##IMJ5    ");
-    //i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
-    i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
-    delayMS(100);
-    //i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
-    i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
+    
+    for (ix=0; ix<3; ix++) {
+        delayMS(100);
+        i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
+    }
+    for (ix=0; ix<3; ix++) {
+        delayMS(100);
+        i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
+    }
     camera_init((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, imgWidth, imgHeight);
     camera_start();
-
-    /* Initialise camera-related globals */
-    framecount = 0;
-    overlay_flag = 0;
-    quality = 4; // Default JPEG quality - range is 1-8 (1 is highest)
 }
 
 void invert_video() {  // flip video for upside-down camera
     i2cwrite(0x30, ov9655_invert, sizeof(ov9655_invert)>>1, SCCB_ON);
-    if (!silent_console)
-        printf("#y");
+    printf("#y");
 }
 
 void restore_video() {  // restore normal video orientation
     i2cwrite(0x30, ov9655_restore, sizeof(ov9655_restore)>>1, SCCB_ON);
-    if (!silent_console)
-        printf("#Y");
+    printf("#Y");
 }
 
 /* Refactored out, code to reset the camera after a frame size change. */
 void camera_reset (unsigned int width) {
-    imgWidth = width;
     if (width == 160) {
+        imgWidth = width;
         imgHeight = 120;
         strcpy(imgHead, "##IMJ3    ");
         camera_stop();
+        i2cwrite(0x21, ov7725_qqvga, sizeof(ov7725_qqvga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_qqvga, sizeof(ov9655_qqvga)>>1, SCCB_ON);
-        if (!silent_console)
-            printf("#a");
+        printf("#a");
     } else if (width == 320) {
+        imgWidth = width;
         imgHeight = 240;
         strcpy(imgHead, "##IMJ5    ");
         camera_stop();
-       //i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
-       i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
-        if (!silent_console)
-            printf("#b");
+        i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
+        i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
+        printf("#b");
     } else if (width == 640) {
+        imgWidth = width;
         imgHeight = 480;
         strcpy(imgHead, "##IMJ7    ");
         camera_stop();
-        //i2cwrite(0x21, ov7725_vga, sizeof(ov7725_vga)>>1, SCCB_ON);
+        i2cwrite(0x21, ov7725_vga, sizeof(ov7725_vga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_vga, sizeof(ov9655_vga)>>1, SCCB_ON);
-        if (!silent_console)
-            printf("#c");
+        printf("#c");
     } else if (width == 1280) {
+        imgWidth = width;
         imgHeight = 1024;
         strcpy(imgHead, "##IMJ9    ");
         camera_stop();
         i2cwrite(0x30, ov9655_sxga, sizeof(ov9655_sxga)>>1, SCCB_ON);
-        if (!silent_console)
-            printf("#A");
+        printf("#A");
     }
     camera_init((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, imgWidth, imgHeight);
     camera_start();
@@ -596,9 +588,7 @@ void change_image_quality () {
     } else if (quality > 8) {
         quality = 8;
     }
-    if (!silent_console) {
-        printf("##quality - %c\n\r", ch);
-    }
+    printf("##quality - %c\n\r", ch);
 }
 
 // write caption string of up to 40 characters to frame buffer 
@@ -749,25 +739,20 @@ void process_i2c() {
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
-            if (!silent_console) {
-                printf("##ir %d\n\r", i2c_data[0]);
-            }
+            printf("##ir %d\n\r", i2c_data[0]);
             break;
         case 'R':
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
-            if (!silent_console) {
-                printf("##iR %d\n\r",(i2c_data[0] << 8) + i2c_data[1]);
-            }
+            printf("##iR %d\n\r",(i2c_data[0] << 8) + i2c_data[1]);
             break;
         case 'w':
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2c_data[1] = (unsigned char)getch();
             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
-            if (!silent_console)
-                printf("#iw");
+            printf("#iw");
             break;
         default:
             return;
@@ -797,8 +782,7 @@ void motor_command() {
         lspeed = 0;
         rspeed = 0;
     }
-    if (!silent_console)
-        printf("#M");
+    printf("#M");
 }
 
 /* Increase motor base speed
@@ -813,8 +797,7 @@ void motor_increase_base_speed() {
         rspeed = check_bounds_0_100(rspeed + 3);
         setPPM1(lspeed, rspeed);
     }
-    if (!silent_console)
-        printf("#+");
+    printf("#+");
 }
 
 /* Decrease motor base speed
@@ -829,8 +812,7 @@ void motor_decrease_base_speed() {
         rspeed = check_bounds_0_100(rspeed - 3);
         setPPM1(lspeed, rspeed);
     }
-    if (!silent_console)
-        printf("#-");
+    printf("#-");
 }
 
 void motor_trim_left() {
@@ -852,9 +834,7 @@ void motor_trim_right() {
 /* Take motor action */
 void motor_action(unsigned char ch) {
     motor_set(ch, base_speed, &lspeed, &rspeed);
-    if (!silent_console) {
-        printf("#%c", ch);
-    }
+    printf("#%c", ch);
 }
 
 /* General motor control code */
@@ -934,8 +914,7 @@ void ppm1_command() {
     lspeed = (int)((signed char)getch());
     rspeed = (int)((signed char)getch());
     setPPM1(lspeed, rspeed);
-    if (!silent_console)
-        printf("#S");
+    printf("#S");
 }
 
 /* servo command, timers 6 and 7, two character command string follows.
@@ -949,8 +928,7 @@ void ppm2_command() {
     lspeed2 = (int)((signed char)getch());
     rspeed2 = (int)((signed char)getch());
     setPPM2(lspeed2, rspeed2);
-    if (!silent_console)
-        printf("#s");
+    printf("#s");
 }
 
 void initPWM() {
@@ -1150,16 +1128,14 @@ void enable_failsafe() {
         if (rfailsafe == 0)  // minimum PWM power setting is 0x01, not 0x00
             rfailsafe = 1;
     failsafe_mode = 1;
-    if (!silent_console)
-        printf("#F");
+    printf("#F");
 }
 
 /* Disable failsafe - 
    Serial protocol char: f */
 void disable_failsafe() {
     failsafe_mode = 0;
-    if (!silent_console)
-        printf("#f");
+    printf("#f");
 }
 
 void reset_failsafe_clock() {
@@ -1225,9 +1201,7 @@ void process_colors() {
             ch2 = getch() & 0x0F;
             ch3 = getch() & 0x0F;
             vmax[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            if (!silent_console) {
-                printf("##vc %d\n\r", ix);
-            }
+            printf("##vc %d\n\r", ix);
             break;
         case 'p':  //    vp = sample individual pixel, print YUV value
             ch1 = getch() & 0x0F;
@@ -1242,12 +1216,10 @@ void process_colors() {
             i2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
             grab_frame();
             ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
-            if (!silent_console) {
-                printf("##vp %d %d %d\n\r",
-                    ((ix>>16) & 0x000000FF),  // Y1
-                    ((ix>>24) & 0x000000FF),  // U
-                    ((ix>>8) & 0x000000FF));   // V
-            }
+            printf("##vp %d %d %d\n\r",
+                ((ix>>16) & 0x000000FF),  // Y1
+                ((ix>>24) & 0x000000FF),  // U
+                ((ix>>8) & 0x000000FF));   // V
             break;
         case 'b':  //    vb = find blobs for a given color
             ch1 = getch();
@@ -1258,12 +1230,10 @@ void process_colors() {
                 ch1 &= 0x0F;
             grab_frame();
             ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
-            if (!silent_console) {
-                printf("##vb%c\n\r", ch2);
-                for (iy=0; iy<ix; iy++) {
-                    printf(" %d - %d %d %d %d  \n\r", 
-                        blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
-                }
+            printf("##vb%c\n\r", ch2);
+            for (iy=0; iy<ix; iy++) {
+                printf(" %d - %d %d %d %d  \n\r", 
+                    blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
             }
             break;
         case 'r':  //    vr = recall colors
@@ -1272,48 +1242,42 @@ void process_colors() {
                 ix = (ix & 0x0F) + 9;
             else
                 ix &= 0x0F;
-            if (!silent_console) {
-                printf("##vr %d %d %d %d %d %d %d\n\r",
-                   ix, ymin[ix], ymax[ix], umin[ix], umax[ix], vmin[ix], vmax[ix]);
-            }
+            printf("##vr %d %d %d %d %d %d %d\n\r",
+               ix, ymin[ix], ymax[ix], umin[ix], umax[ix], vmin[ix], vmax[ix]);
             break;
         case 'h':  //    vh = histogram
             grab_frame();
             vhist((unsigned char *)FRAME_BUF);
-            if (!silent_console) {
-                printf("##vhist\n\r");
-                iy = 0;
-                itot = imgWidth * imgHeight / 2;
-                printf("      0  16  32  48  64  80  96 112 128 144 160 176 192 208 224 240 (V-axis)\n\r");
-                for (i1=0; i1<16; i1++) {
-                    printf("%d", i1*16);
-                    for (i2=0; i2<16; i2++) {
-                        iy++;
-                        ix = i1*16 + i2;
-                        if (hist0[ix] > (itot>>2))
-                            printf("****");
-                        else if (hist0[ix] > (itot>>5))
-                            printf(" ***");
-                        else if (hist0[ix] > (itot>>8))
-                            printf("  **");
-                        else if (hist0[ix] > (itot>>11))
-                            printf("   *");
-                        else {
-                            printf("    ");
-                            iy--;
-                        }
+            printf("##vhist\n\r");
+            iy = 0;
+            itot = imgWidth * imgHeight / 2;
+            printf("      0  16  32  48  64  80  96 112 128 144 160 176 192 208 224 240 (V-axis)\n\r");
+            for (i1=0; i1<16; i1++) {
+                printf("%d", i1*16);
+                for (i2=0; i2<16; i2++) {
+                    iy++;
+                    ix = i1*16 + i2;
+                    if (hist0[ix] > (itot>>2))
+                        printf("****");
+                    else if (hist0[ix] > (itot>>5))
+                        printf(" ***");
+                    else if (hist0[ix] > (itot>>8))
+                        printf("  **");
+                    else if (hist0[ix] > (itot>>11))
+                        printf("   *");
+                    else {
+                        printf("    ");
+                        iy--;
                     }
-                    printf("\n\r");
                 }
-                printf("(U-axis)             %d regions\n\r", iy);
+                printf("\n\r");
             }
+            printf("(U-axis)             %d regions\n\r", iy);
             break;
         case 'm':  //    vm = mean colors
             grab_frame();
             vmean((unsigned char *)FRAME_BUF);
-            if (!silent_console) {
-                printf("##vmean %d %d %d\n\r", mean[0], mean[1], mean[2]);
-            }
+            printf("##vmean %d %d %d\n\r", mean[0], mean[1], mean[2]);
             break;
         case 'z':  //    vz = clear or segment colors
             ix = (unsigned int)getch() & 0x0F;

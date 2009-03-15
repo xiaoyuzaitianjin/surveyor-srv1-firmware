@@ -4,6 +4,10 @@
 struct Table GlobalTable;
 struct TableEntry *GlobalHashTable[GLOBAL_TABLE_SIZE];
 
+/* the table of string literal values */
+struct Table StringLiteralTable;
+struct TableEntry *StringLiteralHashTable[STRING_LITERAL_TABLE_SIZE];
+
 /* the stack */
 struct StackFrame *TopStackFrame = NULL;
 
@@ -12,7 +16,52 @@ struct StackFrame *TopStackFrame = NULL;
 void VariableInit()
 {
     TableInitTable(&GlobalTable, &GlobalHashTable[0], GLOBAL_TABLE_SIZE, TRUE);
+    TableInitTable(&StringLiteralTable, &StringLiteralHashTable[0], STRING_LITERAL_TABLE_SIZE, TRUE);
     TopStackFrame = NULL;
+}
+
+/* deallocate the contents of a variable */
+void VariableFree(struct Value *Val)
+{
+    if (Val->ValOnHeap)
+    {
+        /* free function bodies */
+        if (Val->Typ == &FunctionType && Val->Val->FuncDef.Intrinsic == NULL)
+            HeapFree((void *)Val->Val->FuncDef.Body.Pos);
+
+        /* free macro bodies */
+        if (Val->Typ == &MacroType)
+            HeapFree((void *)Val->Val->Parser.Pos);
+
+        /* free the value */
+        HeapFree(Val);
+    }
+}
+
+/* deallocate the global table and the string literal table */
+void VariableTableCleanup(struct Table *HashTable)
+{
+    struct TableEntry *Entry;
+    struct TableEntry *NextEntry;
+    int Count;
+    
+    for (Count = 0; Count < HashTable->Size; Count++)
+    {
+        for (Entry = HashTable->HashTable[Count]; Entry != NULL; Entry = NextEntry)
+        {
+            NextEntry = Entry->Next;
+            VariableFree(Entry->p.v.Val);
+                
+            /* free the hash table entry */
+            HeapFree(Entry);
+        }
+    }
+}
+
+void VariableCleanup()
+{
+    VariableTableCleanup(&GlobalTable);
+    VariableTableCleanup(&StringLiteralTable);
 }
 
 /* allocate some memory, either on the heap or the stack and check if we've run out */
@@ -95,14 +144,14 @@ struct Value *VariableAllocValueShared(struct ParseState *Parser, struct Value *
     return VariableAllocValueFromExistingData(Parser, FromValue->Typ, FromValue->Val, FromValue->IsLValue, FromValue->IsLValue ? FromValue : NULL);
 }
 
-/* define a variable */
+/* define a variable. Ident must be registered */
 void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue)
 {
     if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, Ident, VariableAllocValueAndCopy(Parser, InitValue, TopStackFrame == NULL)))
         ProgramFail(Parser, "'%s' is already defined", Ident);
 }
 
-/* check if a variable with a given name is defined */
+/* check if a variable with a given name is defined. Ident must be registered */
 int VariableDefined(const char *Ident)
 {
     struct Value *FoundValue;
@@ -116,7 +165,7 @@ int VariableDefined(const char *Ident)
     return TRUE;
 }
 
-/* get the value of a variable. must be defined */
+/* get the value of a variable. must be defined. Ident must be registered */
 void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LVal)
 {
     if (TopStackFrame == NULL || !TableGet(&TopStackFrame->LocalTable, Ident, LVal))
@@ -126,7 +175,7 @@ void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LV
     }
 }
 
-/* define a global variable shared with a platform global */
+/* define a global variable shared with a platform global. Ident will be registered */
 void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct ValueType *Typ, union AnyValue *FromValue, int IsWritable)
 {
     struct Value *SomeValue = VariableAllocValueAndData(NULL, (Typ->Base == TypeArray) ? sizeof(struct ArrayValue) : 0, IsWritable, NULL, TRUE);
@@ -149,8 +198,8 @@ void VariableStackPop(struct ParseState *Parser, struct Value *Var)
     int Success;
     
 #ifdef DEBUG_HEAP
-    if (Var->ValOnStack)
-        printf("popping %d at 0x%lx\n", sizeof(struct Value) + VariableSizeValue(Var), (unsigned long)Var);
+//    if (Var->ValOnStack)
+//        printf("popping %d at 0x%lx\n", sizeof(struct Value) + VariableSizeValue(Var), (unsigned long)Var);
 #endif
         
     if (Var->ValOnHeap)
@@ -193,4 +242,21 @@ void VariableStackFramePop(struct ParseState *Parser)
     *Parser = TopStackFrame->ReturnParser;
     TopStackFrame = TopStackFrame->PreviousStackFrame;
     HeapPopStackFrame();
+}
+
+/* get a string literal. assumes that Ident is already registered. NULL if not found */
+struct Value *VariableStringLiteralGet(char *Ident)
+{
+    struct Value *LVal = NULL;
+
+    if (TableGet(&StringLiteralTable, Ident, &LVal))
+        return LVal;
+    else
+        return NULL;
+}
+
+/* define a string literal. assumes that Ident is already registered */
+void VariableStringLiteralDefine(char *Ident, struct Value *Val)
+{
+    TableSet(&StringLiteralTable, Ident, Val);
 }

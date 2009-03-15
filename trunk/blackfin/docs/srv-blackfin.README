@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 8 March 2009 
+SRV-1 firmware test build for Blackfin - 15 March 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * removed chess(), lisp() and original c() 
@@ -27,7 +27,19 @@ SRV-1 firmware test build for Blackfin - 8 March 2009
 * added interactive mode for picoC - invoked with '!'.  once stored
   program (launched by 'Q') completes, picoC continues in interactive
   mode until 'ESC' character received
-   
+  
+* added gps functions to SRV_protocol and C interpreter.  '$g' command
+  will dump and parse gps NMEA strings and initialize uart1 to 57600baud
+  for Locoys LS20031 gps module
+
+* added support for OV7725 camera module
+
+*WARNINGS*
+    OV7725 I2C address conflicts with HMC6352 compass, so compass 
+        needs to be moved to 0x22 (44/45) address. To be safe, disconnect 
+        the HMC6352 before running this version
+    Also, note that setting the OV7725 to 1280x1024 causes lockup
+
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 6 February 2009 

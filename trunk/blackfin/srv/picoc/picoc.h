@@ -54,7 +54,7 @@ enum LexToken
     TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
     TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
     TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
-    TokenHashDefine, TokenHashInclude,
+    TokenHashDefine, TokenHashInclude, TokenDelete,
     TokenNone, TokenEOF, TokenEndOfLine, TokenEndOfFunction
 };
 
@@ -108,14 +108,15 @@ enum BaseType
 /* data type */
 struct ValueType
 {
-    enum BaseType Base;         /* what kind of type this is */
-    int ArraySize;              /* the size of an array type */
-    int Sizeof;                 /* the storage required */
-    const char *Identifier;     /* the name of a struct or union */
-    struct ValueType *FromType; /* the type we're derived from (or NULL) */
+    enum BaseType Base;             /* what kind of type this is */
+    int ArraySize;                  /* the size of an array type */
+    int Sizeof;                     /* the storage required */
+    const char *Identifier;         /* the name of a struct or union */
+    struct ValueType *FromType;     /* the type we're derived from (or NULL) */
     struct ValueType *DerivedTypeList;  /* first in a list of types derived from this one */
-    struct ValueType *Next;     /* next item in the derived type list */
-    struct Table *Members;      /* members of a struct, union or enum */
+    struct ValueType *Next;         /* next item in the derived type list */
+    struct Table *Members;          /* members of a struct or union */
+    int OnHeap;                     /* true if allocated on the heap */
 };
 
 /* function definition */
@@ -133,17 +134,14 @@ struct FuncDef
 /* values */
 struct ArrayValue
 {
-    unsigned int Size;          /* the number of elements in the array */
-    void *Data;                 /* pointer to the array data */
+    unsigned int Size;              /* the number of elements in the array */
+    void *Data;                     /* pointer to the array data */
 };
 
 struct PointerValue
 {
-    struct Value *Segment;      /* array or basic value which this points to, NULL for machine memory access */
-    union s {
-        unsigned int Offset;    /* index into an array */
-        void *Memory;           /* machine memory pointer for raw memory access */
-    } Data;
+    struct Value *Segment;          /* array or basic value which this points to, NULL for machine memory access */
+    unsigned int Offset;            /* index into an array */
 };
 
 union AnyValue
@@ -164,28 +162,27 @@ union AnyValue
 
 struct Value
 {
-    struct ValueType *Typ;      /* the type of this value */
-    union AnyValue *Val;        /* pointer to the AnyValue which holds the actual content */
-    struct Value *LValueFrom;   /* if an LValue, this is a Value our LValue is contained within (or NULL) */
-    char ValOnHeap;             /* the AnyValue is on the heap (but this Value is on the stack) */
-    char ValOnStack;            /* the AnyValue is on the stack along with this Value */
-    char IsLValue;              /* is modifiable and is allocated somewhere we can usefully modify it */
-    char TempToken;             /* temporary token used in expression evaluation */
+    struct ValueType *Typ;          /* the type of this value */
+    union AnyValue *Val;            /* pointer to the AnyValue which holds the actual content */
+    struct Value *LValueFrom;       /* if an LValue, this is a Value our LValue is contained within (or NULL) */
+    char ValOnHeap;                 /* the AnyValue is on the heap (but this Value is on the stack) */
+    char ValOnStack;                /* the AnyValue is on the stack along with this Value */
+    char IsLValue;                  /* is modifiable and is allocated somewhere we can usefully modify it */
 };
 
 /* hash table data structure */
 struct TableEntry
 {
-    struct TableEntry *Next;    /* next item in this hash chain */
+    struct TableEntry *Next;        /* next item in this hash chain */
     union TableEntryPayload
     {
         struct ValueEntry
         {
-            char *Key;          /* points to the shared string table */
-            struct Value *Val;  /* the value we're storing */
-        } v;                    /* used for tables of values */
+            char *Key;              /* points to the shared string table */
+            struct Value *Val;      /* the value we're storing */
+        } v;                        /* used for tables of values */
         
-        char Key[1];            /* dummy size - used for the shared string table */
+        char Key[1];                /* dummy size - used for the shared string table */
     } p;
 };
     
@@ -251,10 +248,13 @@ char *TableStrRegister2(const char *Str, int Len);
 void TableInitTable(struct Table *Tbl, struct TableEntry **HashTable, int Size, int OnHeap);
 int TableSet(struct Table *Tbl, char *Key, struct Value *Val);
 int TableGet(struct Table *Tbl, const char *Key, struct Value **Val);
+struct Value *TableDelete(struct Table *Tbl, const char *Key);
 char *TableSetIdentifier(struct Table *Tbl, const char *Ident, int IdentLen);
+void TableStrFree();
 
 /* lex.c */
-void LexInit(void);
+void LexInit();
+void LexCleanup();
 void *LexAnalyse(const char *FileName, const char *Source, int SourceLen, int *TokenLen);
 void LexInitParser(struct ParseState *Parser, void *TokenSource, const char *FileName, int Line, int RunIt);
 enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int IncPos);
@@ -269,6 +269,7 @@ int ParseStatement(struct ParseState *Parser);
 struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueType *ReturnType, char *Identifier, int IsProtoType);
 void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt);
 void ParseInteractive();
+void ParseCleanup();
 
 /* expression.c */
 int ExpressionParse(struct ParseState *Parser, struct Value **Result);
@@ -276,6 +277,7 @@ int ExpressionParseInt(struct ParseState *Parser);
 
 /* type.c */
 void TypeInit();
+void TypeCleanup();
 int TypeSize(struct ValueType *Typ, int ArraySize);
 int TypeSizeValue(struct Value *Val);
 int TypeStackSizeValue(struct Value *Val);
@@ -295,6 +297,9 @@ void HeapFree(void *Mem);
 
 /* variable.c */
 void VariableInit();
+void VariableCleanup();
+void VariableFree(struct Value *Val);
+void VariableTableCleanup(struct Table *HashTable);
 void *VariableAlloc(struct ParseState *Parser, int Size, int OnHeap);
 void VariableStackPop(struct ParseState *Parser, struct Value *Var);
 struct Value *VariableAllocValueAndData(struct ParseState *Parser, int DataSize, int IsLValue, struct Value *LValueFrom, int OnHeap);
@@ -308,6 +313,8 @@ void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LV
 void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct ValueType *Typ, union AnyValue *FromValue, int IsWritable);
 void VariableStackFrameAdd(struct ParseState *Parser, int NumParams);
 void VariableStackFramePop(struct ParseState *Parser);
+struct Value *VariableStringLiteralGet(char *Ident);
+void VariableStringLiteralDefine(char *Ident, struct Value *Val);
 
 /* library.c */
 void LibraryInit(struct Table *GlobalTable, const char *LibraryName, struct LibraryFunction (*FuncList)[]);
@@ -318,8 +325,10 @@ void PrintFP(double Num, CharWriter *PutCh);
 /* platform_support.c */
 void ProgramFail(struct ParseState *Parser, const char *Message, ...);
 void LexFail(struct LexState *Lexer, const char *Message, ...);
+void PlatformCleanup();
 void PlatformScanFile(const char *FileName);
 char *PlatformGetLine(char *Buf, int MaxLen);
+int PlatformGetCharacter();
 void PlatformPutc(unsigned char OutCh);
 void PlatformPrintf(const char *Format, ...);
 void PlatformVPrintf(const char *Format, va_list Args);

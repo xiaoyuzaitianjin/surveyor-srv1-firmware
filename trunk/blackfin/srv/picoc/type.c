@@ -28,6 +28,7 @@ struct ValueType *TypeAdd(struct ParseState *Parser, struct ValueType *ParentTyp
     NewType->Members = NULL;
     NewType->FromType = ParentType;
     NewType->DerivedTypeList = NULL;
+    NewType->OnHeap = TRUE;
     NewType->Next = ParentType->DerivedTypeList;
     ParentType->DerivedTypeList = NewType;
     
@@ -93,6 +94,7 @@ void TypeAddBaseType(struct ValueType *TypeNode, enum BaseType Base, int Sizeof)
     TypeNode->Members = NULL;
     TypeNode->FromType = NULL;
     TypeNode->DerivedTypeList = NULL;
+    TypeNode->OnHeap = FALSE;
     TypeNode->Next = UberType.DerivedTypeList;
     UberType.DerivedTypeList = TypeNode;
 }
@@ -112,6 +114,37 @@ void TypeInit()
     TypeAddBaseType(&CharType, TypeChar, sizeof(char));
     CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
     CharArrayType = TypeAdd(NULL, &CharType, TypeArray, 0, StrEmpty, sizeof(char));
+}
+
+/* deallocate heap-allocated types */
+void TypeCleanupNode(struct ValueType *Typ)
+{
+    struct ValueType *SubType;
+    struct ValueType *NextSubType;
+    
+    /* clean up and free all the sub-nodes */
+    for (SubType = Typ->DerivedTypeList; SubType != NULL; SubType = NextSubType)
+    {
+        NextSubType = SubType->Next;
+        TypeCleanupNode(SubType);
+        if (SubType->OnHeap)
+        {
+            /* if it's a struct or union deallocate all the member values */
+            if (SubType->Members != NULL)
+            {
+                VariableTableCleanup(SubType->Members);
+                HeapFree(SubType->Members);
+            }
+
+            /* free this node */
+            HeapFree(SubType);
+        }
+    }
+}
+
+void TypeCleanup()
+{
+    TypeCleanupNode(&UberType);
 }
 
 /* parse a struct or union declaration */
@@ -175,6 +208,60 @@ void TypeParseStruct(struct ParseState *Parser, struct ValueType **Typ, int IsSt
     LexGetToken(Parser, NULL, TRUE);
 }
 
+/* parse an enum declaration */
+void TypeParseEnum(struct ParseState *Parser, struct ValueType **Typ)
+{
+    struct Value *LexValue;
+    struct Value InitValue;
+    enum LexToken Token;
+    struct ValueType *EnumType;
+    int EnumValue = 0;
+    char *EnumIdentifier;
+    
+    if (TopStackFrame != NULL)
+        ProgramFail(Parser, "enum definitions can only be globals");
+        
+    if (LexGetToken(Parser, &LexValue, TRUE) != TokenIdentifier)
+        ProgramFail(Parser, "enum name required");
+    
+    *Typ = &IntType;
+    EnumType = TypeGetMatching(Parser, &UberType, TypeEnum, 0, LexValue->Val->Identifier);
+    Token = LexGetToken(Parser, NULL, FALSE);
+    if (Token != TokenLeftBrace)
+    { /* use the already defined enum */
+        if ((*Typ)->Members == NULL)
+            ProgramFail(Parser, "enum '%s' isn't defined", LexValue->Val->Identifier);
+            
+        return;
+    }
+    
+    LexGetToken(Parser, NULL, TRUE);    
+    (*Typ)->Members = &GlobalTable;
+    memset(&InitValue, '\0', sizeof(struct Value));
+    InitValue.Typ = &IntType;
+    InitValue.Val = (union AnyValue *)&EnumValue;
+    do {
+        if (LexGetToken(Parser, &LexValue, TRUE) != TokenIdentifier)
+            ProgramFail(Parser, "identifier expected");
+        
+        EnumIdentifier = LexValue->Val->Identifier;
+        if (LexGetToken(Parser, NULL, FALSE) == TokenAssign)
+        {
+            LexGetToken(Parser, NULL, TRUE);
+            EnumValue = ExpressionParseInt(Parser);
+        }
+        
+        VariableDefine(Parser, EnumIdentifier, &InitValue);
+            
+        Token = LexGetToken(Parser, NULL, TRUE);
+        if (Token != TokenComma && Token != TokenRightBrace)
+            ProgramFail(Parser, "comma expected");
+        
+        EnumValue++;
+                    
+    } while (Token == TokenComma);
+}
+
 /* parse a type - just the basic type */
 int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ)
 {
@@ -196,6 +283,13 @@ int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ)
                 ProgramFail(Parser, "bad type declaration");
                 
             TypeParseStruct(Parser, Typ, Token == TokenStructType);
+            break;
+
+        case TokenEnumType:
+            if (*Typ != NULL)
+                ProgramFail(Parser, "bad type declaration");
+                
+            TypeParseEnum(Parser, Typ);
             break;
 
         default: *Parser = Before; return FALSE;

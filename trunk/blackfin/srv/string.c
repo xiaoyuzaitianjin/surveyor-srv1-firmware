@@ -166,4 +166,63 @@ unsigned int ctoi(unsigned char c) {
         return (unsigned int)(c & 0x0F);
 }
 
+unsigned int atoi_b16(char *s) {
+	// Convert two hex characters to a int8
+	unsigned int result = 0;
+	int i;
+	for(i = 0; i < 2; i++,s++)  {
+		if (*s >= 'A')
+			result = 16 * result + (*s) - 'A' + 10;
+		else
+			result = 16 * result + (*s) - '0';
+	}
+	return result;
+}
+
+char *strpbrk(const char *str, const char *set) {
+	while (*str != '\0')
+		if (strchr(set, *str) == 0)
+			++str;
+		else
+			return (char *) str;
+
+	return 0;
+}
+
+int strspn(const char *s, const char *accept) {
+	const char *p;
+	const char *a;
+	int count = 0;
+	for (p = s; *p != '\0'; ++p) {
+		for (a = accept; *a != '\0'; ++a)
+			if (*p == *a)
+				break;
+		if (*a == '\0')
+			return count;
+		else
+			++count;
+	}
+	return count;
+}
+
+char *strtok_r(char *s, const char *delim, char **save_ptr) {
+	char *token;
+	token = 0;					/* Initialize to no token. */
+	if (s == 0) {				/* If not first time called... */
+		s = *save_ptr;		/* restart from where we left off. */
+	}
+	if (s != 0) {				/* If not finished... */
+		*save_ptr = 0;
+		s += strspn(s, delim);	/* Skip past any leading delimiters. */
+		if (*s != '\0') {		/* We have a token. */
+			token = s;
+			*save_ptr = strpbrk(token, delim); /* Find token's end. */
+			if (*save_ptr != 0) {
+				/* Terminate the token and make SAVE_PTR point past it.  */
+				*(*save_ptr)++ = '\0';
+			}
+		}
+	}
+	return token;
+}
 

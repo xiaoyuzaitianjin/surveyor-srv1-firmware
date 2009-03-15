@@ -17,7 +17,9 @@
 #include "print.h"
 #include "spi.h"
 #include "string.h"
+#include "gps.h"
 #include "myfunc.h"
+
 extern int picoc(char *);
 
 int main() {
@@ -29,7 +31,7 @@ int main() {
     initRTC();
     initTMR4();
     init_uart0();
-    //init_uart1();  // use UART1 with GPS until GPIO soft-UART is ready
+//    init_uart1();  // use UART1 with GPS until GPIO soft-UART is ready
     init_colors();
     init_sonar();
     disable_failsafe();
@@ -108,11 +110,7 @@ int main() {
                             svs_slave((unsigned short *)FLASH_BUFFER, 131072);
                             break;
                         case 'g':  // gps test
-                            printf("gps test\n\r");
-                            while (!getchar(&ch)) {
-                                if (uart1GetChar(&ch))
-                                    putchar(ch);
-                            }
+                            gps_show();
                             break;
                     }
                     break;

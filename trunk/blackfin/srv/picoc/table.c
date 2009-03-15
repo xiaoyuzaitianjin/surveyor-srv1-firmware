@@ -87,6 +87,25 @@ int TableGet(struct Table *Tbl, const char *Key, struct Value **Val)
     return TRUE;
 }
 
+/* remove an entry from the table */
+struct Value *TableDelete(struct Table *Tbl, const char *Key)
+{
+    struct TableEntry **EntryPtr;
+    int HashValue = ((unsigned long)Key) % Tbl->Size;   /* shared strings have unique addresses so we don't need to hash them */
+    
+    for (EntryPtr = &Tbl->HashTable[HashValue]; *EntryPtr != NULL; EntryPtr = &(*EntryPtr)->Next)
+    {
+        if ((*EntryPtr)->p.v.Key == Key)
+        {
+            struct Value *Val = (*EntryPtr)->p.v.Val;
+            *EntryPtr = (*EntryPtr)->Next;
+            return Val;
+        }
+    }
+
+    return NULL;
+}
+
 /* check a hash table entry for an identifier */
 static struct TableEntry *TableSearchIdentifier(struct Table *Tbl, const char *Key, int Len, int *AddAt)
 {
@@ -118,6 +137,7 @@ char *TableSetIdentifier(struct Table *Tbl, const char *Ident, int IdentLen)
             ProgramFail(NULL, "out of memory");
             
         strncpy((char *)&NewEntry->p.Key[0], Ident, IdentLen);
+        NewEntry->p.Key[IdentLen] = '\0';
         NewEntry->Next = Tbl->HashTable[AddAt];
         Tbl->HashTable[AddAt] = NewEntry;
         return &NewEntry->p.Key[0];
@@ -133,4 +153,21 @@ char *TableStrRegister2(const char *Str, int Len)
 char *TableStrRegister(const char *Str)
 {
     return TableStrRegister2(Str, strlen(Str));
+}
+
+/* free all the strings */
+void TableStrFree()
+{
+    struct TableEntry *Entry;
+    struct TableEntry *NextEntry;
+    int Count;
+    
+    for (Count = 0; Count < StringTable.Size; Count++)
+    {
+        for (Entry = StringTable.HashTable[Count]; Entry != NULL; Entry = NextEntry)
+        {
+            NextEntry = Entry->Next;
+            HeapFree(Entry);
+        }
+    }
 }

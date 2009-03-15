@@ -1,31 +1,9 @@
 #include "picoc.h"
 
-void SayHello(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
-{
-    PlatformPrintf("Hello\n");
-}
-
-void PrintInteger(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
-{
-    PlatformPrintf("%d\n", Param[0]->Val->Integer);
-}
-
-#ifdef UNIX_HOST
-void Random(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
-{
-    ReturnValue->Val->Integer = rand();
-}
-#endif
-
-static int SomeVar = 42;
-static int SomeArray[4];
 static int Blobcnt, Blobx1, Blobx2, Bloby1, Bloby2, Iy1, Iy2, Iu1, Iu2, Iv1, Iv2;
+static int GPSlatdeg, GPSlatmin, GPSlondeg, GPSlonmin, GPSalt, GPSfix, GPSsat, GPSutc;
 void PlatformLibraryInit()
 {
-    struct ValueType *IntArrayType;
-
-    VariableDefinePlatformVar(NULL, "somevar", &IntType, (union AnyValue *)&SomeVar, TRUE);
-
     VariableDefinePlatformVar(NULL, "blobcnt", &IntType, (union AnyValue *)&Blobcnt, FALSE);
     VariableDefinePlatformVar(NULL, "blobx1", &IntType, (union AnyValue *)&Blobx1, FALSE);
     VariableDefinePlatformVar(NULL, "blobx2", &IntType, (union AnyValue *)&Blobx2, FALSE);
@@ -37,16 +15,15 @@ void PlatformLibraryInit()
     VariableDefinePlatformVar(NULL, "u2", &IntType, (union AnyValue *)&Iu2, FALSE);
     VariableDefinePlatformVar(NULL, "v1", &IntType, (union AnyValue *)&Iv1, FALSE);
     VariableDefinePlatformVar(NULL, "v2", &IntType, (union AnyValue *)&Iv2, FALSE);
-    
-    IntArrayType = TypeGetMatching(NULL, &IntType, TypeArray, 4, NULL);
-    SomeArray[0] = 12;
-    SomeArray[1] = 34;
-    SomeArray[2] = 56;
-    SomeArray[3] = 78;
-    VariableDefinePlatformVar(NULL, "somearray", IntArrayType, (union AnyValue *)&SomeArray, FALSE);
+    VariableDefinePlatformVar(NULL, "gpslatdeg", &IntType, (union AnyValue *)&GPSlatdeg, FALSE);
+    VariableDefinePlatformVar(NULL, "gpslatmin", &IntType, (union AnyValue *)&GPSlatmin, FALSE);
+    VariableDefinePlatformVar(NULL, "gpslondeg", &IntType, (union AnyValue *)&GPSlondeg, FALSE);
+    VariableDefinePlatformVar(NULL, "gpslonmin", &IntType, (union AnyValue *)&GPSlonmin, FALSE);
+    VariableDefinePlatformVar(NULL, "gpsalt", &IntType, (union AnyValue *)&GPSalt, FALSE);
+    VariableDefinePlatformVar(NULL, "gpsfix", &IntType, (union AnyValue *)&GPSfix, FALSE);
+    VariableDefinePlatformVar(NULL, "gpssat", &IntType, (union AnyValue *)&GPSsat, FALSE);
+    VariableDefinePlatformVar(NULL, "gpsutc", &IntType, (union AnyValue *)&GPSutc, FALSE);
 }
-
-#ifdef SURVEYOR_HOST
 
 void Csignal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // check for kbhit, return t or nil
 {
@@ -246,11 +223,24 @@ void Ccompass(struct ParseState *Parser, struct Value *ReturnValue, struct Value
     unsigned int ix;
     
     i2c_data[0] = 0x41;  // read compass twice to clear last reading
-    i2cread(0x21, (unsigned char *)i2c_data, 2, SCCB_ON);
+    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
     i2c_data[0] = 0x41;
-    i2cread(0x21, (unsigned char *)i2c_data, 2, SCCB_ON);
+    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
     ix = ((i2c_data[0] << 8) + i2c_data[1]) / 10;
     ReturnValue->Val->Integer = ix;
+}
+
+void Cgps(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    gps_parse();
+    GPSlatdeg = gps_gga.latdeg;
+    GPSlatmin = gps_gga.latmin;
+    GPSlondeg = gps_gga.londeg;
+    GPSlonmin = gps_gga.lonmin;
+    GPSalt = gps_gga.alt;
+    GPSfix = gps_gga.fix;
+    GPSsat = gps_gga.sat;
+    GPSutc = gps_gga.utc;
 }
 
 void Creadi2c(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  //  syntax   val = readi2c(device, register);
@@ -528,8 +518,6 @@ void Cnnlearnblob (struct ParseState *Parser, struct Value *ReturnValue, struct 
 /* list of all library functions and their prototypes */
 struct LibraryFunction PlatformLibrary[] =
 {
-    { SayHello,     "void sayhello()" },
-    { PrintInteger, "void printint(int)" },
     { Csignal,      "int signal()" },
     { Cinput,       "int input()" },
     { Cdelay,       "void delay(int)" },
@@ -549,6 +537,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Cvmean,       "void vmean()" },
     { Cvblob,       "int vblob(int, int)" },
     { Ccompass,     "int compass()" },
+    { Cgps,         "void gps()" },
     { Creadi2c,     "int readi2c(int, int)" },
     { Creadi2c2,    "int readi2c2(int, int)" },
     { Cwritei2c,    "void writei2c(int, int, int)" },
@@ -567,16 +556,4 @@ struct LibraryFunction PlatformLibrary[] =
     { Cnnlearnblob, "void nnlearnblob(int)" },
     { NULL,         NULL }
 };
-#endif
-
-#ifdef UNIX_HOST
-/* list of all library functions and their prototypes */
-struct LibraryFunction PlatformLibrary[] =
-{
-    { SayHello,     "void sayhello()" },
-    { PrintInteger, "void printint(int)" },
-    { Random,       "int random()" },
-    { NULL,         NULL }
-};
-#endif
 

@@ -38,6 +38,7 @@ static struct ReservedWord ReservedWords[] =
     { "char", TokenCharType, NULL },
     { "continue", TokenContinue, NULL },
     { "default", TokenDefault, NULL },
+    { "delete", TokenDelete, NULL },
     { "do", TokenDo, NULL },
 #ifndef NO_FP
     { "double", TokenDoubleType, NULL },
@@ -85,6 +86,12 @@ void LexInit()
     
     for (Count = 0; Count < sizeof(ReservedWords) / sizeof(struct ReservedWord); Count++)
         ReservedWords[Count].SharedWord = TableStrRegister(ReservedWords[Count].Word);
+}
+
+/* deallocate */
+void LexCleanup()
+{
+    LexInteractiveClear(NULL);
 }
 
 /* check if a word is a reserved word - used while scanning */
@@ -236,6 +243,7 @@ enum LexToken LexGetStringConstant(struct LexState *Lexer, struct Value *Value)
     const char *EndPos;
     char *EscBuf;
     char *EscBufPos;
+    char *RegString;
     struct Value *ArrayValue;
     
     while (Lexer->Pos != Lexer->End && (*Lexer->Pos != '"' || Escape))
@@ -256,14 +264,24 @@ enum LexToken LexGetStringConstant(struct LexState *Lexer, struct Value *Value)
     for (EscBufPos = EscBuf, Lexer->Pos = StartPos; Lexer->Pos != EndPos;)
         *EscBufPos++ = LexUnEscapeCharacter(&Lexer->Pos, EndPos);
     
-    ArrayValue = VariableAllocValueAndData(NULL, sizeof(struct ArrayValue), FALSE, NULL, TRUE);
-    ArrayValue->Typ = CharArrayType;
-    ArrayValue->Val->Array.Size = EscBufPos - EscBuf + 1;
-    ArrayValue->Val->Array.Data = TableStrRegister2(EscBuf, EscBufPos - EscBuf);
+    /* try to find an existing copy of this string literal */
+    RegString = TableStrRegister2(EscBuf, EscBufPos - EscBuf);
     HeapPopStack(EscBuf, EndPos - StartPos);
+    ArrayValue = VariableStringLiteralGet(RegString);
+    if (ArrayValue == NULL)
+    {
+        /* create and store this string literal */
+        ArrayValue = VariableAllocValueAndData(NULL, sizeof(struct ArrayValue), FALSE, NULL, TRUE);
+        ArrayValue->Typ = CharArrayType;
+        ArrayValue->Val->Array.Size = EscBufPos - EscBuf + 1;
+        ArrayValue->Val->Array.Data = RegString;
+        VariableStringLiteralDefine(RegString, ArrayValue);
+    }
+
+    /* create the the pointer for this char* */
     Value->Typ = CharPtrType;
     Value->Val->Pointer.Segment = ArrayValue;
-    Value->Val->Pointer.Data.Offset = 0;
+    Value->Val->Pointer.Offset = 0;
     
     if (*Lexer->Pos == '"')
         Lexer->Pos++;
@@ -613,24 +631,24 @@ void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser
         }
         else
         { /* it's spread across multiple lines */
-            MemSize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes] - Pos;
+            MemSize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-1] - Pos;
             for (ILine = InteractiveCurrentLine->Next; ILine != NULL && (EndParser->Pos < (void *)&ILine->Tokens[0] || EndParser->Pos >= (void *)&ILine->Tokens[ILine->NumBytes]); ILine = ILine->Next)
-                MemSize += ILine->NumBytes;
+                MemSize += ILine->NumBytes - 1;
             
             assert(ILine != NULL);
-            MemSize += &ILine->Tokens[InteractiveCurrentLine->NumBytes] - Pos;
+            MemSize += EndParser->Pos - (void *)&ILine->Tokens[0];
             NewTokens = VariableAlloc(StartParser, MemSize + 1, TRUE);
             
-            CopySize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes] - Pos;
+            CopySize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-1] - Pos;
             memcpy(NewTokens, Pos, CopySize);
             NewTokenPos = NewTokens + CopySize;
             for (ILine = InteractiveCurrentLine->Next; ILine != NULL && (EndParser->Pos < (void *)&ILine->Tokens[0] || EndParser->Pos >= (void *)&ILine->Tokens[ILine->NumBytes]); ILine = ILine->Next)
             {
-                memcpy(NewTokenPos, &ILine->Tokens[0], ILine->NumBytes);
-                NewTokenPos += ILine->NumBytes;
+                memcpy(NewTokenPos, &ILine->Tokens[0], ILine->NumBytes-1);
+                NewTokenPos += ILine->NumBytes-1;
             }
             assert(ILine != NULL);
-            memcpy(NewTokenPos, &ILine->Tokens[0], &ILine->Tokens[ILine->NumBytes] - Pos);
+            memcpy(NewTokenPos, &ILine->Tokens[0], EndParser->Pos - (void *)&ILine->Tokens[0]);
         }
     }
     
@@ -650,7 +668,8 @@ void LexInteractiveClear(struct ParseState *Parser)
         InteractiveHead = NextLine;
     }
 
-    Parser->Pos = NULL;
+    if (Parser != NULL)
+        Parser->Pos = NULL;
     InteractiveTail = NULL;
 }
 
