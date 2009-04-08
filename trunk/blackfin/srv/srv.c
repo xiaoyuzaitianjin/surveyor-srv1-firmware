@@ -57,7 +57,7 @@ short hhpel[] = {0, -1, 0, 1, -1, 1, -1, 0, 1};
 short vhpel[] = {0, -1, -1, -1, 0, 0, 1, 1, 1};
 
 /* Motor globals */
-int lspeed, rspeed, lspeed2, rspeed2, base_speed, err1;
+int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, err1;
 int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
 
 /* IMU globals */
@@ -80,6 +80,7 @@ unsigned char *cp;
 unsigned int i, j; // Loop counter.
 unsigned int master;  // SVS master or slave ?
 unsigned int uart1_flag = 0;
+unsigned int thumbnail_flag = 0;
 
 void init_io() {
     *pPORTGIO_DIR = 0x0300;   // LEDs (PG8 and PG9)
@@ -381,7 +382,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
 }
 
 void grab_frame () {
-    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, 
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
     if (frame_diff_flag)
         compute_frame_diff((unsigned char *)FRAME_BUF, 
@@ -638,7 +639,6 @@ void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, un
     return;
 }
 
-
 /* XModem Receive.
    Serial protocol char: X */
 void xmodem_receive () {
@@ -729,6 +729,7 @@ void write_boot_flash () {
 
 /* Process i2c command:  
         irxy  - i2c read device x, register y, return '##ir value'
+        iRxy  - i2c read device x, register y, return 2-byte '##iR value'
         iwxyz - i2c write device x, register y, value z, return '##iw'
    Serial protocol char: i */
 void process_i2c() {
@@ -739,20 +740,29 @@ void process_i2c() {
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
-            printf("##ir %d\n\r", i2c_data[0]);
+            printf("##ir%2x %d\n\r", i2c_device, i2c_data[0]);
             break;
         case 'R':
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
-            printf("##iR %d\n\r",(i2c_data[0] << 8) + i2c_data[1]);
+            printf("##iR%2x %d\n\r",i2c_device, (i2c_data[0] << 8) + i2c_data[1]);
             break;
         case 'w':
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2c_data[1] = (unsigned char)getch();
             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
-            printf("#iw");
+            printf("##iw%2x\n\r", i2c_device);
+            break;
+        case 'W':  // multi-write
+            i2c_device = (unsigned char)getch();
+            i2c_data[0] = (unsigned char)getch();
+            i2c_data[1] = (unsigned char)getch();
+            i2c_data[2] = (unsigned char)getch();
+            i2c_data[3] = (unsigned char)getch();
+            i2cwrite(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
+            printf("##iW%2x", i2c_device);
             break;
         default:
             return;
@@ -783,6 +793,30 @@ void motor_command() {
         rspeed = 0;
     }
     printf("#M");
+}
+
+/* Motor command for 2nd set of timers, three character command string follows.
+   Serial protocol char: m */
+void motor2_command() {
+    unsigned int mdelay;
+    if (!pwm2_init) {
+        initPWM2();
+        pwm2_init = 1;
+        pwm2_mode = PWM_PWM;
+        base_speed2 = 40;
+        lspeed2 = rspeed2 = 0;
+    }
+    lspeed2 = (int)((signed char)getch());
+    rspeed2 = (int)((signed char)getch());
+    mdelay = (unsigned int)getch();
+    setPWM2(lspeed2, rspeed2);
+    if (mdelay) {
+        delayMS(mdelay * 10);
+        setPWM2(0, 0);
+        lspeed2 = 0;
+        rspeed2 = 0;
+    }
+    printf("#m");
 }
 
 /* Increase motor base speed
@@ -947,6 +981,19 @@ void initPWM() {
     //*pPORTHIO |= 0x0030;  
 }
 
+void initPWM2() {
+    // configure timers 6 and 7 for PWM
+    *pPORT_MUX |= 0x0010;   // note that this reassigns UART1 signals as timers
+    *pPORTF_FER |= 0x000C;  // configure PF2 and PF3 as TMR7 and TMR6
+    *pTIMER6_CONFIG = PULSE_HI | PWM_OUT | PERIOD_CNT;
+    *pTIMER7_CONFIG = PULSE_HI | PWM_OUT | PERIOD_CNT;
+    *pTIMER6_PERIOD = PERIPHERAL_CLOCK / 1000;                // 1000Hz
+    *pTIMER7_PERIOD = PERIPHERAL_CLOCK / 1000;                // 1000Hz
+    *pTIMER6_WIDTH = ((PERIPHERAL_CLOCK / 1000) * 1) / 100; 
+    *pTIMER7_WIDTH = ((PERIPHERAL_CLOCK / 1000) * 1) / 100;
+    *pTIMER_ENABLE |= TIMEN6 | TIMEN7;
+}
+
 void initTMR4() {
     // configure timer 4
     *pPORTF_FER |= 0x0020;  // configure PF5 TMR4
@@ -1006,6 +1053,21 @@ void setPWM (int mleft, int mright) {
 
     *pTIMER2_WIDTH = ((PERIPHERAL_CLOCK / 1000) * mleft) / 100;
     *pTIMER3_WIDTH = ((PERIPHERAL_CLOCK / 1000) * mright) / 100;
+}
+
+void setPWM2 (int mleft, int mright) {
+    if (mleft > 100)
+        mleft = 100;
+    if (mleft < 1)
+        mleft = 1;
+
+    if (mright > 100)
+        mright = 100;
+    if (mright < 1)
+        mright = 1;
+
+    *pTIMER6_WIDTH = ((PERIPHERAL_CLOCK / 1000) * mleft) / 100;
+    *pTIMER7_WIDTH = ((PERIPHERAL_CLOCK / 1000) * mright) / 100;
 }
 
 void setPPM1 (int mleft, int mright) {

@@ -31,6 +31,7 @@ struct Table;
 /* lexical tokens */
 enum LexToken
 {
+    TokenNone, 
     TokenComma,
     TokenAssign, TokenAddAssign, TokenSubtractAssign, TokenMultiplyAssign, TokenDivideAssign, TokenModulusAssign,
     TokenShiftLeftAssign, TokenShiftRightAssign, TokenArithmeticAndAssign, TokenArithmeticOrAssign, TokenArithmeticExorAssign,
@@ -54,8 +55,8 @@ enum LexToken
     TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
     TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
     TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
-    TokenHashDefine, TokenHashInclude, TokenDelete,
-    TokenNone, TokenEOF, TokenEndOfLine, TokenEndOfFunction
+    TokenHashDefine, TokenHashInclude, TokenNew, TokenDelete,
+    TokenEOF, TokenEndOfLine, TokenEndOfFunction
 };
 
 /* used in dynamic memory allocation */
@@ -227,6 +228,7 @@ typedef void CharWriter(unsigned char);
 /* globals */
 extern struct Table GlobalTable;
 extern struct StackFrame *TopStackFrame;
+extern struct ValueType UberType;
 extern struct ValueType IntType;
 extern struct ValueType CharType;
 #ifndef NO_FP
@@ -270,6 +272,7 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
 void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt);
 void ParseInteractive();
 void ParseCleanup();
+void ParserCopyPos(struct ParseState *To, struct ParseState *From);
 
 /* expression.c */
 int ExpressionParse(struct ParseState *Parser, struct Value **Result);
@@ -332,7 +335,6 @@ int PlatformGetCharacter();
 void PlatformPutc(unsigned char OutCh);
 void PlatformPrintf(const char *Format, ...);
 void PlatformVPrintf(const char *Format, va_list Args);
-int PlatformSetExitPoint();
 void PlatformExit();
 void PlatformLibraryInit();
 

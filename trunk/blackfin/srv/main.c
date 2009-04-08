@@ -176,6 +176,9 @@ int main() {
                 case 'M':   // grab 3 character motor command string (left, right, delay)
                     motor_command();
                     break;
+                case 'm':   // use 2nd set of timers for PWM
+                    motor2_command();
+                    break;
                 case '+':   // increase base motor speed
                     motor_increase_base_speed();
                     break;
@@ -232,11 +235,14 @@ int main() {
                 case 'G':   // disable frame differencing and color segmentation
                     disable_frame_diff();
                     break;
+                case 'h':   // toggle thumbnail_flag for SAA7113
+                    if (thumbnail_flag == 0)
+                        thumbnail_flag = 1;
+                    else
+                        thumbnail_flag = 0;
+                    break;
                 case 'i':   // i2c read / write
                     process_i2c();
-                    break;
-                case 'h':   // set serial port to high speed
-                    init_fast_uart0();
                     break;
             }
             reset_failsafe_clock();

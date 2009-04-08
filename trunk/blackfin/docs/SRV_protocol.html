@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
 <h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 
-15 March 2009</h3>
+7 April 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -69,6 +69,11 @@ returns to the regular SRV-1 command processing loop.
 </td></tr><tr><td>'c'</td><td>'#c'</td><td>set capture resolution to 640x480
 </td></tr><tr><td>'d' or 'A'</td><td>'#A'</td><td>set capture resolution to 1280x1024
 </td></tr><tr><th></th><th></th><th>
+</td></tr><tr><td>'D'</td><td>'##D'</td><td>checks MN13812 battery level detect circuit on SVS<br>
+returns:<br>
+##D - battery voltage okay<br>
+##D - low battery voltage detected<br>
+</td></tr><tr><th></th><th></th><th>
 </td></tr><tr><td>'E'</td><td></td><td>launches flash buffer line editor -<br>
 (T)op (B)ottom (P)reviouse (N)ext line (L)ist (I)nsert until ESC (D)elete (H)elp (X)exit
 </th></tr><tr><td>'Fab'</td><td>'#F'</td><td>Enables Failsafe mode for motor control<br>
@@ -80,7 +85,6 @@ sets motor/servo levels for 'M' and 'S' commands in case no command is received 
 </th></tr><tr><td>'g1'</td><td>'##g1'</td><td>enable color segmentation
 </th></tr><tr><td>'g2'</td><td>'##g2'</td><td>enable edge detection (threshold changed with 'T' command)
 </th></tr><tr><td>'G'</td><td>'#G'</td><td>disable frame differencing / color segmentation / edge detection
-</th></tr><tr><td>'h'</td><td>'#h'</td><td>switch serial channel to high baud rate (2500kbps)
 </td></tr><tr><th></th><th></th><th>
 </td></tr><tr><td>'I'</td><td>'##IMJxs0s1s2s3....'</td><td>grab JPEG compressed video frame
 <br><br> x = frame size in pixels:<br>   1 = 80x64, 3 = 160x120, 5 = 320x240, 7 = 640x480, 9 = 1280x1024
@@ -89,11 +93,11 @@ sets motor/servo levels for 'M' and 'S' commands in case no command is received 
 <br><br> Note that sometimes the 'I' command returns nothing if the
 robot camera is busy, so the 'I' command should be called as many times
 as needed until a frame is returned
-</th></tr><tr><td>'irab'</td><td>'##ir cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
+</th></tr><tr><td>'irab'</td><td>'##iraa cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
 a is device id, b is register, cc is 8-bit return value from register displayed as decimal value
-</th></tr><tr><td>'iRab'</td><td>'##iR cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
+</th></tr><tr><td>'iRab'</td><td>'##iRaa cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
 a is device id, b is register, cc is 16-bit return value from register displayed as decimal value
-</th></tr><tr><td>'iwabc'</td><td>'##iw'</td><td>I2C register write ('abc' parameters sent as 8-bit binary)<br>
+</th></tr><tr><td>'iwabc'</td><td>'##iwaa'</td><td>I2C register write ('abc' parameters sent as 8-bit binary)<br>
 a is device id, b is register, c is value written to register
 </td></tr><tr><th></th><th></th><th>
 </th></tr><tr><td>'l'</td><td>'#l'</td><td>turn on lasers
@@ -106,6 +110,7 @@ a is device id, b is register, c is value written to register
 forward, 0xFF through 0x81 is reverse, e.g. the decimal equivalent of the 4-byte sequence 0x4D 0x32
 0xCE 0x14 = 'M' 50 -50 20 (rotate right for 200ms)
 <br><br> duration of 00 is infinite, e.g. the 4-byte sequence 0x4D 0x32 0x32 0x00 = M 50 50 00 (drive forward at 50% indefinitely)
+</th></tr><tr><td>'mabc'</td><td>'#m'</td><td>to employ direct PWM motor control of 2nd bank of timers (TMR6 and TMR7) - same format as 'M' command<br>
 </td></tr><tr><th></th><th></th><th>
 </th></tr><tr><td>'o'</td><td>'#o'</td><td>enable caption overlay
 </td></tr><tr><td>'O'</td><td>'#O'</td><td>disable caption overlay
@@ -195,10 +200,8 @@ return the colors stored in color bin #0 - e.g. '##vr0 127 176 86 111 154 200\n'
 </th></tr><tr><th></th><th></th><th>
 
 </th></tr><tr><th></th><th></th><th>
-</th></tr><tr><th></th><th></th><th>
 
-</th></tr><tr><th>C interpreter</th><th></th><th>See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a> 
-for<br> full C interpreter documentation<br>
+</th></tr><tr><th>C interpreter</th><th></th><th>
 </th></tr><tr><th></th><th></th><th>
 
 </th></tr><tr><td>'Q'</td><td>execute C program</td><td>runs C program 
@@ -208,10 +211,12 @@ buffer) or 'X' command (XMODEM file transfer)<br><br>
 </th></tr><tr><th></th><th></th><th>
 </th></tr><tr><td>'!'</td><td>run C interactively</td><td>send ESC to 
 exit<br>
-</td></tr>
-</tbody></table>
+</td></tr><tr><th>
+See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a> 
+for full C interpreter documentation<br>
+</th></tr></tbody></table>
 <br><br>
-last updated 15 March 2009 - 23:50 GMT
+last updated 7 April 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

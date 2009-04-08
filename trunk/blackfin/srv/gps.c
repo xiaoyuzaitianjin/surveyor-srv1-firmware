@@ -17,9 +17,9 @@
 }; 
 
 $GPGGA,173415.400,3514.5974,N,12037.2028,W,1,8,1.18,84.6,M,-30.8,M,,*50
-$GPGAA,hhmmss.sss,ddmm.mmmm,n,dddmm.mmmm,e,q,ss,y.y,a.a,z,g.g,z,t.t,iii*CC
+$GPGGA,hhmmss.sss,ddmm.mmmm,n,dddmm.mmmm,e,q,ss,y.y,a.a,z,g.g,z,t.t,iii*CC
     where:
-        GPGAA        : GPS fixed data identifier
+        GPGGA        : GPS fixed data identifier
         hhmmss.ss    : Coordinated Universal Time (UTC), also known as GMT
         ddmm.mmmm,n  : Latitude in degrees, minutes and cardinal sign
         dddmm.mmmm,e : Longitude in degrees, minutes and cardinal sign

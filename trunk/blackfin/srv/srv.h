@@ -92,6 +92,7 @@ void camera_reset (unsigned int width);
 void change_image_quality ();
 void set_caption (unsigned char *str, unsigned int width);
 void move_image (unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height);
+void move_interleave (unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height);
 void invert_video(), restore_video();
 
 /* Image Processing */
@@ -121,7 +122,7 @@ void crc_flash_buffer ();
 void init_motors ();
 void init_servos();
 void update_servos();
-void motor_command ();
+void motor_command(), motor2_command();
 void motor_increase_base_speed ();
 void motor_decrease_base_speed ();
 void motor_trim_left ();
@@ -131,9 +132,11 @@ void motor_set (unsigned char cc, int speed, int *ls, int *rs);
 void ppm1_command ();
 void ppm2_command ();
 void initPWM ();
+void initPWM2 ();
 void initPPM1 ();
 void initPPM2 ();
 void setPWM (int mleft, int mright);
+void setPWM2 (int mleft, int mright);
 void setPPM1 (int mleft, int mright);
 void setPPM2 (int mleft, int mright);
 int check_bounds_0_100(int ix);
@@ -153,10 +156,10 @@ void delayNS (int delay);  // delay up to 100000 nanoseconds (.0001 sec)
 
 /* Globals */
 extern int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
-extern int lspeed, rspeed, lspeed2, rspeed2, base_speed;
+extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2;
 extern int sonar_data[];
 extern unsigned int imgWidth, imgHeight, frame_diff_flag;
-extern unsigned int uart1_flag;
+extern unsigned int uart1_flag, thumbnail_flag;
 
 #endif
 

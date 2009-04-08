@@ -1,5 +1,4 @@
 void init_uart0();
-void init_fast_uart0();
 void init_uart1();
 
 void uart0SendChar(unsigned char s);
@@ -12,6 +11,6 @@ void uart1SendString(unsigned char *s);
 void uart1SendChars(unsigned char *s, unsigned int count);
 unsigned char uart1GetCh();
 unsigned char uart1GetChar(unsigned char *s);
-void printNumber(unsigned char base, unsigned char noDigits, unsigned char sign, unsigned char pad, unsigned int number);
+void printNumber(unsigned char base, unsigned char noDigits, unsigned char sign, unsigned char pad, int number);
 
 

@@ -44,17 +44,12 @@ int PlatformGetCharacter()
 }
 
 /* mark where to end the program for platforms which require this */
-int PlatformSetExitPoint()
-{
-    return 0;
-}
+int ExitBuf[41];
 
 /* exit the program */
-extern int errjmp[];
-
 void PlatformExit()
 {
-    errjmp[40] = 1;
-    longjmp(errjmp, 1);
+    ExitBuf[40] = 1;
+    longjmp(ExitBuf, 1);
 }
 

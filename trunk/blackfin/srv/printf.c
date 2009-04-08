@@ -24,6 +24,7 @@
 */
 
 #include "print.h"
+#include "stdarg.h"
 
 #ifdef TEST
 int main(void)

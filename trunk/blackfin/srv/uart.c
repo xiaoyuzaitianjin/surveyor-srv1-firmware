@@ -36,23 +36,6 @@ void init_uart0(void)
     SSYNC;
 }
 
-void init_fast_uart0(void)
-{
-    *pPORTF_FER |= 0x0003;  // enable UART0 pins
-
-    *pUART0_GCTL = UCEN;
-    *pUART0_LCR = DLAB;
-    *pUART0_DLL = UART0_FAST_DIVIDER;
-    *pUART0_DLH = UART0_FAST_DIVIDER >> 8;
-    *pUART0_LCR = WLS(8); // 8 bit, no parity, one stop bit
-
-    // dummy reads to clear possible pending errors / irqs
-    char dummy = *pUART0_RBR;
-    dummy = *pUART0_LSR;
-    dummy = *pUART0_IIR;
-    SSYNC;
-}
-
 void init_uart1(void)
 {
     *pPORTF_FER |= 0x000C;  // enable UART1 pins
@@ -162,7 +145,7 @@ printNumber(unsigned char  base,
             unsigned char  noDigits,
             unsigned char  sign,
             unsigned char  pad,
-            unsigned int number)
+            int number)
 {
   static unsigned char  hexChars[16] = "0123456789ABCDEF";
   unsigned char        *pBuf;
