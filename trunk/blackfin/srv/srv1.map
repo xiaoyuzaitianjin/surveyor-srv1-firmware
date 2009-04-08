@@ -311,7 +311,7 @@ Linker script and memory map
                 0xffa063e4                nnset_pattern
                 0xffa06678                nnscale8x8
 
-.text           0x00000000     0x6e88
+.text           0x00000000     0x6eb4
  .text          0x00000000       0xf0 camera.o
                 0x00000000                camera_init
                 0x000000a8                camera_start
@@ -484,62 +484,62 @@ Linker script and memory map
                 0x000056c0                LibGets
                 0x00005840                LibraryInit
                 0x000056a8                LibGetc
- .text          0x000058cc     0x13a8 picoc/library_surveyor.o
-                0x00005c68                Ctan
-                0x00006698                Cvrcap
-                0x0000637c                Cwritei2c
-                0x000066bc                Csonar
-                0x00006378                Cnninit
-                0x00005a8c                Csin
-                0x000058e0                Cioread
-                0x00006120                Cnnmatchblob
-                0x00005998                Claser
-                0x000066a0                Crange
-                0x0000649c                Cgps
-                0x000059fc                Cvcolor
-                0x00006814                Cmotors2
-                0x000060f0                Cnnshow
-                0x0000679c                Cservos
-                0x00005b78                Ccos
-                0x00005ebc                Cacos
-                0x00006724                Cservos2
-                0x00006428                Ccompass
-                0x000068b4                Cmotors
-                0x00005f8c                Casin
-                0x0000595c                Cpoke
-                0x0000669c                Cvcap
-                0x0000664c                Cvpix
-                0x000059dc                Cbattery
-                0x00005d84                Catan
-                0x00006048                Cnnlearnblob
-                0x000063f0                Creadi2c
-                0x000063b0                Creadi2c2
-                0x00005908                Cpeek
-                0x000069ac                Cinput
-                0x0000696c                Crand
-                0x00006954                Ctime
-                0x000062f0                Cnntrain
-                0x00005a78                Cvdiff
+ .text          0x000058cc     0x13d4 picoc/library_surveyor.o
+                0x00005c94                Ctan
+                0x000066c4                Cvrcap
+                0x000063a8                Cwritei2c
+                0x000066e8                Csonar
+                0x000063a4                Cnninit
+                0x00005ab8                Csin
+                0x000058fc                Cioread
+                0x0000614c                Cnnmatchblob
+                0x000059c4                Claser
+                0x000066cc                Crange
+                0x000064c8                Cgps
+                0x00005a28                Cvcolor
+                0x00006840                Cmotors2
+                0x0000611c                Cnnshow
+                0x000067c8                Cservos
+                0x00005ba4                Ccos
+                0x00005ee8                Cacos
+                0x00006750                Cservos2
+                0x00006454                Ccompass
+                0x000068e0                Cmotors
+                0x00005fb8                Casin
+                0x00005988                Cpoke
+                0x000066c8                Cvcap
+                0x00006678                Cvpix
+                0x00005a08                Cbattery
+                0x00005db0                Catan
+                0x00006074                Cnnlearnblob
+                0x0000641c                Creadi2c
+                0x000063dc                Creadi2c2
+                0x00005934                Cpeek
+                0x000069d8                Cinput
+                0x00006998                Crand
+                0x00006980                Ctime
+                0x0000631c                Cnntrain
+                0x00005aa4                Cvdiff
                 0x000058cc                Ciodir
-                0x00006994                Cdelay
-                0x00006514                Cvblob
-                0x000069f8                PlatformLibraryInit
-                0x0000622c                Cnntest
-                0x00005e70                Cnnset
-                0x000058f4                Ciowrite
-                0x000069c8                Csignal
-                0x0000660c                Cvmean
- .text          0x00006c74      0x16c picoc/platform.o
-                0x00006d44                PlatformPrintf
-                0x00006d60                LexFail
-                0x00006c74                PlatformVPrintf
-                0x00006d9c                ProgramFail
- .text          0x00006de0       0xa8 picoc/platform_surveyor.o
-                0x00006e18                PlatformPutc
-                0x00006e20                PlatformGetLine
-                0x00006de0                PlatformCleanup
-                0x00006e08                PlatformGetCharacter
-                0x00006dec                PlatformExit
+                0x000069c0                Cdelay
+                0x00006540                Cvblob
+                0x00006a24                PlatformLibraryInit
+                0x00006258                Cnntest
+                0x00005e9c                Cnnset
+                0x00005914                Ciowrite
+                0x000069f4                Csignal
+                0x00006638                Cvmean
+ .text          0x00006ca0      0x16c picoc/platform.o
+                0x00006d70                PlatformPrintf
+                0x00006d8c                LexFail
+                0x00006ca0                PlatformVPrintf
+                0x00006dc8                ProgramFail
+ .text          0x00006e0c       0xa8 picoc/platform_surveyor.o
+                0x00006e44                PlatformPutc
+                0x00006e4c                PlatformGetLine
+                0x00006e0c                PlatformCleanup
+                0x00006e34                PlatformGetCharacter
+                0x00006e18                PlatformExit
 
 .l1data         0xff800000     0x16d4
  *(.data)
@@ -711,11 +711,11 @@ Linker script and memory map
  *(SORT(.dtors.*))
  *(.dtors)
 
-.sdram.bss      0x00006e88        0x0
-                0x00006e88                __sdram_bss_start = .
+.sdram.bss      0x00006eb4        0x0
+                0x00006eb4                __sdram_bss_start = .
  *(.bss.sdram)
-                0x00006e88                . = ALIGN (0x4)
-                0x00006e88                __sdram_bss_end = .
+                0x00006eb4                . = ALIGN (0x4)
+                0x00006eb4                __sdram_bss_end = .
 
 .bss            0xff900000     0x37cc
                 0xff900000                __bss_start = .
