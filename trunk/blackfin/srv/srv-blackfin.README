@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 7 April 2009 
+SRV-1 firmware test build for Blackfin - 10 April 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added 'm' command to control 2nd bank of timers using PWM - same syntax
@@ -16,6 +16,8 @@ SRV-1 firmware test build for Blackfin - 7 April 2009
   for GPIO-H15/14/13/12/11/10 (pins 32/31/30/29/28/27)
 
 * added battery() and peek() / poke() functions to C
+
+* changed default capture rates of OV7725 for better low light performance
 
 ============================================================================
 
