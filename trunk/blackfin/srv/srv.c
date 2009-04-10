@@ -70,7 +70,7 @@ int lfailsafe, rfailsafe;
 int failsafe_clock;
 
 /* Sonar globals */
-int sonar_data[5];
+int sonar_data[5], sonar_flag = 0;
 
 /* random number generator globals */
 unsigned int rand_seed = 0x55555555;
@@ -97,6 +97,7 @@ void init_io() {
     pwm2_mode = PWM_OFF;
     pwm1_init = 0;
     pwm2_init = 0;
+    sonar_flag = 0;
 }
 
 /* reset CPU */
@@ -308,6 +309,11 @@ void ping_sonar() {
 
 void sonar() {
     int t0, t1, t2, t3, t4, x1, x2, x3, x4, imask;
+    
+    if (!sonar_flag) {
+        sonar_flag = 1;
+        init_sonar();
+    }
     
     imask = *pPORTHIO & 0x3C00;
     *pPORTHIO |= 0x0002;       // force H1 high to trigger sonars

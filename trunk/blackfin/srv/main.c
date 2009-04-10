@@ -31,9 +31,7 @@ int main() {
     initRTC();
     initTMR4();
     init_uart0();
-//    init_uart1();  // use UART1 with GPS until GPIO soft-UART is ready
     init_colors();
-    init_sonar();
     disable_failsafe();
     serial_out_version();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
