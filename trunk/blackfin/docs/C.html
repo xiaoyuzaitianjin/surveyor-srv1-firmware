@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 7 April 2009</h3>
+<h3>SRV-1 C Interpreter - as of 11 April 2009</h3>
 
 <table width="700">
 <tbody>
@@ -80,6 +80,10 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
      &nbsp;&nbsp;- 2nd value determines which blob (largest to smallest)<br>
      &nbsp;&nbsp;- data returned in globals blobcnt, blobx1, blobx2, bloby1, bloby2<br><br>
 <li>int compass(): read HMC6352 compass<br><br>
+<li>int analog(channel): read AD7998 8-channel 12-bit A/D<br>
+     &nbsp;&nbsp;- channels 1-8 correspond to i2c device 0x20<br>
+     &nbsp;&nbsp;- channels 11-18 correspond to i2c device 0x23<br>
+     &nbsp;&nbsp;- channels 21-28 correspond to i2c device 0x24<br><br>
 <li>void gps(): parse $GPGGA string from gps<br>
     &nbsp;&nbsp;- data returned in globals gpslatdeg, gpslatmin, gpslondeg, gpslonmin, <br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gpsalt, gpsfix, gpssat, gpsutc<br><br>
@@ -103,7 +107,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 7 April 2009 - 23:50 GMT
+last updated 11 April 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

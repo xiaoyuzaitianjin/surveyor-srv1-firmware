@@ -19,12 +19,19 @@ SRV-1 firmware test build for Blackfin - 11 April 2009
 
 * changed default capture rates of OV7725 for better low light performance
 
-* added 'iW' command for multi-byte I2C write.  this can be used to 
-  reprogram the I2C address of the HMC6352 compass from 0x21 to 0x22.  to do 
-  this, from SRV1Test, in hex command mode, send 695721770044, then power 
-  cycle the HMC6352, then test that it moved to 0x22 by sending 69522241 a 
-  couple of times, and you should be getting good data from the new address
-  
+* added 'iW' command for multi-byte I2C writes.  this can be used to 
+  reprogram the I2C address of the HMC6352 compass from 0x21 to 0x22.  
+  to do this, make certain that you don't have an OV7725 camera installed, 
+  as it operates on I2C address 0x21.   from SRV1Test, in hex command mode, 
+  send 695721770044, then power cycle the HMC6352, then test that it moved 
+  to 0x22 by sending 69522241 a couple of times, and you should be getting 
+  good data from the compass at the new address
+
+* added support for AD7998 8-channel 12-bit A/D converter via C function
+  int x = analog(channel).  Channels 1-8 correspond to i2c device 0x20, 
+  channels 11-18 correspond to i2c device 0x23 and channels 21-28 
+  correspond to i2c device 0x24
+
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 15 March 2009 

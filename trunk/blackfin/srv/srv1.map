@@ -311,7 +311,7 @@ Linker script and memory map
                 0xffa063fc                nnset_pattern
                 0xffa06690                nnscale8x8
 
-.text           0x00000000     0x6f7c
+.text           0x00000000     0x70dc
  .text          0x00000000       0xf0 camera.o
                 0x00000000                camera_init
                 0x000000a8                camera_start
@@ -485,64 +485,65 @@ Linker script and memory map
                 0x00005788                LibGets
                 0x00005908                LibraryInit
                 0x00005770                LibGetc
- .text          0x00005994     0x13d4 picoc/library_surveyor.o
+ .text          0x00005994     0x1534 picoc/library_surveyor.o
                 0x00005d5c                Ctan
-                0x0000678c                Cvrcap
+                0x00006904                Cvrcap
                 0x00006470                Cwritei2c
-                0x000067b0                Csonar
+                0x00006928                Csonar
                 0x0000646c                Cnninit
                 0x00005b80                Csin
                 0x000059c4                Cioread
                 0x00006214                Cnnmatchblob
                 0x00005a8c                Claser
-                0x00006794                Crange
-                0x00006590                Cgps
+                0x0000690c                Crange
+                0x0000651c                Cgps
                 0x00005af0                Cvcolor
-                0x00006908                Cmotors2
+                0x00006a80                Cmotors2
                 0x000061e4                Cnnshow
-                0x00006890                Cservos
+                0x00006a08                Cservos
                 0x00005c6c                Ccos
                 0x00005fb0                Cacos
-                0x00006818                Cservos2
-                0x0000651c                Ccompass
-                0x000069a8                Cmotors
+                0x00006990                Cservos2
+                0x000066f0                Ccompass
+                0x00006b20                Cmotors
+                0x00006594                Canalog
                 0x00006080                Casin
                 0x00005a50                Cpoke
-                0x00006790                Cvcap
-                0x00006740                Cvpix
+                0x00006908                Cvcap
+                0x000068b8                Cvpix
                 0x00005ad0                Cbattery
                 0x00005e78                Catan
                 0x0000613c                Cnnlearnblob
                 0x000064e4                Creadi2c
                 0x000064a4                Creadi2c2
                 0x000059fc                Cpeek
-                0x00006aa0                Cinput
-                0x00006a60                Crand
-                0x00006a48                Ctime
+                0x00006c00                Cinput
+                0x00006bd8                Crand
+                0x00006bc0                Ctime
                 0x000063e4                Cnntrain
                 0x00005b6c                Cvdiff
                 0x00005994                Ciodir
-                0x00006a88                Cdelay
-                0x00006608                Cvblob
-                0x00006aec                PlatformLibraryInit
+                0x00006768                Cdelay
+                0x00006780                Cvblob
+                0x00006c4c                PlatformLibraryInit
                 0x00006320                Cnntest
                 0x00005f64                Cnnset
                 0x000059dc                Ciowrite
-                0x00006abc                Csignal
-                0x00006700                Cvmean
- .text          0x00006d68      0x16c picoc/platform.o
-                0x00006e38                PlatformPrintf
-                0x00006e54                LexFail
-                0x00006d68                PlatformVPrintf
-                0x00006e90                ProgramFail
- .text          0x00006ed4       0xa8 picoc/platform_surveyor.o
-                0x00006f0c                PlatformPutc
-                0x00006f14                PlatformGetLine
-                0x00006ed4                PlatformCleanup
-                0x00006efc                PlatformGetCharacter
-                0x00006ee0                PlatformExit
+                0x00006c1c                Csignal
+                0x00006878                Cvmean
+ .text          0x00006ec8      0x16c picoc/platform.o
+                0x00006f98                PlatformPrintf
+                0x00006fb4                LexFail
+                0x00006ec8                PlatformVPrintf
+                0x00006ff0                ProgramFail
+ .text          0x00007034       0xa8 picoc/platform_surveyor.o
+                0x0000706c                PlatformPutc
+                0x00007074                PlatformGetLine
+                0x00007034                PlatformCleanup
+                0x0000705c                PlatformGetCharacter
+                0x00007040                PlatformExit
 
-.l1data         0xff800000     0x16d4
+.l1data         0xff800000     0x16dc
  *(.data)
  .data          0xff800000        0x0 camera.o
  .data          0xff800000        0x0 edit.o
@@ -600,99 +601,99 @@ Linker script and memory map
  .data          0xff801554        0x0 picoc/variable.o
  .data          0xff801554       0x20 picoc/clibrary.o
                 0xff801554                CLibrary
- .data          0xff801574      0x160 picoc/library_surveyor.o
+ .data          0xff801574      0x168 picoc/library_surveyor.o
                 0xff801574                PlatformLibrary
- .data          0xff8016d4        0x0 picoc/platform.o
- .data          0xff8016d4        0x0 picoc/platform_surveyor.o
+ .data          0xff8016dc        0x0 picoc/platform.o
+ .data          0xff8016dc        0x0 picoc/platform_surveyor.o
  *(.l1data)
  *(.l1data.a)
 
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff8016d4     0x2388
+.rodata         0xff8016dc     0x23c4
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
-                0xff8016d4       0xb2 edit.o
+                0xff8016dc       0xb2 edit.o
                                  0xb4 (size before relaxing)
- *fill*         0xff801786        0x2 00
- .rodata        0xff801788       0x5c edit.o
+ *fill*         0xff80178e        0x2 00
+ .rodata        0xff801790       0x5c edit.o
  .rodata.str1.4
-                0xff8017e4        0x7 printf.o
+                0xff8017ec        0x7 printf.o
                                   0x8 (size before relaxing)
- *fill*         0xff8017eb        0x1 00
- .rodata        0xff8017ec      0x200 xmodem.o
+ *fill*         0xff8017f3        0x1 00
+ .rodata        0xff8017f4      0x200 xmodem.o
  .rodata.str1.4
-                0xff8019ec       0xaa gps.o
+                0xff8019f4       0xaa gps.o
                                  0xac (size before relaxing)
- *fill*         0xff801a96        0x2 00
+ *fill*         0xff801a9e        0x2 00
  .rodata.str1.4
-                0xff801a98       0x14 myfunc.o
- .rodata        0xff801aac      0x23c main.o
- .rodata        0xff801ce8      0x104 srv.o
+                0xff801aa0       0x14 myfunc.o
+ .rodata        0xff801ab4      0x23c main.o
+ .rodata        0xff801cf0      0x104 srv.o
  .rodata.str1.4
-                0xff801dec      0x5ea srv.o
+                0xff801df4      0x5ea srv.o
                                 0x5f8 (size before relaxing)
- *fill*         0xff8023d6        0x2 00
- .rodata        0xff8023d8       0x10 uart.o
+ *fill*         0xff8023de        0x2 00
+ .rodata        0xff8023e0       0x10 uart.o
  .rodata.str1.4
-                0xff8023e8       0x33 float.o
+                0xff8023f0       0x33 float.o
                                  0x34 (size before relaxing)
- *fill*         0xff80241b        0x1 00
+ *fill*         0xff802423        0x1 00
  .rodata.str1.4
-                0xff80241c       0x27 colors.o
+                0xff802424       0x27 colors.o
                                  0x28 (size before relaxing)
- *fill*         0xff802443        0x1 00
+ *fill*         0xff80244b        0x1 00
  .rodata.str1.4
-                0xff802444       0x5b spi.o
+                0xff80244c       0x5b spi.o
                                  0x5c (size before relaxing)
- *fill*         0xff80249f        0x1 00
+ *fill*         0xff8024a7        0x1 00
  .rodata.str1.4
-                0xff8024a0        0x8 neural.o
+                0xff8024a8        0x8 neural.o
                                   0xc (size before relaxing)
  .rodata.str1.4
-                0xff8024a8       0x57 picoc/picoc.o
+                0xff8024b0       0x57 picoc/picoc.o
                                  0x58 (size before relaxing)
- *fill*         0xff8024ff        0x1 00
+ *fill*         0xff802507        0x1 00
  .rodata.str1.4
-                0xff802500        0xe picoc/table.o
+                0xff802508        0xe picoc/table.o
                                  0x14 (size before relaxing)
- *fill*         0xff80250e        0x2 00
- .rodata        0xff802510      0x2cc picoc/lex.o
+ *fill*         0xff802516        0x2 00
+ .rodata        0xff802518      0x2cc picoc/lex.o
  .rodata.str1.4
-                0xff8027dc       0xee picoc/lex.o
+                0xff8027e4       0xee picoc/lex.o
                                 0x108 (size before relaxing)
- *fill*         0xff8028ca        0x2 00
+ *fill*         0xff8028d2        0x2 00
  .rodata.str1.4
-                0xff8028cc      0x1a1 picoc/parse.o
+                0xff8028d4      0x1a1 picoc/parse.o
                                 0x1a8 (size before relaxing)
- *fill*         0xff802a6d        0x3 00
- .rodata        0xff802a70       0x98 picoc/parse.o
+ *fill*         0xff802a75        0x3 00
+ .rodata        0xff802a78       0x98 picoc/parse.o
  .rodata.str1.4
-                0xff802b08      0x345 picoc/expression.o
+                0xff802b10      0x345 picoc/expression.o
                                 0x38c (size before relaxing)
- *fill*         0xff802e4d        0x3 00
- .rodata        0xff802e50      0x1e0 picoc/expression.o
+ *fill*         0xff802e55        0x3 00
+ .rodata        0xff802e58      0x1e0 picoc/expression.o
  .rodata.str1.4
-                0xff803030      0x12d picoc/type.o
+                0xff803038      0x12d picoc/type.o
                                 0x164 (size before relaxing)
- *fill*         0xff80315d        0x3 00
- .rodata        0xff803160       0x2c picoc/type.o
+ *fill*         0xff803165        0x3 00
+ .rodata        0xff803168       0x2c picoc/type.o
  .rodata.str1.4
-                0xff80318c       0x43 picoc/variable.o
+                0xff803194       0x43 picoc/variable.o
                                  0x6c (size before relaxing)
- *fill*         0xff8031cf        0x1 00
+ *fill*         0xff8031d7        0x1 00
  .rodata.str1.4
-                0xff8031d0       0x46 picoc/clibrary.o
+                0xff8031d8       0x46 picoc/clibrary.o
                                  0x54 (size before relaxing)
- *fill*         0xff803216        0x2 00
+ *fill*         0xff80321e        0x2 00
  .rodata.str1.4
-                0xff803218      0x6ce picoc/library_surveyor.o
-                                0x6e4 (size before relaxing)
- *fill*         0xff8038e6        0x2 00
- .rodata        0xff8038e8      0x16c picoc/library_surveyor.o
+                0xff803220      0x6fa picoc/library_surveyor.o
+                                0x710 (size before relaxing)
+ *fill*         0xff80391a        0x2 00
+ .rodata        0xff80391c      0x17c picoc/library_surveyor.o
  .rodata.str1.4
-                0xff803a54        0x8 picoc/platform.o
+                0xff803a98        0x8 picoc/platform.o
                                   0xc (size before relaxing)
  .rodata.str1.4
                 0x00000000       0x10 picoc/platform_surveyor.o
@@ -712,11 +713,11 @@ Linker script and memory map
  *(SORT(.dtors.*))
  *(.dtors)
 
-.sdram.bss      0x00006f7c        0x0
-                0x00006f7c                __sdram_bss_start = .
+.sdram.bss      0x000070dc        0x0
+                0x000070dc                __sdram_bss_start = .
  *(.bss.sdram)
-                0x00006f7c                . = ALIGN (0x4)
-                0x00006f7c                __sdram_bss_end = .
+                0x000070dc                . = ALIGN (0x4)
+                0x000070dc                __sdram_bss_end = .
 
 .bss            0xff900000     0x37d0
                 0xff900000                __bss_start = .
