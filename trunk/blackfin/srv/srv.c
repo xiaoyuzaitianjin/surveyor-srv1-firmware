@@ -737,6 +737,7 @@ void write_boot_flash () {
         irxy  - i2c read device x, register y, return '##ir value'
         iRxy  - i2c read device x, register y, return 2-byte '##iR value'
         iwxyz - i2c write device x, register y, value z, return '##iw'
+        iWabcd - i2c write device a, data b, c, d, return '##ix'
    Serial protocol char: i */
 void process_i2c() {
     unsigned char i2c_device, i2c_data[2];
@@ -766,8 +767,7 @@ void process_i2c() {
             i2c_data[0] = (unsigned char)getch();
             i2c_data[1] = (unsigned char)getch();
             i2c_data[2] = (unsigned char)getch();
-            i2c_data[3] = (unsigned char)getch();
-            i2cwrite(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
+            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
             printf("##iW%2x", i2c_device);
             break;
         default:

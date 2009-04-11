@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 10 April 2009 
+SRV-1 firmware test build for Blackfin - 11 April 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added 'm' command to control 2nd bank of timers using PWM - same syntax
@@ -19,6 +19,12 @@ SRV-1 firmware test build for Blackfin - 10 April 2009
 
 * changed default capture rates of OV7725 for better low light performance
 
+* added 'iW' command for multi-byte I2C write.  this can be used to 
+  reprogram the I2C address of the HMC6352 compass from 0x21 to 0x22.  to do 
+  this, from SRV1Test, in hex command mode, send 695721770044, then power 
+  cycle the HMC6352, then test that it moved to 0x22 by sending 69522241 a 
+  couple of times, and you should be getting good data from the new address
+  
 ============================================================================
 
 SRV-1 firmware test build for Blackfin - 15 March 2009 
