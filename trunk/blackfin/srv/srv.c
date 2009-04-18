@@ -294,6 +294,139 @@ void led1_on() {
     *pPORTGIO = 0x0200;  // turn on LED1
 }
 
+/* init LIS3LV02DQ 3-axis tilt sensor with i2c device id 0x1D */
+void init_tilt()
+{
+    unsigned char i2c_data[3], device_id;
+    
+    device_id = 0x1D;
+    i2c_data[0] = 0x20;
+    i2c_data[1] = 0x87;
+    i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
+    delayMS(10);
+}
+
+unsigned int tilt(unsigned int channel)
+{
+    unsigned char i2c_data[2], ch1;
+    unsigned int ix;
+    
+    switch(channel) {
+        case 1:  // x axis
+            ch1 = 0x28;
+            break;  
+        case 2:  // y axis
+            ch1 = 0x2A;
+            break;  
+        case 3:  // z axis
+            ch1 = 0x2C;
+            break;  
+        default:
+            return 0;  // invalid channel
+    }
+    i2c_data[0] = ch1;
+    i2cread(0x1D, (unsigned char *)i2c_data, 1, SCCB_ON);
+    ix = (unsigned int)i2c_data[0];
+    i2c_data[0] = ch1 + 1;
+    delayUS(1000);
+    i2cread(0x1D, (unsigned char *)i2c_data, 1, SCCB_ON);
+    ix += (unsigned int)i2c_data[0] << 8;
+    return ix;
+}
+
+void read_tilt()
+{
+    unsigned int channel;
+    channel = (unsigned int)(getch() & 0x0F);
+    printf("##$T%d %4d\n\r", channel, tilt(channel));
+}
+
+/* init all 3 possible AD7998 A/D's */
+void init_analog() {
+    unsigned char i2c_data[3], device_id;
+    unsigned int ix;
+    
+    for (ix=0; ix<3; ix++) {
+        switch (ix) {
+            case 0:
+                device_id = 0x20;
+                break;
+            case 1:
+                device_id = 0x23;
+                break;
+            case 2:
+                device_id = 0x24;
+                break;
+        }
+        // set timer register 3
+        i2c_data[0] = 0x03;
+        i2c_data[1] = 0x01;
+        i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
+        delayMS(10);
+        // set analog channel 
+        i2c_data[0] = 0x02;
+        i2c_data[1] = 0x0F;
+        i2c_data[2] = 0xF0;
+        i2cwritex(device_id, (unsigned char *)i2c_data, 3, SCCB_ON);
+        delayMS(10);
+    }
+}
+
+/* read AD7998 - channels 01-08, 11-17 or 21-27 */
+unsigned int analog(unsigned int ix)
+{
+    unsigned char i2c_data[3], device_id;
+    unsigned int channel;
+    unsigned char mask1[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x04, 0x08 };
+    unsigned char mask2[] = { 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00 };
+    
+    // decide which i2c device based on channel range
+    if ((ix<1) || (ix>28))
+        return 0xFFFF;  // invalid channel
+    device_id = 0;
+    switch (ix / 10) {
+        case 0:
+            device_id = 0x20;  // channels 1-8
+            break;
+        case 1:
+            device_id = 0x23;  // channels 11-18
+            break;
+        case 2:
+            device_id = 0x24;  // channels 21-28
+            break;
+    }
+    channel = ix % 10;
+    if ((channel<1) || (channel>8))
+        return 0xFFFF;  // invalid channel
+    
+    // set timer register 3
+    i2c_data[0] = 0x03;
+    i2c_data[1] = 0x01;
+    i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
+
+    // set analog channel 
+    i2c_data[0] = 0x02;
+    i2c_data[1] = mask1[channel-1];
+    i2c_data[2] = mask2[channel-1];
+    i2cwritex(device_id, (unsigned char *)i2c_data, 3, SCCB_ON);
+
+    // small delay
+    delayUS(1000);
+
+    // read data
+    i2c_data[0] = 0x00;
+    i2cread(device_id, (unsigned char *)i2c_data, 2, SCCB_ON);
+    ix = (((i2c_data[0] & 0x0F) << 8) + i2c_data[1]);
+    return ix;
+}
+
+void read_analog()
+{
+    unsigned int channel;
+    channel = ((unsigned int)(getch() & 0x0F) * 10) + (unsigned int)(getch() & 0x0F);
+    printf("##$A%d %4d\n\r", channel, analog(channel));
+}
+
 /* use GPIO H10 (pin 27), H11 (pin 28), H12 (pin 29), H13 (pin 30) as sonar inputs -
     GPIO H1 (pin 18) is used to trigger the sonar reading (low-to-high transition) */
 void init_sonar() {  

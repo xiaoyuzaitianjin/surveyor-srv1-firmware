@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 11 April 2009 
+SRV-1 firmware test build for Blackfin - 18 April 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added 'm' command to control 2nd bank of timers using PWM - same syntax
@@ -31,6 +31,12 @@ SRV-1 firmware test build for Blackfin - 11 April 2009
   int x = analog(channel).  Channels 1-8 correspond to i2c device 0x20, 
   channels 11-18 correspond to i2c device 0x23 and channels 21-28 
   correspond to i2c device 0x24
+  
+* added $Axx console command to read analog channels 01-08, 11-18, 21-28
+
+* added support for LIS3LV02DQ 3-axis accelerometer, with tilt() command
+  in the C interpreter and $Tx console command.  tilt(1) or $T1 reads x-axis,
+  tilt(2) or $T2 reads y-axis, tilt(3) or $T3 reads z-axis
 
 ============================================================================
 

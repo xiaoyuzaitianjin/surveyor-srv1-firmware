@@ -32,6 +32,8 @@ int main() {
     initTMR4();
     init_uart0();
     init_colors();
+    init_analog();
+    init_tilt();
     disable_failsafe();
     serial_out_version();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
@@ -109,6 +111,12 @@ int main() {
                             break;
                         case 'g':  // gps test
                             gps_show();
+                            break;
+                        case 'A':  // read analog channel 1-8, 11-18 or 21-28
+                            read_analog();
+                            break;
+                        case 'T':  // read tilt sensor channel 1-3 (x, y or z axis)
+                            read_tilt();
                             break;
                     }
                     break;

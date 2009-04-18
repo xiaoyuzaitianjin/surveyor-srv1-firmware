@@ -32,7 +32,7 @@ srv1.bin: $(OBJS)
 main.o:  main.c srv.h ov9655.h uart.h xmodem.h i2c.h print.h config.h
 
 srv.o:   srv.c config.h uart.h i2c.h ov9655.h camera.h jpeg.h xmodem.h  \
-         stm_m25p32.h c.h lisp.h font8x8.h colors.h malloc.h spi.h print.h float.h
+         stm_m25p32.h font8x8.h colors.h malloc.h spi.h print.h float.h
 
 uart.o:  uart.c config.h
 

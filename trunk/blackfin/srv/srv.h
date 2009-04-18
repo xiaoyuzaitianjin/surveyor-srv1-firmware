@@ -58,6 +58,16 @@ void serial_out_flashbuffer ();
 /* I2C */
 void process_i2c();
 
+/* Analog */
+void init_analog();
+unsigned int analog(unsigned int);
+void read_analog();
+
+/* Tilt */
+void init_tilt();
+unsigned int tilt(unsigned int);
+void read_tilt();
+
 /* Lasers */
 void lasers_on ();
 void lasers_off ();
