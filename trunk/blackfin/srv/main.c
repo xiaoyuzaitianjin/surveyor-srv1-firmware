@@ -115,6 +115,9 @@ int main() {
                         case 'A':  // read analog channel 1-8, 11-18 or 21-28
                             read_analog();
                             break;
+                        case 'C':  // read HMC6352 compass on i2c port 0x22
+                            read_compass();
+                            break;
                         case 'T':  // read tilt sensor channel 1-3 (x, y or z axis)
                             read_tilt();
                             break;

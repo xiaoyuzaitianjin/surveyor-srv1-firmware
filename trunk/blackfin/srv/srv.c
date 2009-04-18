@@ -341,6 +341,20 @@ void read_tilt()
     printf("##$T%d %4d\n\r", channel, tilt(channel));
 }
 
+void read_compass()
+{
+    unsigned char i2c_data[3];
+    unsigned int ix;
+
+    i2c_data[0] = 0x41;  // read compass twice to clear last reading
+    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
+    delayUS(1000);
+    i2c_data[0] = 0x41;
+    i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
+    ix = (((unsigned int)i2c_data[0] << 8) + i2c_data[1]) / 10;
+    printf("##$C %3d\n\r", ix);
+}
+
 /* init all 3 possible AD7998 A/D's */
 void init_analog() {
     unsigned char i2c_data[3], device_id;
