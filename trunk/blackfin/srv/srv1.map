@@ -317,7 +317,7 @@ Linker script and memory map
                 0xffa067f4                nnset_pattern
                 0xffa06a88                nnscale8x8
 
-.text           0x00000000     0x7118
+.text           0x00000000     0x7430
  .text          0x00000000       0xf0 camera.o
                 0x00000000                camera_init
                 0x000000a8                camera_start
@@ -423,132 +423,142 @@ Linker script and memory map
                 0x000028d8                LexScanGetToken
                 0x00002bc4                LexTokenise
                 0x000027c0                LexGetStringConstant
- .text          0x00002fbc      0xbc8 picoc/parse.o
+ .text          0x00002fbc      0xbd0 picoc/parse.o
                 0x00003084                ParseFunctionDefinition
-                0x00003968                ParseBlock
+                0x00003970                ParseBlock
                 0x000032a4                ParseDeclaration
                 0x00002fcc                ParseCleanup
                 0x00002fbc                ParserCopyPos
-                0x000039f0                ParseStatementMaybeRun
-                0x00003a24                ParseFor
-                0x000038e0                Parse
+                0x000039f8                ParseStatementMaybeRun
+                0x00003a2c                ParseFor
+                0x000038e8                Parse
                 0x00003408                ParseStatement
                 0x00002fe0                ParseMacroDefinition
-                0x0000386c                ParseInteractive
- .text          0x00003b84      0xb5c picoc/expression.o
-                0x00004418                ExpressionParseInt
-                0x00003b84                ParsePushInt
-                0x00003bac                ExpressionParseValue
-                0x00004484                ExpressionParseFunctionCall
-                0x0000401c                ExpressionParse
- .text          0x000046e0      0x23c picoc/heap.o
-                0x00004794                HeapFree
-                0x000048c8                HeapAllocStack
-                0x00004754                HeapPushStackFrame
-                0x00004774                HeapPopStackFrame
-                0x000047ec                HeapAlloc
-                0x0000472c                HeapPopStack
-                0x000046e0                HeapInit
- .text          0x0000491c      0x7e4 picoc/type.o
-                0x00004944                TypeStackSizeValue
-                0x000049ec                TypeInit
-                0x000050b0                TypeCleanupNode
-                0x00004974                TypeAddBaseType
-                0x00004c84                TypeParseStruct
-                0x000050f4                TypeCleanup
-                0x00004958                TypeSize
-                0x00004edc                TypeParse
-                0x00004f08                TypeParseIdentPart
-                0x00004ab4                TypeGetMatching
-                0x00004e44                TypeParseFront
-                0x0000491c                TypeSizeValue
-                0x000049a8                TypeAdd
-                0x00004b28                TypeParseEnum
- .text          0x00005100      0x5b8 picoc/variable.o
-                0x0000513c                VariableDefined
-                0x000053d0                VariableStackPop
-                0x000051f4                VariableStackFramePop
-                0x000054e4                VariableAllocValueAndData
-                0x0000551c                VariableDefinePlatformVar
-                0x00005310                VariableFree
-                0x000053b0                VariableCleanup
-                0x00005100                VariableStringLiteralDefine
-                0x0000566c                VariableAllocValueFromType
-                0x0000536c                VariableTableCleanup
-                0x00005114                VariableStringLiteralGet
-                0x000052c0                VariableInit
-                0x00005244                VariableStackFrameAdd
-                0x00005198                VariableGet
-                0x000055c0                VariableAllocValueAndCopy
-                0x000054bc                VariableAllocValueShared
-                0x00005484                VariableAllocValueFromExistingData
-                0x0000543c                VariableAlloc
-                0x00005608                VariableDefine
- .text          0x000056b8      0x2dc picoc/clibrary.o
-                0x000057d4                LibPrintf
-                0x000056e0                PrintInt
-                0x000056b8                PrintStr
-                0x00005788                LibGets
-                0x00005908                LibraryInit
-                0x00005770                LibGetc
- .text          0x00005994     0x1570 picoc/library_surveyor.o
-                0x00005d5c                Ctan
-                0x00006940                Cvrcap
-                0x00006470                Cwritei2c
-                0x00006964                Csonar
-                0x0000646c                Cnninit
-                0x00005b80                Csin
-                0x000059c4                Cioread
-                0x00006214                Cnnmatchblob
-                0x00005a8c                Claser
-                0x00006948                Crange
-                0x0000651c                Cgps
-                0x00005af0                Cvcolor
-                0x00006abc                Cmotors2
-                0x000061e4                Cnnshow
-                0x00006a44                Cservos
-                0x00005c6c                Ccos
-                0x00005fb0                Cacos
-                0x000069cc                Cservos2
-                0x00006728                Ccompass
-                0x00006b5c                Cmotors
-                0x00006594                Canalog
-                0x00006080                Casin
-                0x00005a50                Cpoke
-                0x00006944                Cvcap
-                0x000068f4                Cvpix
-                0x00005ad0                Cbattery
-                0x00005e78                Catan
-                0x000066f0                Ctilt
-                0x0000613c                Cnnlearnblob
-                0x000064e4                Creadi2c
-                0x000064a4                Creadi2c2
-                0x000059fc                Cpeek
-                0x00006c3c                Cinput
-                0x00006c14                Crand
-                0x00006bfc                Ctime
-                0x000063e4                Cnntrain
-                0x00005b6c                Cvdiff
-                0x00005994                Ciodir
-                0x000067a4                Cdelay
-                0x000067bc                Cvblob
-                0x00006c88                PlatformLibraryInit
-                0x00006320                Cnntest
-                0x00005f64                Cnnset
-                0x000059dc                Ciowrite
-                0x00006c58                Csignal
-                0x000068b4                Cvmean
- .text          0x00006f04      0x16c picoc/platform.o
-                0x00006fd4                PlatformPrintf
-                0x00006ff0                LexFail
-                0x00006f04                PlatformVPrintf
-                0x0000702c                ProgramFail
- .text          0x00007070       0xa8 picoc/platform_surveyor.o
-                0x000070a8                PlatformPutc
-                0x000070b0                PlatformGetLine
-                0x00007070                PlatformCleanup
-                0x00007098                PlatformGetCharacter
-                0x0000707c                PlatformExit
+                0x00003874                ParseInteractive
+ .text          0x00003b8c      0xe4c picoc/expression.o
+                0x00003d68                ExpressionPostfixOperator
+                0x00004714                ExpressionParseInt
+                0x00003d2c                ExpressionPushInt
+                0x00003bec                ExpressionGetStructElement
+                0x00003e50                ExpressionPrefixOperator
+                0x00003b98                ExpressionStackPushOperator
+                0x00003b8c                debugf
+                0x00004330                ExpressionStackCollapse
+                0x00003e04                ExpressionStackPushValueByType
+                0x00003fc4                ExpressionStackPushValue
+                0x00004780                ExpressionParseFunctionCall
+                0x00003fe8                ExpressionInfixOperator
+                0x00003bc8                ExpressionStackPushValueNode
+                0x0000441c                ExpressionParse
+                0x00003e30                ExpressionStackPushLValue
+ .text          0x000049d8      0x25c picoc/heap.o
+                0x00004a68                HeapFree
+                0x00004b9c                HeapAllocStack
+                0x00004a24                HeapPushStackFrame
+                0x00004a44                HeapPopStackFrame
+                0x00004ac0                HeapAlloc
+                0x00004bf0                HeapPopStack
+                0x000049d8                HeapInit
+ .text          0x00004c34      0x7e4 picoc/type.o
+                0x00004c5c                TypeStackSizeValue
+                0x00004d04                TypeInit
+                0x000053c8                TypeCleanupNode
+                0x00004c8c                TypeAddBaseType
+                0x00004f9c                TypeParseStruct
+                0x0000540c                TypeCleanup
+                0x00004c70                TypeSize
+                0x000051f4                TypeParse
+                0x00005220                TypeParseIdentPart
+                0x00004dcc                TypeGetMatching
+                0x0000515c                TypeParseFront
+                0x00004c34                TypeSizeValue
+                0x00004cc0                TypeAdd
+                0x00004e40                TypeParseEnum
+ .text          0x00005418      0x5b8 picoc/variable.o
+                0x00005454                VariableDefined
+                0x000056e8                VariableStackPop
+                0x0000550c                VariableStackFramePop
+                0x000057fc                VariableAllocValueAndData
+                0x00005834                VariableDefinePlatformVar
+                0x00005628                VariableFree
+                0x000056c8                VariableCleanup
+                0x00005418                VariableStringLiteralDefine
+                0x00005984                VariableAllocValueFromType
+                0x00005684                VariableTableCleanup
+                0x0000542c                VariableStringLiteralGet
+                0x000055d8                VariableInit
+                0x0000555c                VariableStackFrameAdd
+                0x000054b0                VariableGet
+                0x000058d8                VariableAllocValueAndCopy
+                0x000057d4                VariableAllocValueShared
+                0x0000579c                VariableAllocValueFromExistingData
+                0x00005754                VariableAlloc
+                0x00005920                VariableDefine
+ .text          0x000059d0      0x2dc picoc/clibrary.o
+                0x00005aec                LibPrintf
+                0x000059f8                PrintInt
+                0x000059d0                PrintStr
+                0x00005aa0                LibGets
+                0x00005c20                LibraryInit
+                0x00005a88                LibGetc
+ .text          0x00005cac     0x1570 picoc/library_surveyor.o
+                0x00006074                Ctan
+                0x00006c58                Cvrcap
+                0x00006788                Cwritei2c
+                0x00006c7c                Csonar
+                0x00006784                Cnninit
+                0x00005e98                Csin
+                0x00005cdc                Cioread
+                0x0000652c                Cnnmatchblob
+                0x00005da4                Claser
+                0x00006c60                Crange
+                0x00006834                Cgps
+                0x00005e08                Cvcolor
+                0x00006dd4                Cmotors2
+                0x000064fc                Cnnshow
+                0x00006d5c                Cservos
+                0x00005f84                Ccos
+                0x000062c8                Cacos
+                0x00006ce4                Cservos2
+                0x00006a40                Ccompass
+                0x00006e74                Cmotors
+                0x000068ac                Canalog
+                0x00006398                Casin
+                0x00005d68                Cpoke
+                0x00006c5c                Cvcap
+                0x00006c0c                Cvpix
+                0x00005de8                Cbattery
+                0x00006190                Catan
+                0x00006a08                Ctilt
+                0x00006454                Cnnlearnblob
+                0x000067fc                Creadi2c
+                0x000067bc                Creadi2c2
+                0x00005d14                Cpeek
+                0x00006f54                Cinput
+                0x00006f2c                Crand
+                0x00006f14                Ctime
+                0x000066fc                Cnntrain
+                0x00005e84                Cvdiff
+                0x00005cac                Ciodir
+                0x00006abc                Cdelay
+                0x00006ad4                Cvblob
+                0x00006fa0                PlatformLibraryInit
+                0x00006638                Cnntest
+                0x0000627c                Cnnset
+                0x00005cf4                Ciowrite
+                0x00006f70                Csignal
+                0x00006bcc                Cvmean
+ .text          0x0000721c      0x16c picoc/platform.o
+                0x000072ec                PlatformPrintf
+                0x00007308                LexFail
+                0x0000721c                PlatformVPrintf
+                0x00007344                ProgramFail
+ .text          0x00007388       0xa8 picoc/platform_surveyor.o
+                0x000073c0                PlatformPutc
+                0x000073c8                PlatformGetLine
+                0x00007388                PlatformCleanup
+                0x000073b0                PlatformGetCharacter
+                0x00007394                PlatformExit
 
 .l1data         0xff800000     0x16e4
  *(.data)
@@ -604,6 +614,7 @@ Linker script and memory map
  .data          0xff801548        0x0 picoc/parse.o
  .data          0xff801548        0x0 picoc/expression.o
  .data          0xff801548        0xc picoc/heap.o
+                0xff801548                HeapStackTop
  .data          0xff801554        0x0 picoc/type.o
  .data          0xff801554        0x0 picoc/variable.o
  .data          0xff801554       0x20 picoc/clibrary.o
@@ -618,7 +629,7 @@ Linker script and memory map
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff8016e4     0x2548
+.rodata         0xff8016e4     0x25d4
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
                 0xff8016e4       0xb2 edit.o
@@ -677,30 +688,34 @@ Linker script and memory map
  *fill*         0xff802bd5        0x3 00
  .rodata        0xff802bd8       0x98 picoc/parse.o
  .rodata.str1.4
-                0xff802c70      0x345 picoc/expression.o
+                0xff802c70      0x346 picoc/expression.o
                                 0x38c (size before relaxing)
- *fill*         0xff802fb5        0x3 00
- .rodata        0xff802fb8      0x1e0 picoc/expression.o
+ *fill*         0xff802fb6        0x2 00
+ .rodata        0xff802fb8      0x264 picoc/expression.o
  .rodata.str1.4
-                0xff803198      0x12d picoc/type.o
+                0xff80321c        0x6 picoc/heap.o
+                                  0x8 (size before relaxing)
+ *fill*         0xff803222        0x2 00
+ .rodata.str1.4
+                0xff803224      0x12d picoc/type.o
                                 0x164 (size before relaxing)
- *fill*         0xff8032c5        0x3 00
- .rodata        0xff8032c8       0x2c picoc/type.o
+ *fill*         0xff803351        0x3 00
+ .rodata        0xff803354       0x2c picoc/type.o
  .rodata.str1.4
-                0xff8032f4       0x43 picoc/variable.o
+                0xff803380       0x43 picoc/variable.o
                                  0x6c (size before relaxing)
- *fill*         0xff803337        0x1 00
+ *fill*         0xff8033c3        0x1 00
  .rodata.str1.4
-                0xff803338       0x46 picoc/clibrary.o
+                0xff8033c4       0x46 picoc/clibrary.o
                                  0x54 (size before relaxing)
- *fill*         0xff80337e        0x2 00
+ *fill*         0xff80340a        0x2 00
  .rodata.str1.4
-                0xff803380      0x726 picoc/library_surveyor.o
+                0xff80340c      0x726 picoc/library_surveyor.o
                                 0x73c (size before relaxing)
- *fill*         0xff803aa6        0x2 00
- .rodata        0xff803aa8      0x17c picoc/library_surveyor.o
+ *fill*         0xff803b32        0x2 00
+ .rodata        0xff803b34      0x17c picoc/library_surveyor.o
  .rodata.str1.4
-                0xff803c24        0x8 picoc/platform.o
+                0xff803cb0        0x8 picoc/platform.o
                                   0xc (size before relaxing)
  .rodata.str1.4
                 0x00000000       0x10 picoc/platform_surveyor.o
@@ -720,11 +735,11 @@ Linker script and memory map
  *(SORT(.dtors.*))
  *(.dtors)
 
-.sdram.bss      0x00007118        0x0
-                0x00007118                __sdram_bss_start = .
+.sdram.bss      0x00007430        0x0
+                0x00007430                __sdram_bss_start = .
  *(.bss.sdram)
-                0x00007118                . = ALIGN (0x4)
-                0x00007118                __sdram_bss_end = .
+                0x00007430                . = ALIGN (0x4)
+                0x00007430                __sdram_bss_end = .
 
 .bss            0xff900000     0x37d0
                 0xff900000                __bss_start = .
