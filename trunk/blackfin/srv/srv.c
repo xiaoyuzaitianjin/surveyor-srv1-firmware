@@ -33,6 +33,7 @@
 #include "string.h"
 #include "neural.h"
 #include "float.h"
+#include "sdcard.h"
 
 #include "srv.h"
 
@@ -88,7 +89,8 @@ void init_io() {
     *pPORTHIO_DIR |= 0x0040;  // set PORTH6 to output for serial flow control
     *pPORTHIO = 0x0000;       // set output low 
     *pPORTHIO_INEN |= 0x000D; // enable inputs: Matchport RTS0 (H0), battery (H2), master/slave (H3)
-    *pPORTHIO_DIR |= 0x0380;  // set up lasers
+    *pPORTHIO_DIR |= 0x0380;  // set up lasers - note that GPIO-H8 is used for SD SPI select on RCM board
+    *pPORTHIO |= 0x0100;      // set GPIO-H8 high in case it's used for SD SPI select 
     if (*pPORTHIO & 0x0008)   // check SVS master/slave bit
         master = 0;
     else
@@ -1655,6 +1657,16 @@ void process_neuralnet() {
             nndisplay(ix);
             break;
     }
+}
+
+void testSD() {
+    unsigned int numsec;
+    
+    InitSD();
+    printf("CardInit() returns %d\n\r", CardInit());
+    printf("GetCardParams() returns %d     ", GetCardParams(&numsec));
+    printf("%d sectors found\n\r", numsec);
+    CloseSD();
 }
 
 /* pseudo-random number generator based on Galois linear feedback shift register

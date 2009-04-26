@@ -130,6 +130,7 @@ void write_user_sector (int);
 void write_boot_flash ();
 void clear_flash_buffer ();
 void crc_flash_buffer ();
+void testSD();
 
 /* Motors */
 void init_motors ();

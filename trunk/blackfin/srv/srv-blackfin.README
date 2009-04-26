@@ -2,7 +2,16 @@
 
 ============================================================================
 
-SRV-1 firmware test build for Blackfin - 18 April 2009 
+SRV-1 firmware build for Blackfin - 26 April 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* added sdcard.c and sdcard.h for microSD card interface.  work in progress - 
+  uses GPIO-H8 for SPI_SELECT on RCM board.  '$S' command tests presence
+  and size of microSD card.  reads and writes will follow
+  
+============================================================================
+
+SRV-1 firmware build for Blackfin - 18 April 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added 'm' command to control 2nd bank of timers using PWM - same syntax

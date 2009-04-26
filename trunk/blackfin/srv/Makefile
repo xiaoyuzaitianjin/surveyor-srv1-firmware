@@ -1,5 +1,5 @@
 CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c \
-  xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c gps.c \
+  xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c gps.c sdcard.c \
   picoc/picoc.c picoc/table.c picoc/lex.c picoc/parse.c picoc/expression.c \
   picoc/heap.c picoc/type.c picoc/variable.c picoc/clibrary.c \
   picoc/library_surveyor.c picoc/platform.c picoc/platform_surveyor.c
@@ -32,7 +32,7 @@ srv1.bin: $(OBJS)
 main.o:  main.c srv.h ov9655.h uart.h xmodem.h i2c.h print.h config.h
 
 srv.o:   srv.c config.h uart.h i2c.h ov9655.h camera.h jpeg.h xmodem.h  \
-         stm_m25p32.h font8x8.h colors.h malloc.h spi.h print.h float.h
+         stm_m25p32.h font8x8.h colors.h malloc.h spi.h print.h sdcard.h $Sfloat.h
 
 uart.o:  uart.c config.h
 

@@ -121,6 +121,9 @@ int main() {
                         case 'T':  // read tilt sensor channel 1-3 (x, y or z axis)
                             read_tilt();
                             break;
+                        case 'S':  // test SD card interface on RCM
+                            testSD();
+                            break;
                     }
                     break;
                 case '%': // jump to user defined functions in myfunc.c
