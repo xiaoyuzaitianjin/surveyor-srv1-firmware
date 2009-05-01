@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 13 April 2009</h3>
+<h3>SRV-1 C Interpreter - as of 1 May 2009</h3>
 
 <table width="700">
 <tbody>
@@ -91,24 +91,28 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>int sonar(int): ping modules 1, 2, 3 or 4<br><br>
 <li>int tan(int): tan(angle) * 100<br><br>
 <li>int tilt(int):  return tilt sensor reading from channel 1 (x axis), 2 (y axis) or 3 (z axis)<br><br>
+     &nbsp;&nbsp;- int x = tilt(1);  int y = tilt(2);  int z = tilt(3);<br><br>
 <li>int time():  return time in milliseconds since startup<br><br>
 <li>int vblob(int, int): blob search on color xxx - returns number of blobs found <br>
+     &nbsp;&nbsp;- 'int' return value indicates how many matching blobs were found<br>
      &nbsp;&nbsp;- 2nd value determines which blob (largest to smallest)<br>
      &nbsp;&nbsp;- data returned in globals blobcnt, blobx1, blobx2, bloby1, bloby2<br><br>
 <li>void vcap(): capture video frame<br><br>
 <li>void vcolor(int, int, int, int, int, int, int): set color bin with<br> 
      &nbsp;&nbsp;&nbsp;&nbsp;ymin, ymax, umin, umax, vmin, vmax<br><br>
-<li>void vdiff(int): enable/disable differencing with vcap()<br><br>
+<li>void vdiff(int): enable/disable differencing with vcap()<br>
+     &nbsp;&nbsp;- vdiff(1) enables / vdiff(0) disables<br><br>
 <li>void vmean(): get YUV means over full frame<br>
      &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
-<li>void vpix(int, int): get YUV values of vpix(x, y)<br><br>
+<li>void vpix(int, int): get YUV values of vpix(x, y)<br>
+     &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
 <li>void vrcap(): capture reference frame for differencing<br><br>
 <li>void writei2c(int, int, int): write byte to I2C port<br><br>
 </ul>
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 18 April 2009 - 23:50 GMT
+last updated 1 May 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>
