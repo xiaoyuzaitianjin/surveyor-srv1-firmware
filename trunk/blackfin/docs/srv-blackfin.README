@@ -2,13 +2,25 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 26 April 2009 
+SRV-1 firmware build for Blackfin - 12 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added sdcard.c and sdcard.h for microSD card interface.  work in progress - 
   uses GPIO-H8 for SPI_SELECT on RCM board.  '$S' command tests presence
   and size of microSD card.  reads and writes will follow
   
+* fixed various problems with sonar functions
+
+* changed 'X' xmodem receive function to clear flash buffer before receiving 
+  data.  the xmodem transfer previously did not clear the buffer, so old
+  data would remain in the buffer after the end of the newly transferred file
+
+* added 'vf' console command and vfind() C function to count number of 
+  matching pixels for a given color bin in range 1, c2, y1, y2
+  
+* added 'va' console command and vcam() C function to enable/disable camera's
+  AGC, AWB and AEC functions
+
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 18 April 2009 

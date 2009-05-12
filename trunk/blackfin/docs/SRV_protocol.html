@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
 <h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 
-18 April 2009</h3>
+11 May 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -153,6 +153,7 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </th></tr><tr><th>Special Commands</th><th></th><th>
 </th></tr><tr><th></th><th></th><th>
 </th></tr><tr><td>'$!'</td><td></td><td>reset Blackfin
+</th></tr><tr><td>'$g'</td><td></td><td>parse GPS input
 </th></tr><tr><td>'$R'</td><td></td><td>SVS command - configures slave Blackfin to receive SPI transfer to flash buffer
 </th></tr><tr><td>'$X'</td><td></td><td>SVS command - configures master Blackfin to transfer contents of flash buffer via SPI
 </th></tr><tr><td>'$Axx'</td><td>'##$Axx yyyy\n'</td><td>read AD7998 A/D channel xx (01-08, 11-18 or 21-28)
@@ -165,7 +166,8 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </th></tr><tr><th></th><th></th><th>
 </td></tr><tr><td>all parameters are sent as ASCII decimal characters ('0' - '9')</td><td></td><td>
 </th></tr><tr><th></th><th></th><th>
-<tr><td>'vbc'</td><td>'##vbc x1 x2 y1 y2    ssss...\n'</td><td>the
+<tr><td>'vax'</td><td>'##vax\n'</td><td>the 'va' command enables/disables automatic gain, white balance and exposure camera functions (default x=7)<br>  x=4 -> AGC enable<br> x=2 -> AWB enable<br> x=1 -> AEC enable<br>  x=7 -> AGC+AWB+AEC on<br>  x=0 -> AGC+AWB+AEC off
+</td></tr><tr><td>'vbc'</td><td>'##vbc x1 x2 y1 y2    ssss...\n'</td><td>the
 'vb' command searches for blobs matching the colors in color bin #c,
 and returns coordinates of an x1, x2, y1, y2 rectangular region
 containing the matching pixels, along with a count of matching pixels
@@ -220,7 +222,7 @@ See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a>
 for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 18 April 2009 - 23:50 GMT
+last updated 11 May 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

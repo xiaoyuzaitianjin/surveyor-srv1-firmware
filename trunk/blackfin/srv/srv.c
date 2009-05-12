@@ -446,6 +446,7 @@ void read_analog()
 /* use GPIO H10 (pin 27), H11 (pin 28), H12 (pin 29), H13 (pin 30) as sonar inputs -
     GPIO H1 (pin 18) is used to trigger the sonar reading (low-to-high transition) */
 void init_sonar() {  
+    *pPORTHIO_INEN &= 0xC3FF;
     *pPORTHIO_INEN |= 0x3C00;  // enable H27, H28, H29, H30 as inputs
     *pPORTHIO_DIR |= 0x0002;  // set up sonar trigger
     *pPORTHIO &= 0xFFFD;       // force H1 low
@@ -453,6 +454,7 @@ void init_sonar() {
 }
 
 void ping_sonar() {
+    sonar();
     printf("##ping %d %d %d %d\n\r", sonar_data[1], sonar_data[2], sonar_data[3], sonar_data[4]);
 }
 
@@ -482,22 +484,34 @@ void sonar() {
     }
 
     *pPORTHIO &= 0xFFFD;       // force H1 low to disable sonar
-    if (imask & 0x0400)
+    if (imask & 0x0400) {
         x1 = 0;
-    else
+    }else {
+        if (x1 < t1)
+            t1 -= PERIPHERAL_CLOCK;
         x1 = (x1 - t1) / 200;
-    if (imask & 0x0800)
+    }
+    if (imask & 0x0800) {
         x2 = 0;
-    else
+    } else {
+        if (x2 < t2)
+            t2 -= PERIPHERAL_CLOCK;
         x2 = (x2 - t2) / 200;
-    if (imask & 0x1000)
+    }
+    if (imask & 0x1000) {
         x3 = 0;
-    else
+    } else {
+        if (x3 < t3)
+            t3 -= PERIPHERAL_CLOCK;
         x3 = (x3 - t3) / 200;
-    if (imask & 0x2000)
+    }
+    if (imask & 0x2000) {
         x4 = 0;
-    else
+    } else {
+        if (x4 < t4)
+            t1 -= PERIPHERAL_CLOCK;
         x4 = (x4 - t4) / 200;
+    }
 
     sonar_data[0] = sonar_data[1] = x1;  // should fix this - we are counting 1-4, not 0-3
     sonar_data[2] = x2;
@@ -597,7 +611,7 @@ void send_frame () {
         frame[1] = ((ix/10)% 10) + 0x30;
         frame[0] = ((ix/100)% 10) + 0x30;
 
-        ping_sonar();
+        sonar();
         ix = sonar_data[1] / 100;
         frame[10] = (ix % 10) + 0x30;
         frame[9] = ((ix/10)% 10) + 0x30;
@@ -797,6 +811,7 @@ void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, un
 /* XModem Receive.
    Serial protocol char: X */
 void xmodem_receive () {
+  clear_flash_buffer();
   err1 = xmodemReceive((unsigned char *)FLASH_BUFFER, 131072);
   if (err1 < 0) {
     printf("##Xmodem receive error: %d\n\r", err1);
@@ -1374,20 +1389,32 @@ void check_failsafe() {
 
 void process_colors() {
     unsigned char ch, ch1, ch2, ch3, ch4;
+    unsigned int clr, x1, x2, y1, y2;
     unsigned int ix, iy, i1, i2, itot;
     unsigned int ulo[4], uhi[4], vlo[4], vhi[4];
     unsigned char i2c_data[2];
               // vision processing commands
-                    //    vc = set colors
+                    //    va = enable/disable AGC / AWB / AEC camera controls
+                    //    vc = set color bin ranges
                     //    vp = sample individual pixel
-                    //    vb = find blobs
-                    //    vr = recall colors
+                    //    vb = find blobs matching color bin 
+                    //    vr = recall color bin ranges
+                    //    vf = find pixels matching color bin
                     //    vh = histogram
                     //    vm = mean colors
                     //    vz = zero all color settings
                     //    vd = dump camera registers
     ch = getch();
     switch (ch) {
+        case 'a':  //    va = enable/disable AGC(4) / AWB(2) / AEC(1) camera controls
+                   //    va7 = AGC+AWB+AEC on   va0 = AGC+AWB+AEC off
+            ix = (unsigned int)getch() & 0x07;
+            i2c_data[0] = 0x13;
+            i2c_data[1] = 0xC0 + ix;
+            i2cwrite(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV9655
+            i2cwrite(0x21, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV7725
+            printf("##va%d\n\r", ix);
+            break;
         case 'c':  //    vc = set colors
             ix = (unsigned int)getch();
             if (ix > '9')
@@ -1437,6 +1464,31 @@ void process_colors() {
                 ((ix>>16) & 0x000000FF),  // Y1
                 ((ix>>24) & 0x000000FF),  // U
                 ((ix>>8) & 0x000000FF));   // V
+            break;
+        case 'f':  //    vf = find number of pixels in x1, x2, y1, y2 range matching color bin
+            clr = getch() & 0x0F;
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            x1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            x2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            y1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            y2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            grab_frame();
+            printf("##vf %d\n\r", vfind((unsigned char *)FRAME_BUF, clr, x1, x2, y1, y2));
             break;
         case 'b':  //    vb = find blobs for a given color
             ch1 = getch();

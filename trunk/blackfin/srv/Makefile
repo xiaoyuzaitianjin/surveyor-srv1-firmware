@@ -9,7 +9,7 @@ ASMSRCS = r8x8dct.asm math.asm setjmp.asm
 CPUDEFINES = -D__ADSPBF537__ -D__ADSPLPBLACKFIN__
 INCLUDES = -I../include
 ASMFLAGS = -x assembler-with-cpp $(CPUDEFINES) $(INCLUDES)
-CFLAGS = $(INCLUDES) -O2 -Wall -fomit-frame-pointer -fno-builtin-printf -fno-builtin-puts \
+CFLAGS = $(INCLUDES) -g -O2 -Wall -fomit-frame-pointer -fno-builtin-printf -fno-builtin-puts \
 	-fno-builtin-strchr -fno-builtin-strcpy -fno-builtin-strlen -fno-builtin-strdup \
 	-fno-builtin-memset -fno-builtin-memcpy -fno-builtin-isdigit
 CFLAGS += $(CPUDEFINES)

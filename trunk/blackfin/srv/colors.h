@@ -8,11 +8,12 @@
 
 extern unsigned int vblob(unsigned char *, unsigned char *, unsigned int);
 extern unsigned int vpix(unsigned char *, unsigned int, unsigned int);
+extern unsigned int vfind(unsigned char *frame_buf, unsigned int clr, unsigned int x1, unsigned int x2, unsigned int y1, unsigned int y2);
 extern void init_colors();
 extern void vhist(unsigned char *frame_buf);
 extern void vmean(unsigned char *frame_buf);
 extern void color_segment(unsigned char *frame_buf);
-extern void edge_detect(unsigned char *frame_buf, unsigned char *frame_buf2, int threshold);
+extern void edge_detect(unsigned char *outbuf, unsigned char *inbuf, int threshold);
 
 extern unsigned int ymax[], ymin[], umax[], umin[], vmax[], vmin[];
 extern unsigned int blobx1[], blobx2[], bloby1[], bloby2[], blobcnt[], blobix[];

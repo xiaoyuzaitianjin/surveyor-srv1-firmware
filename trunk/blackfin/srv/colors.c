@@ -306,6 +306,32 @@ void color_segment(unsigned char *frame_buf) {
     }
 }
 
+/* count number of pixels matching 'clr' bin in range [x1,y1] to [x2,y2] */
+unsigned int vfind(unsigned char *frame_buf, unsigned int clr, 
+                   unsigned int x1, unsigned int x2, unsigned int y1, unsigned int y2) {
+    unsigned int ix, xx, yy, y, u, v, count;
+    
+    count = 0;
+    for (xx=x1; xx<x2; xx+=2) {   
+        for (yy=y1; yy<y2; yy++) {
+            ix = index(xx,yy);
+            y = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
+            //y = (unsigned int)frame_buf[ix+1];
+            u = (unsigned int)frame_buf[ix];
+            v = (unsigned int)frame_buf[ix+2];
+            if ((y >= ymin[clr])
+              && (y <= ymax[clr]) 
+              && (u >= umin[clr]) 
+              && (u <= umax[clr]) 
+              && (v >= vmin[clr]) 
+              && (v <= vmax[clr])) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
 void edge_detect(unsigned char *inbuf, unsigned char *outbuf, int thresh) {
     unsigned int ix, xx, yy, y2, u2, v2, skip;
     unsigned char *ip, *op;

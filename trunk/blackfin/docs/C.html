@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 1 May 2009</h3>
+<h3>SRV-1 C Interpreter - as of 12 May 2009</h3>
 
 <table width="700">
 <tbody>
@@ -54,7 +54,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>void gps(): parse $GPGGA string from gps<br>
     &nbsp;&nbsp;- data returned in globals gpslatdeg, gpslatmin, gpslondeg, gpslonmin, <br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gpsalt, gpsfix, gpssat, gpsutc<br><br>
-<li>int input():  blocking read of serial channel<br><br>
+<li>int input():  return single character from read of serial channel (same as getch())<br><br>
 <li>void iodir(int):  set GPIO-H15/14/13/12/11/10 as inputs or outputs<br>
     &nbsp;&nbsp;&nbsp;&nbsp;0 = input, 1 = output<br>
     &nbsp;&nbsp;&nbsp;&nbsp;iodir(0x31) == H15-out H14-out H13-in H12-in H11-in H10-out<br>
@@ -64,7 +64,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
     &nbsp;&nbsp;&nbsp;&nbsp;if H15=1 H14=1 H13=0 H12=0 H11=0 H10=0, <br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ioread() would return 48 == 0x30<br><br>
 <li>void iowrite(int):  set GPIO pins H15-H10<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;iowrite(0x31) of iowrite(0b110001) would set<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;iowrite(0x31) or iowrite(0b110001) would set<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; H15=1 H14=1 H13=0 H12=0 H11=0 H10=1<br><br>
 <li>void laser(int): 0=off, 1=left, 2=right, 3=both<br><br>
 <li>void motors(int, int): set left and right PWM motor power -100 to 100<br><br>
@@ -97,11 +97,19 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
      &nbsp;&nbsp;- 'int' return value indicates how many matching blobs were found<br>
      &nbsp;&nbsp;- 2nd value determines which blob (largest to smallest)<br>
      &nbsp;&nbsp;- data returned in globals blobcnt, blobx1, blobx2, bloby1, bloby2<br><br>
+<li>void vcam(int):  enable/disable automatic gain, white balance and exposure camera functions (default is 7)<br>
+     &nbsp;&nbsp;vcam(4) -> AGC enable<br>
+     &nbsp;&nbsp;vcam(2) -> AWB enable<br>
+     &nbsp;&nbsp;vcam(1) -> AEC enable<br>
+     &nbsp;&nbsp;vcam(7) -> AGC+AWB+AEC on<br>
+     &nbsp;&nbsp;vcam(0) -> AGC+AWB+AEC off <br><br>
 <li>void vcap(): capture video frame<br><br>
 <li>void vcolor(int, int, int, int, int, int, int): set color bin with<br> 
      &nbsp;&nbsp;&nbsp;&nbsp;ymin, ymax, umin, umax, vmin, vmax<br><br>
 <li>void vdiff(int): enable/disable differencing with vcap()<br>
      &nbsp;&nbsp;- vdiff(1) enables / vdiff(0) disables<br><br>
+<li>int vfind(int color, int x1, int x2, int y1, int y2): count number of pixels in color bin <br> 
+     &nbsp;&nbsp;&nbsp;&nbsp;in range of x1 -> x2, y1 -> y2<br><br>
 <li>void vmean(): get YUV means over full frame<br>
      &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
 <li>void vpix(int, int): get YUV values of vpix(x, y)<br>
@@ -112,7 +120,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 1 May 2009 - 23:50 GMT
+last updated 12 May 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>
