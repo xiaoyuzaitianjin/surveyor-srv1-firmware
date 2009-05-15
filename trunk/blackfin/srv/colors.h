@@ -19,6 +19,8 @@ extern unsigned int ymax[], ymin[], umax[], umin[], vmax[], vmin[];
 extern unsigned int blobx1[], blobx2[], bloby1[], bloby2[], blobcnt[], blobix[];
 extern unsigned int hist0[], hist1[], hist2[], mean[];
 
-void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh);
-void svs_segview(unsigned char *spibuf, unsigned char *framebuf);
+unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
+           unsigned int columns, unsigned int *outvect);
+void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh);
+void svs_segview(unsigned char *inbuf, unsigned char *outbuf);
 

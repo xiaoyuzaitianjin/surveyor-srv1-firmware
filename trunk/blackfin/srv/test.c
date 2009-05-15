@@ -143,3 +143,5 @@ laser(0);
 printf("time = %d\n", time());
 printf("rand(10) = %d\n", rand(10));
 
+exit();
+

@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
 <h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 
-11 May 2009</h3>
+15 May 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -181,6 +181,8 @@ corresponding to measurements taken at another time, such as the above
 mentioned orange golf ball color measurement, using 'vc3127176086111154200'.
 we could then confirm that the colors were properly stored by issuing
 the command 'vr3' to retrieve the contents of color bin #3.
+</td></tr><tr><td>'vfxxx1xxx2yyy1yyy2'</td><td>'##vf xxxx\n'</td><td>the 'vf' counts the number of pixels matching color bin #c in the range of x1, x2, y1, y2<br>
+e.g.  'vf10100020001500220'  searches for color bin #1 pixels in the x range from 100-200 and y range from 150-220 <br>
 </td></tr><tr><td>'vh'</td><td>'##vhist y  u  v\n'</td><td>computes and lists the distribution of Y, U and V pixels over the entire range of possible values, divided into bins of 0-3, 4-7, 8-11, ... 248-251, 252-255
 </td></tr><tr><td>'vm'</td><td>'##vmean yy uu vv\n'</td><td>computes mean values for Y, U and V over the entire image.
 </td></tr><tr><td>'vpxxxxyyyy'</td><td>'##vp yyy uuu vvv\n'</td><td>the 'vp' command samples a single pixel defined by coordinates xxxx (column 0000-0159, 0000-0319, 0000-0639, 0000-1279 depending on resolution) and yy (row 0000-0127, 0000-0255, 0000-0511, 0000-1023, where 0000 is top of image). 'vp01600128' will sample a pixel in the middle of the image at 320x256 resolution, 'vp01600000' will sample a pixel in the middle of the top row, etc...
@@ -189,6 +191,8 @@ followed by y1=Ymin, y2=Ymax, u1=Umin, u2=Umax, v1=Vmin, v2=Vmax. <br>
 in the above example where colors for an orange golf ball were captured
 using the 'vg' command for color bin #0, issuing a 'vr0' command will
 return the colors stored in color bin #0 - e.g. '##vr0 127 176 86 111 154 200\n'. 
+</td></tr><tr><td>'vsx'</td><td>'##vscan = pix xxxx xxxx xxxx xxxx ... xxxx\n'</td><td>vs scans for edge pixels in x (1-9) columns using edge_thresh set by 'T' or 'vt' command.  displays total number of edge pixels found and distance from bottom to first edge pixel in each column
+</td></tr><tr><td>'vtxxx'</td><td>'##vthresh xxxx\n'</td><td>vt sets the edge_thresh global variable from 0000-9999 for edge detection (default is 3200).  equivalent to 'T' console function but with more precision
 </td></tr><tr><td>'vzx'</td><td>'##vzero\n'</td><td>vz0 zeros out all of the color bins, vz1 / vz2 / vz3 / vz4 segments colors into various color spaces which can be used by enabling 'g1' color segmentation function ('G' turns it off)
 </th></tr><tr><th></th><th></th><th>
 
@@ -222,7 +226,7 @@ See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a>
 for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 11 May 2009 - 23:50 GMT
+last updated 15 May 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

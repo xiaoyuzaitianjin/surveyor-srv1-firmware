@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 12 May 2009 
+SRV-1 firmware build for Blackfin - 15 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added sdcard.c and sdcard.h for microSD card interface.  work in progress - 
@@ -16,10 +16,27 @@ SRV-1 firmware build for Blackfin - 12 May 2009
   data would remain in the buffer after the end of the newly transferred file
 
 * added 'vf' console command and vfind() C function to count number of 
-  matching pixels for a given color bin in range 1, c2, y1, y2
+  matching pixels for a given color bin in range x1, x2, y1, y2
   
 * added 'va' console command and vcam() C function to enable/disable camera's
   AGC, AWB and AEC functions
+  
+* added 'vs' console command and vscan() C function to use the edge detect
+  function and divide image into a specified number of columns, scanning
+  for edge pixels from top to bottom and reporting total number of edge
+  pixels found as well as distance from bottom of image to first edge pixel 
+  in each column
+
+* added 'vtxxxx' console function to set edge_thresh edge detect threshold.  
+  range is 0000-9999.  same basic functionality as 'T' console function 
+  ('T' takes a single digit and multiplies it by 800), which will eventually 
+  be eliminated)
+
+* changed input() function in C to take full range of character values instead
+  of just '0' - '9'
+  
+* added exit() function to C to allow program to bypass the interactive mode 
+  and return control to the main firmware loop
 
 ============================================================================
 

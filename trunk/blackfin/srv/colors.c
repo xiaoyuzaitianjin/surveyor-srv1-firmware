@@ -376,7 +376,31 @@ void edge_detect(unsigned char *inbuf, unsigned char *outbuf, int thresh) {
         ip1[ix] = op1[ix];
 }
 
-void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
+unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
+           unsigned int columns, unsigned int *outvect) {
+    unsigned int ix, x, y, hits;
+    unsigned char *pp;
+    
+    svs_segcode(outbuf, inbuf, thresh);  // find edge pixels
+
+    hits = 0;
+    pp = outbuf;
+    for (ix=0; ix<columns; ix++)    // initialize output vector
+        outvect[ix] = imgHeight;
+        
+    for (y=0; y<imgHeight; y++) {  // now search from top to bottom, noting each hit in the appropriate column
+        for (x=0; x<imgWidth; x+=2) {  // note that edge detect used full UYVY per pixel position
+            if (*pp & 0xC0) {   // look for edge hit 
+                outvect[((x * columns) / imgWidth)] = imgHeight - y;
+                hits++;
+            }
+            pp++;
+        }
+    }
+    return hits;
+}
+
+void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh) {
     unsigned int ix, xx, yy, y2, u2, v2, skip;
     unsigned char *ip, *op, cc;
     unsigned int gx, gy;
@@ -385,7 +409,7 @@ void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
         return;
     
     skip = imgWidth*2;
-    op = spibuf;
+    op = outbuf;
     for (yy=0; yy<imgHeight; yy++) {
         for (xx=0; xx<imgWidth; xx+=2) {   
             if ((xx < 2) || (xx >= imgWidth-2) || (yy < 1) || (yy >= imgHeight-1)) {
@@ -394,7 +418,7 @@ void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
             }
             gx = gy = 0;
             ix = index(xx, yy);
-            ip = framebuf + ix;
+            ip = inbuf + ix;
 
             y2 = *(ip+5) + *(ip+7) - *(ip-3) - *(ip-1);
             u2 = *(ip+4) - *(ip-4);
@@ -417,15 +441,15 @@ void svs_segcode(unsigned char *spibuf, unsigned char *framebuf, int thresh) {
     }
 }
 
-void svs_segview(unsigned char *spibuf, unsigned char *framebuf) {
+void svs_segview(unsigned char *inbuf, unsigned char *outbuf) {
     unsigned int ix;
     unsigned char *ip, *op;
 
     if (imgWidth > 640)   // buffer size limits this function to 640x480 resolution
         return;
     
-    ip = spibuf;
-    op = framebuf;
+    ip = inbuf;
+    op = outbuf;
     for (ix=0; ix<imgWidth*imgHeight; ix+=2) {   
         if (*ip & 0xC0) {      // is this an edge pixel ?
             *(op+1) = *(op+3) = 0xFF;

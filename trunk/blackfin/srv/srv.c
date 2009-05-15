@@ -54,8 +54,6 @@ unsigned int edge_thresh;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
 char imgHead[11]; /* image frame header for I command */
-short hhpel[] = {0, -1, 0, 1, -1, 1, -1, 0, 1};
-short vhpel[] = {0, -1, -1, -1, 0, 0, 1, 1, 1};
 
 /* Motor globals */
 int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, err1;
@@ -811,13 +809,14 @@ void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, un
 /* XModem Receive.
    Serial protocol char: X */
 void xmodem_receive () {
-  clear_flash_buffer();
-  err1 = xmodemReceive((unsigned char *)FLASH_BUFFER, 131072);
-  if (err1 < 0) {
-    printf("##Xmodem receive error: %d\n\r", err1);
-  } else {
-      printf("##Xmodem success. Count: %d\n\r", err1);
-  }
+    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00020000); ix++)
+        *((unsigned char *)ix) = 0;   // clear the read buffer
+      err1 = xmodemReceive((unsigned char *)FLASH_BUFFER, 131072);
+      if (err1 < 0) {
+          printf("##Xmodem receive error: %d\n\r", err1);
+      } else {
+          printf("##Xmodem success. Count: %d\n\r", err1);
+      }
 }
 
 void launch_editor() {
@@ -1392,6 +1391,7 @@ void process_colors() {
     unsigned int clr, x1, x2, y1, y2;
     unsigned int ix, iy, i1, i2, itot;
     unsigned int ulo[4], uhi[4], vlo[4], vhi[4];
+    int vect[16];  // used by vscan()
     unsigned char i2c_data[2];
               // vision processing commands
                     //    va = enable/disable AGC / AWB / AEC camera controls
@@ -1547,6 +1547,23 @@ void process_colors() {
             grab_frame();
             vmean((unsigned char *)FRAME_BUF);
             printf("##vmean %d %d %d\n\r", mean[0], mean[1], mean[2]);
+            break;
+        case 's':  //    vs = scan for edges, 
+            x1 = (unsigned int)getch() & 0x0F;  // get number of columns to use
+            grab_frame();
+            ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, (unsigned int)x1, (unsigned int *)&vect[0]);
+            printf("##vscan = %d ", ix);
+            for (i1=0; i1<x1; i1++)
+                printf("%4d ", vect[i1]);
+            printf("\n\r");
+            break;
+        case 't':  //    vt = set edge detect threshold (0000-9999, default is 3200)
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            edge_thresh = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            printf("##vthresh %d\n\r", edge_thresh);
             break;
         case 'z':  //    vz = clear or segment colors
             ix = (unsigned int)getch() & 0x0F;

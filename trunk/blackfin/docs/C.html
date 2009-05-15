@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 12 May 2009</h3>
+<h3>SRV-1 C Interpreter - as of 15 May 2009</h3>
 
 <table width="700">
 <tbody>
@@ -51,6 +51,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>int compass(): read HMC6352 compass<br><br>
 <li>int cos(int): cos(angle) * 100<br><br>
 <li>void delay(int):  delay xxx milliseconds<br><br>
+<li>void exit():  leave picoC on completion of stored program, bypassing the interactive mode<br><br>
 <li>void gps(): parse $GPGGA string from gps<br>
     &nbsp;&nbsp;- data returned in globals gpslatdeg, gpslatmin, gpslondeg, gpslonmin, <br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gpsalt, gpsfix, gpssat, gpsutc<br><br>
@@ -108,19 +109,25 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
      &nbsp;&nbsp;&nbsp;&nbsp;ymin, ymax, umin, umax, vmin, vmax<br><br>
 <li>void vdiff(int): enable/disable differencing with vcap()<br>
      &nbsp;&nbsp;- vdiff(1) enables / vdiff(0) disables<br><br>
-<li>int vfind(int color, int x1, int x2, int y1, int y2): count number of pixels in color bin <br> 
+<li>int vfind(int color, int x1, int x2, int y1, int y2):<br>
+    &nbsp;&nbsp;- count number of pixels in color bin <br> 
      &nbsp;&nbsp;&nbsp;&nbsp;in range of x1 -> x2, y1 -> y2<br><br>
 <li>void vmean(): get YUV means over full frame<br>
      &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
 <li>void vpix(int, int): get YUV values of vpix(x, y)<br>
      &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
 <li>void vrcap(): capture reference frame for differencing<br><br>
+<li>int vscan(columns, threshold): edge detect function<br>
+    &nbsp;&nbsp;- counts edge pixels and divides image into columns<br>
+    &nbsp;&nbsp;- returns the distance from bottom of the image to first<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;  edge pixel in each column<br>
+    &nbsp;&nbsp;- results found in scanvect[] array<br><br>
 <li>void writei2c(int, int, int): write byte to I2C port<br><br>
 </ul>
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 12 May 2009 - 23:50 GMT
+last updated 15 May 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>
