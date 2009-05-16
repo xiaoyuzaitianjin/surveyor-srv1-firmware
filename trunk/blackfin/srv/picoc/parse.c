@@ -127,14 +127,14 @@ int ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
                     ProgramFail(Parser, "can't define a void variable");
                     
                 if (LexGetToken(Parser, NULL, FALSE) != TokenAssign)
-                    VariableDefine(Parser, Identifier, VariableAllocValueFromType(Parser, Typ, TRUE, NULL));
+                    VariableDefine(Parser, Identifier, VariableAllocValueFromType(Parser, Typ, TRUE, NULL), TRUE);
                 else
                 { /* we're assigning an initial value */
                     LexGetToken(Parser, NULL, TRUE);
                     if (!ExpressionParse(Parser, &CValue))
                         ProgramFail(Parser, "expression expected");
                         
-                    VariableDefine(Parser, Identifier, CValue);
+                    VariableDefine(Parser, Identifier, CValue, TRUE);
                     if (Parser->Mode == RunModeRun)
                         VariableStackPop(Parser, CValue);
                 }
@@ -382,7 +382,11 @@ int ParseStatement(struct ParseState *Parser)
             if (LexGetToken(Parser, &LexerValue, TRUE) != TokenStringConstant)
                 ProgramFail(Parser, "\"filename.h\" expected");
             
+#ifndef NATIVE_POINTERS
             PlatformScanFile(LexerValue->Val->Pointer.Segment->Val->Array.Data);
+#else
+            PlatformScanFile(((struct Value *)(LexerValue->Val->NativePointer))->Val->Array.Data);
+#endif
             CheckTrailingSemicolon = FALSE;
             break;
 #endif

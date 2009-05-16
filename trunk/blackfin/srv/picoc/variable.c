@@ -101,7 +101,7 @@ struct Value *VariableAllocValueAndData(struct ParseState *Parser, int DataSize,
 /* allocate a value given its type */
 struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct ValueType *Typ, int IsLValue, struct Value *LValueFrom)
 {
-    int Size = TypeSize(Typ, Typ->ArraySize);
+    int Size = TypeSize(Typ, Typ->ArraySize, FALSE);
     struct Value *NewValue = VariableAllocValueAndData(Parser, Size, IsLValue, LValueFrom, FALSE);
     assert(Size > 0 || Typ == &VoidType);
     NewValue->Typ = Typ;
@@ -145,9 +145,14 @@ struct Value *VariableAllocValueShared(struct ParseState *Parser, struct Value *
 }
 
 /* define a variable. Ident must be registered */
-void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue)
+void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue, int MakeWritable)
 {
-    if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, Ident, VariableAllocValueAndCopy(Parser, InitValue, TopStackFrame == NULL)))
+    struct Value *AssignValue = VariableAllocValueAndCopy(Parser, InitValue, TopStackFrame == NULL);
+    
+    if (MakeWritable)
+        AssignValue->IsLValue = TRUE;
+        
+    if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, Ident, AssignValue))
         ProgramFail(Parser, "'%s' is already defined", Ident);
 }
 
@@ -259,4 +264,49 @@ struct Value *VariableStringLiteralGet(char *Ident)
 void VariableStringLiteralDefine(char *Ident, struct Value *Val)
 {
     TableSet(&StringLiteralTable, Ident, Val);
+}
+
+/* check a pointer for validity and dereference it for use */
+void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType)
+{
+#ifndef NATIVE_POINTERS
+    struct Value *PointedToValue = PointerValue->Val->Pointer.Segment;
+
+    /* this is a pointer to picoc memory */
+    if (PointerValue->Typ->Base != TypePointer)
+        ProgramFail(Parser, "pointer expected");
+    
+    if (PointedToValue == NULL)
+        ProgramFail(Parser, "can't dereference NULL pointer");
+    
+    if (PointerValue->Val->Pointer.Offset < 0 || PointerValue->Val->Pointer.Offset > TypeLastAccessibleOffset(PointedToValue))
+        ProgramFail(Parser, "attempt to access invalid pointer");
+    
+    /* pass back the optional dereferenced pointer, offset and type */
+    if (DerefVal != NULL)
+    {
+        *DerefVal = PointedToValue;
+        *DerefOffset = PointerValue->Val->Pointer.Offset;
+        *DerefType = PointerValue->Typ->FromType;
+    }
+    
+    /* return a pointer to the data */
+    if (PointedToValue->Typ->Base == TypeArray)
+        return PointedToValue->Val->Array.Data + PointerValue->Val->Pointer.Offset;
+    else
+        return (void *)PointedToValue->Val + PointerValue->Val->Pointer.Offset;
+#else
+    struct Value *PointedToValue = PointerValue->Val->NativePointer;
+    
+    /* check if the pointed to item is within picoc's memory range */
+    if (PointerValue->Val->NativePointer - HeapMemStart >= HEAP_SIZE)
+        *DerefVal = NULL;
+    else
+        *DerefVal = PointedToValue;
+
+    *DerefType = PointerValue->Typ->FromType;
+    *DerefOffset = 0;
+
+    return PointerValue->Val->NativePointer;
+#endif
 }

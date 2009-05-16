@@ -12,7 +12,6 @@ struct ValueType VoidType;
 struct ValueType FunctionType;
 struct ValueType MacroType;
 struct ValueType EnumType;
-struct ValueType Type_Type;
 struct ValueType *CharPtrType;
 struct ValueType *CharArrayType;
 
@@ -48,7 +47,11 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
         
     switch (Base)
     {
+#ifndef NATIVE_POINTERS
         case TypePointer:   Sizeof = sizeof(struct PointerValue); break;
+#else
+        case TypePointer:   Sizeof = sizeof(void *); break;
+#endif
         case TypeArray:     Sizeof = sizeof(struct ArrayValue) + ArraySize * ParentType->Sizeof; break;
         case TypeEnum:      Sizeof = sizeof(int); break;
         default:            Sizeof = 0; break;      /* structs and unions will get bigger when we add members to them */
@@ -69,16 +72,29 @@ int TypeStackSizeValue(struct Value *Val)
 /* memory used by a value */
 int TypeSizeValue(struct Value *Val)
 {
-    if (Val->Typ->Base != TypeArray)
+    if (Val->Typ->Base == TypeChar)
+        return sizeof(int);     /* allow some extra room for type extension to int */
+    else if (Val->Typ->Base != TypeArray)
         return Val->Typ->Sizeof;
     else
         return sizeof(struct ArrayValue) + Val->Typ->FromType->Sizeof * Val->Val->Array.Size;
 }
 
-/* memory used by a variable given its type and array size */
-int TypeSize(struct ValueType *Typ, int ArraySize)
+/* the last accessible offset of a value */
+int TypeLastAccessibleOffset(struct Value *Val)
 {
-    if (Typ->Base != TypeArray)
+    if (Val->Typ->Base != TypeArray)
+        return 0;
+    else
+        return Val->Typ->FromType->Sizeof * (Val->Val->Array.Size-1);
+}
+
+/* memory used by a variable given its type and array size */
+int TypeSize(struct ValueType *Typ, int ArraySize, int Compact)
+{
+    if (Typ->Base == TypeChar && !Compact)
+        return sizeof(int);     /* allow some extra room for type extension to int */
+    else if (Typ->Base != TypeArray)
         return Typ->Sizeof;
     else
         return sizeof(struct ArrayValue) + Typ->FromType->Sizeof * ArraySize;
@@ -110,10 +126,13 @@ void TypeInit()
     TypeAddBaseType(&VoidType, TypeVoid, 0);
     TypeAddBaseType(&FunctionType, TypeFunction, sizeof(int));
     TypeAddBaseType(&MacroType, TypeMacro, sizeof(int));
-    TypeAddBaseType(&Type_Type, TypeType, sizeof(struct ValueType *));
     TypeAddBaseType(&CharType, TypeChar, sizeof(char));
-    CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
     CharArrayType = TypeAdd(NULL, &CharType, TypeArray, 0, StrEmpty, sizeof(char));
+#ifndef NATIVE_POINTERS
+    CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
+#else
+    CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(void *));
+#endif
 }
 
 /* deallocate heap-allocated types */
@@ -251,7 +270,7 @@ void TypeParseEnum(struct ParseState *Parser, struct ValueType **Typ)
             EnumValue = ExpressionParseInt(Parser);
         }
         
-        VariableDefine(Parser, EnumIdentifier, &InitValue);
+        VariableDefine(Parser, EnumIdentifier, &InitValue, FALSE);
             
         Token = LexGetToken(Parser, NULL, TRUE);
         if (Token != TokenComma && Token != TokenRightBrace)

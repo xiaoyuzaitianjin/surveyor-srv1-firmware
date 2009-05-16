@@ -49,7 +49,7 @@ unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
 
 /* Camera globals */
 unsigned int quality, framecount, ix, overlay_flag;
-unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag;
+unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag;
 unsigned int edge_thresh;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
@@ -98,6 +98,10 @@ void init_io() {
     pwm1_init = 0;
     pwm2_init = 0;
     sonar_flag = 0;
+    edge_detect_flag = 0;
+    horizon_detect_flag = 0;
+    segmentation_flag = 0;
+    
 }
 
 /* reset CPU */
@@ -534,6 +538,12 @@ void enable_edge_detect() {
     printf("##g2");
 }
 
+void enable_horizon_detect() {
+    horizon_detect_flag = 1;
+    edge_thresh = 3200;
+    printf("##g3");
+}
+
 void set_edge_thresh () {
     unsigned char ch;
     ch = getch();
@@ -545,10 +555,13 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     frame_diff_flag = 0;
     segmentation_flag = 0;
     edge_detect_flag = 0;
+    horizon_detect_flag = 0;
     printf("#G");
 }
 
 void grab_frame () {
+    unsigned int vect[16];
+    
     move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
     if (frame_diff_flag)
@@ -557,9 +570,12 @@ void grab_frame () {
     if (segmentation_flag)
         color_segment((unsigned char *)FRAME_BUF);
     if (edge_detect_flag) {
-        //edge_detect((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF2, edge_thresh);
         svs_segcode((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh);
         svs_segview((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF);
+    }
+    if (horizon_detect_flag) {
+        vhorizon((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 16, &vect[0]);
+        addvect((unsigned char *)FRAME_BUF, 16, &vect[0]);
     }
 }
 

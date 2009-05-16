@@ -236,6 +236,8 @@ int main() {
                     break;
                 case 'g':   // g0 = grab a reference frame and enable differencing
                             // g1 = enable color segmentation
+                            // g2 = enable edge detection
+                            // g3 = enable horizon detection
                     ch = getch();
                     if (ch == '0')
                         enable_frame_diff();
@@ -243,6 +245,8 @@ int main() {
                         enable_segmentation();
                     if (ch == '2')
                         enable_edge_detect();
+                    if (ch == '3')
+                        enable_horizon_detect();
                     break;
                 case 'G':   // disable frame differencing and color segmentation
                     disable_frame_diff();

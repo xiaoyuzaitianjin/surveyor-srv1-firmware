@@ -378,7 +378,8 @@ void edge_detect(unsigned char *inbuf, unsigned char *outbuf, int thresh) {
 
 unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
            unsigned int columns, unsigned int *outvect) {
-    unsigned int ix, x, y, hits;
+    int x, y;
+    unsigned int ix, hits;
     unsigned char *pp;
     
     svs_segcode(outbuf, inbuf, thresh);  // find edge pixels
@@ -389,6 +390,32 @@ unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh,
         outvect[ix] = imgHeight;
         
     for (y=0; y<imgHeight; y++) {  // now search from top to bottom, noting each hit in the appropriate column
+        for (x=0; x<imgWidth; x+=2) {  // note that edge detect used full UYVY per pixel position
+            if (*pp & 0xC0) {   // look for edge hit 
+                outvect[((x * columns) / imgWidth)] = imgHeight - y;
+                hits++;
+            }
+            pp++;
+        }
+    }
+    return hits;
+}
+
+/* search for image horizon.  similar to vscan(), but search is top-to-bottom rather than bottom-to-top */
+unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
+           unsigned int columns, unsigned int *outvect) {
+    int x, y;
+    unsigned int ix, hits;
+    unsigned char *pp;
+    
+    svs_segcode(outbuf, inbuf, thresh);  // find edge pixels
+
+    hits = 0;
+    for (ix=0; ix<columns; ix++)    // initialize output vector
+        outvect[ix] = 0;
+        
+    for (y=imgHeight-1; y>=0; y--) {  // now search from top to bottom, noting each hit in the appropriate column
+        pp = outbuf + (y * imgWidth / 2);
         for (x=0; x<imgWidth; x+=2) {  // note that edge detect used full UYVY per pixel position
             if (*pp & 0xC0) {   // look for edge hit 
                 outvect[((x * columns) / imgWidth)] = imgHeight - y;
@@ -461,6 +488,22 @@ void svs_segview(unsigned char *inbuf, unsigned char *outbuf) {
         }
         op += 4;
         ip++;
+    }
+}
+
+/* display vector as red pixels (YUV = 72 84 255) */
+void addvect(unsigned char *outbuf, unsigned int columns, unsigned int *vect)
+{
+    unsigned int xx, yy, ix;
+
+    if (imgWidth > 640)   // buffer size limits this function to 640x480 resolution
+        return;
+    for (xx=0; xx<imgWidth; xx++) {
+        yy = (imgHeight-1) - (vect[(xx * columns) / imgWidth]);
+        ix = index(xx, yy);
+        outbuf[ix+1] =  outbuf[ix+3] = 59;
+        outbuf[ix] = 94;
+        outbuf[ix+2] = 228;
     }
 }
 

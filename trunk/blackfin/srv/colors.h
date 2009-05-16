@@ -21,6 +21,10 @@ extern unsigned int hist0[], hist1[], hist2[], mean[];
 
 unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
            unsigned int columns, unsigned int *outvect);
+unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
+           unsigned int columns, unsigned int *outvect);
+
 void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh);
 void svs_segview(unsigned char *inbuf, unsigned char *outbuf);
+void addvect(unsigned char *outbuf, unsigned int columns, unsigned int *vect);
 

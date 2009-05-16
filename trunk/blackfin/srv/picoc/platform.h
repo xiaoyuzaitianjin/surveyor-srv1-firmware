@@ -3,9 +3,12 @@
 #define PLATFORM_H
 
 /* configurable options */
-#undef UNIX_HOST                           /* select your host type */
-#undef  FLYINGFOX_HOST
-#define  SURVEYOR_HOST
+/* select your host type (or do it in the Makefile):
+ * #define  UNIX_HOST
+ * #define  FLYINGFOX_HOST
+ * #define  SURVEYOR_HOST
+ * #define  UMON_HOST
+ */
 
 #ifndef SURVEYOR_HOST
 #define HEAP_SIZE 16384                     /* space for the heap and the stack */
@@ -47,6 +50,15 @@ extern jmp_buf ExitBuf;
 
 #else
 # ifdef FLYINGFOX_HOST
+#  define NO_HASH_INCLUDE
+#  include <stdlib.h>
+#  include <ctype.h>
+#  include <string.h>
+#  include <sys/types.h>
+#  include <stdarg.h>
+#  include <setjmp.h>
+#  include <math.h>
+#  define assert(x)
 
 # else
 #  ifdef SURVEYOR_HOST
@@ -69,6 +81,20 @@ extern jmp_buf ExitBuf;
 #   undef INTERACTIVE_PROMPT_LINE
 #   define INTERACTIVE_PROMPT_STATEMENT "> "
 #   define INTERACTIVE_PROMPT_LINE "- "
+#  else
+#   ifdef UMON_HOST
+#    define NO_FP
+#    include <stdlib.h>
+#    include <string.h>
+#    include <ctype.h>
+#    include <sys/types.h>
+#    include <stdarg.h>
+#    include <math.h>
+#    include "monlib.h"
+#    define assert(x)
+#    undef PlatformSetExitPoint
+#    define PlatformSetExitPoint()
+#   endif
 #  endif
 # endif
 

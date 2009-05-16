@@ -26,6 +26,16 @@
 #define PATH_MAX 1024
 #endif
 
+/* coercion of numeric types to other numeric types */
+#ifndef NO_FP
+#define IS_INTEGER_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeFP || (v)->Typ->Base == TypeChar)
+#define COERCE_INTEGER(v) (((v)->Typ->Base == TypeInt) ? (int)(v)->Val->Integer : (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (v)->Val->FP))
+#else
+#define IS_INTEGER_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeChar)
+#define COERCE_INTEGER(v) (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (v)->Val->Integer)
+#endif
+
+
 struct Table;
 
 /* lexical tokens */
@@ -95,7 +105,7 @@ enum BaseType
 #ifndef NO_FP
     TypeFP,                     /* floating point */
 #endif
-    TypeChar,                   /* a single character - acts like an integer except in machine memory access */
+    TypeChar,                   /* a single character */
     TypeFunction,               /* a function */
     TypeMacro,                  /* a macro */
     TypePointer,                /* a pointer */
@@ -103,7 +113,6 @@ enum BaseType
     TypeStruct,                 /* aggregate type */
     TypeUnion,                  /* merged type */
     TypeEnum,                   /* enumated integer type */
-    TypeType                    /* a type (eg. typedef) */
 };
 
 /* data type */
@@ -139,26 +148,34 @@ struct ArrayValue
     void *Data;                     /* pointer to the array data */
 };
 
+#ifndef NATIVE_POINTERS
 struct PointerValue
 {
     struct Value *Segment;          /* array or basic value which this points to, NULL for machine memory access */
     unsigned int Offset;            /* index into an array */
 };
+#endif
 
 union AnyValue
 {
     unsigned char Character;
     short ShortInteger;
     int Integer;
-#ifndef NO_FP
-    double FP;
-#endif
     char *Identifier;
     struct ArrayValue Array;
-    struct PointerValue Pointer;
     struct ParseState Parser;
     struct ValueType *Typ;
     struct FuncDef FuncDef;
+
+#ifndef NO_FP
+    double FP;
+#endif
+
+#ifndef NATIVE_POINTERS
+    struct PointerValue Pointer;    /* safe pointers */
+#else
+    void *NativePointer;            /* unsafe native pointers */
+#endif
 };
 
 struct Value
@@ -222,11 +239,30 @@ struct LibraryFunction
     const char *Prototype;
 };
 
-/* platform-specific method for writing characters to the console */
-typedef void CharWriter(unsigned char);
+/* output stream-type specific state information */
+union OutputStreamInfo
+{
+    struct StringOutputStream
+    {
+        struct ParseState *Parser;
+        char *WritePos;
+        char *MaxPos;
+    } Str;
+};
+
+/* stream-specific method for writing characters to the console */
+typedef void CharWriter(unsigned char, union OutputStreamInfo *);
+
+/* used when writing output to a string - eg. sprintf() */
+struct OutputStream
+{
+    CharWriter *Putch;
+    union OutputStreamInfo i;
+};
 
 /* globals */
 extern void *HeapStackTop;
+extern void *HeapMemStart;
 extern struct Table GlobalTable;
 extern struct StackFrame *TopStackFrame;
 extern struct ValueType UberType;
@@ -241,8 +277,10 @@ extern struct ValueType MacroType;
 extern struct ValueType *CharPtrType;
 extern struct ValueType *CharArrayType;
 extern char *StrEmpty;
+extern struct PointerValue NULLPointer;
 extern struct LibraryFunction CLibrary[];
 extern struct LibraryFunction PlatformLibrary[];
+extern struct OutputStream CStdOut;
 
 /* table.c */
 void TableInit();
@@ -282,9 +320,10 @@ int ExpressionParseInt(struct ParseState *Parser);
 /* type.c */
 void TypeInit();
 void TypeCleanup();
-int TypeSize(struct ValueType *Typ, int ArraySize);
+int TypeSize(struct ValueType *Typ, int ArraySize, int Compact);
 int TypeSizeValue(struct Value *Val);
 int TypeStackSizeValue(struct Value *Val);
+int TypeLastAccessibleOffset(struct Value *Val);
 int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ);
 void TypeParseIdentPart(struct ParseState *Parser, struct ValueType *BasicTyp, struct ValueType **Typ, char **Identifier);
 void TypeParse(struct ParseState *Parser, struct ValueType **Typ, char **Identifier);
@@ -311,7 +350,7 @@ struct Value *VariableAllocValueAndCopy(struct ParseState *Parser, struct Value 
 struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct ValueType *Typ, int IsLValue, struct Value *LValueFrom);
 struct Value *VariableAllocValueFromExistingData(struct ParseState *Parser, struct ValueType *Typ, union AnyValue *FromValue, int IsLValue, struct Value *LValueFrom);
 struct Value *VariableAllocValueShared(struct ParseState *Parser, struct Value *FromValue);
-void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue);
+void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue, int MakeWritable);
 int VariableDefined(const char *Ident);
 void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LVal);
 void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct ValueType *Typ, union AnyValue *FromValue, int IsWritable);
@@ -319,24 +358,30 @@ void VariableStackFrameAdd(struct ParseState *Parser, int NumParams);
 void VariableStackFramePop(struct ParseState *Parser);
 struct Value *VariableStringLiteralGet(char *Ident);
 void VariableStringLiteralDefine(char *Ident, struct Value *Val);
+void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType);
 
-/* library.c */
+/* clibrary.c */
 void LibraryInit(struct Table *GlobalTable, const char *LibraryName, struct LibraryFunction (*FuncList)[]);
-void PrintInt(int Num, CharWriter *PutCh);
-void PrintStr(const char *Str, CharWriter *PutCh);
-void PrintFP(double Num, CharWriter *PutCh);
+void CLibraryInit();
+void PrintCh(char OutCh, struct OutputStream *Stream);
+void PrintInt(int Num, struct OutputStream *Stream);
+void PrintStr(const char *Str, struct OutputStream *Stream);
+void PrintFP(double Num, struct OutputStream *Stream);
+void PrintType(struct ValueType *Typ, struct OutputStream *Stream);
 
-/* platform_support.c */
+/* platform.c */
 void ProgramFail(struct ParseState *Parser, const char *Message, ...);
 void LexFail(struct LexState *Lexer, const char *Message, ...);
 void PlatformCleanup();
 void PlatformScanFile(const char *FileName);
 char *PlatformGetLine(char *Buf, int MaxLen);
 int PlatformGetCharacter();
-void PlatformPutc(unsigned char OutCh);
+void PlatformPutc(unsigned char OutCh, union OutputStreamInfo *);
 void PlatformPrintf(const char *Format, ...);
 void PlatformVPrintf(const char *Format, va_list Args);
 void PlatformExit();
 void PlatformLibraryInit();
+void Initialise();
+void Cleanup();
 
 #endif /* PICOC_H */

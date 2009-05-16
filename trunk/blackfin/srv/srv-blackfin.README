@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 15 May 2009 
+SRV-1 firmware build for Blackfin - 16 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added sdcard.c and sdcard.h for microSD card interface.  work in progress - 
@@ -37,6 +37,12 @@ SRV-1 firmware build for Blackfin - 15 May 2009
   
 * added exit() function to C to allow program to bypass the interactive mode 
   and return control to the main firmware loop
+
+* added 'g3' console function to compute and display a horizon in camera field
+  of view.  next step is to draw a line and output pitch + roll angles.  'G'
+  disables the horizon display 
+
+* updated picoC to correct variable initialization issue
 
 ============================================================================
 

@@ -94,6 +94,7 @@ void compute_frame_diff (unsigned char *, unsigned char *, int, int);
 void enable_frame_diff ();
 void enable_segmentation();
 void enable_edge_detect();
+void enable_horizon_detect();
 void set_edge_thresh();
 void grab_code_send();
 void recv_grab_code();
@@ -172,7 +173,7 @@ void delayNS (int delay);  // delay up to 100000 nanoseconds (.0001 sec)
 extern int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
 extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2;
 extern int sonar_data[];
-extern unsigned int imgWidth, imgHeight, frame_diff_flag;
+extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag;
 extern unsigned int uart1_flag, thumbnail_flag;
 
 #endif

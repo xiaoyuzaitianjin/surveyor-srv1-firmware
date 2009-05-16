@@ -6,7 +6,7 @@ CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c 
  
 ASMSRCS = r8x8dct.asm math.asm setjmp.asm
 
-CPUDEFINES = -D__ADSPBF537__ -D__ADSPLPBLACKFIN__
+CPUDEFINES = -D__ADSPBF537__ -D__ADSPLPBLACKFIN__ -DSURVEYOR_HOST
 INCLUDES = -I../include
 ASMFLAGS = -x assembler-with-cpp $(CPUDEFINES) $(INCLUDES)
 CFLAGS = $(INCLUDES) -g -O2 -Wall -fomit-frame-pointer -fno-builtin-printf -fno-builtin-puts \
