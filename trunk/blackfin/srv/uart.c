@@ -89,6 +89,13 @@ unsigned char uart0GetChar(unsigned char *a)
     return 1;
 }
 
+unsigned char uart0Signal()
+{
+    if (!(*pUART0_LSR & DR))
+        return 0;
+    return 1;
+}
+
 void uart1SendChar(unsigned char c)
 {
     while (!(*pUART1_LSR & THRE));
@@ -121,6 +128,13 @@ unsigned char uart1GetChar(unsigned char *a)
     if (!(*pUART1_LSR & DR))
         return 0;
     *a = *pUART1_RBR;
+    return 1;
+}
+
+unsigned char uart1Signal()
+{
+    if (!(*pUART1_LSR & DR))
+        return 0;
     return 1;
 }
 

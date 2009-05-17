@@ -95,6 +95,7 @@ void enable_frame_diff ();
 void enable_segmentation();
 void enable_edge_detect();
 void enable_horizon_detect();
+void enable_obstacle_detect();
 void set_edge_thresh();
 void grab_code_send();
 void recv_grab_code();

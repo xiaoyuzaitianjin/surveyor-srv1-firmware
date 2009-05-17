@@ -238,15 +238,23 @@ int main() {
                             // g1 = enable color segmentation
                             // g2 = enable edge detection
                             // g3 = enable horizon detection
-                    ch = getch();
-                    if (ch == '0')
-                        enable_frame_diff();
-                    if (ch == '1')
-                        enable_segmentation();
-                    if (ch == '2')
-                        enable_edge_detect();
-                    if (ch == '3')
-                        enable_horizon_detect();
+                    switch (getch()) {
+                        case '0':
+                            enable_frame_diff();
+                            break;
+                        case '1':
+                            enable_segmentation();
+                            break;
+                        case '2':
+                            enable_edge_detect();
+                            break;
+                        case '3':
+                            enable_horizon_detect();
+                            break;
+                        case '4':
+                            enable_obstacle_detect();
+                            break;
+                    }
                     break;
                 case 'G':   // disable frame differencing and color segmentation
                     disable_frame_diff();

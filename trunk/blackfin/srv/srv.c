@@ -49,7 +49,7 @@ unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
 
 /* Camera globals */
 unsigned int quality, framecount, ix, overlay_flag;
-unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag;
+unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag, obstacle_detect_flag;
 unsigned int edge_thresh;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
@@ -100,6 +100,7 @@ void init_io() {
     sonar_flag = 0;
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
+    obstacle_detect_flag = 0;
     segmentation_flag = 0;
     
 }
@@ -544,6 +545,12 @@ void enable_horizon_detect() {
     printf("##g3");
 }
 
+void enable_obstacle_detect() {
+    obstacle_detect_flag = 1;
+    edge_thresh = 3200;
+    printf("##g4");
+}
+
 void set_edge_thresh () {
     unsigned char ch;
     ch = getch();
@@ -556,6 +563,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     segmentation_flag = 0;
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
+    obstacle_detect_flag = 0;
     printf("#G");
 }
 
@@ -564,17 +572,19 @@ void grab_frame () {
     
     move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
-    if (frame_diff_flag)
+    if (frame_diff_flag) {
         compute_frame_diff((unsigned char *)FRAME_BUF, 
                 (unsigned char *)FRAME_BUF2, imgWidth, imgHeight);
-    if (segmentation_flag)
+    } else if (segmentation_flag) {
         color_segment((unsigned char *)FRAME_BUF);
-    if (edge_detect_flag) {
+    } else if (edge_detect_flag) {
         svs_segcode((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh);
         svs_segview((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF);
-    }
-    if (horizon_detect_flag) {
+    } else if (horizon_detect_flag) {
         vhorizon((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 16, &vect[0]);
+        addvect((unsigned char *)FRAME_BUF, 16, &vect[0]);
+    } else if (obstacle_detect_flag) {
+        vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 16, &vect[0]);
         addvect((unsigned char *)FRAME_BUF, 16, &vect[0]);
     }
 }

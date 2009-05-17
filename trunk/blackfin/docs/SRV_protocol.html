@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
 <h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 
-15 May 2009</h3>
+17 May 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -84,6 +84,8 @@ sets motor/servo levels for 'M' and 'S' commands in case no command is received 
 </th></tr><tr><td>'g0'</td><td>'##g0'</td><td>grab reference frame and enable frame differencing
 </th></tr><tr><td>'g1'</td><td>'##g1'</td><td>enable color segmentation
 </th></tr><tr><td>'g2'</td><td>'##g2'</td><td>enable edge detection (threshold changed with 'T' command)
+</th></tr><tr><td>'g3'</td><td>'##g3'</td><td>enable horizon detection (threshold changed with 'T' command)
+</th></tr><tr><td>'g4'</td><td>'##g4'</td><td>enable obstacle detection (threshold changed with 'T' command)
 </th></tr><tr><td>'G'</td><td>'#G'</td><td>disable frame differencing / color segmentation / edge detection
 </td></tr><tr><th></th><th></th><th>
 </td></tr><tr><td>'I'</td><td>'##IMJxs0s1s2s3....'</td><td>grab JPEG compressed video frame
@@ -226,7 +228,7 @@ See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a>
 for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 15 May 2009 - 23:50 GMT
+last updated 17 May 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

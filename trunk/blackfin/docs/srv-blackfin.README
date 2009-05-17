@@ -40,10 +40,20 @@ SRV-1 firmware build for Blackfin - 16 May 2009
 
 * added 'g3' console function to compute and display a horizon in camera field
   of view.  next step is to draw a line and output pitch + roll angles.  'G'
-  disables the horizon display 
+  disables the horizon display.  core firmware function is vhorizon() in colors.c,
+  along with addvect() for display
+
+* added 'g4' console function to display edge detected obstacles in camera field
+  of view.  similar to the 'g3' console function, but searches bottom-up instead
+  of top-down.  core firmware function is vscan() in colors.c.  also works with
+  addvect()
 
 * updated picoC to correct variable initialization issue
 
+* added uart0Signal() and uart1Signal() functions to check for incoming 
+  character without emptying the serial input FIFO.  macro is print.h is
+  getsignal().  this corrects a problem with the C signal() function
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 18 April 2009 

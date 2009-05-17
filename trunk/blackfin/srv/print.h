@@ -4,4 +4,5 @@ int sprintf(char *out, const char *format, ...);
 #define putchar uart0SendChar
 #define getch uart0GetCh
 #define getchar uart0GetChar
+#define getsignal uart0Signal
 
