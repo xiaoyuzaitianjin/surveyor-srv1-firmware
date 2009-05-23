@@ -112,6 +112,9 @@ int main() {
                         case 'g':  // gps test
                             gps_show();
                             break;
+                        case 'e':  // read motor encoders
+                            read_encoders();
+                            break;
                         case 'A':  // read analog channel 1-8, 11-18 or 21-28
                             read_analog();
                             break;

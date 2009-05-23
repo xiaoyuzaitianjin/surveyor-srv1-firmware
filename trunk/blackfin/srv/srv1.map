@@ -36,6 +36,7 @@ ExitBuf             0xa4              picoc/platform_surveyor.o
 y_acc               0x4               srv.o
 output_start        0x4               srv.o
 hist1               0x400             colors.o
+lcount              0x4               srv.o
 pwm1_init           0x4               srv.o
 image_size          0x4               srv.o
 ILqt                0x80              jpeg.o
@@ -84,11 +85,13 @@ vmin                0x44              colors.o
 heap_ptr            0x4               malloc.o
 bloby1              0xfc              colors.o
 WordType            0x24              picoc/type.o
+rcount              0x4               srv.o
 x_acc0              0x4               srv.o
 IntType             0x24              picoc/type.o
 imgHead             0xb               srv.o
 read_format         0x4               jpeg.o
 edge_detect_flag    0x4               srv.o
+encoder_flag        0x4               srv.o
 imgHeight           0x4               srv.o
 UberType            0x24              picoc/type.o
 failsafe_clock      0x4               srv.o
@@ -129,207 +132,211 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x74b0
+.l1code         0xffa00000     0x78e0
  main.o(.text)
- .text          0xffa00000      0x2d0 main.o
+ .text          0xffa00000      0x2d8 main.o
                 0xffa00000                main
  math.o(.text)
- .text          0xffa002d0      0x200 math.o
-                0xffa0039c                __umodsi3
-                0xffa003ce                __divsi3
-                0xffa002d0                __udivsi3
+ .text          0xffa002d8      0x200 math.o
+                0xffa003a4                __umodsi3
+                0xffa003d6                __divsi3
+                0xffa002d8                __udivsi3
  malloc.o(.text)
- .text          0xffa004d0      0x1a4 malloc.o
-                0xffa005ac                morecore
-                0xffa00524                free
-                0xffa004d0                init_heap
-                0xffa00510                sbrk
-                0xffa005f0                malloc
+ .text          0xffa004d8      0x1a4 malloc.o
+                0xffa005b4                morecore
+                0xffa0052c                free
+                0xffa004d8                init_heap
+                0xffa00518                sbrk
+                0xffa005f8                malloc
  srv.o(.text)
- .text          0xffa00674     0x382c srv.o
-                0xffa01a40                motor_command
-                0xffa02538                process_i2c
-                0xffa01f14                restore_video
-                0xffa02ab0                xmodem_receive
-                0xffa010fc                clearRTC
-                0xffa01218                delayUS
-                0xffa01f3c                invert_video
-                0xffa008e4                grab_reference_frame
-                0xffa0110c                delayMS
-                0xffa01b44                set_edge_thresh
-                0xffa01288                delayNS
-                0xffa00c64                setPPM1
-                0xffa01398                rand
-                0xffa0182c                testSD
-                0xffa02498                tilt
-                0xffa029ec                read_user_sector
-                0xffa00e98                initRTC
-                0xffa02dc8                serial_out_flashbuffer
-                0xffa02b1c                camera_reset
-                0xffa01f64                init_tilt
-                0xffa028fc                write_boot_flash
-                0xffa0250c                read_tilt
-                0xffa00918                initPWM
-                0xffa00a00                init_sonar
-                0xffa01314                check_failsafe
-                0xffa0181c                show_stack_ptr
-                0xffa02414                read_compass
-                0xffa034d4                process_colors
-                0xffa01f94                laser_range
-                0xffa01804                show_heap_ptr
-                0xffa015fc                overlay_on
-                0xffa00bc4                setPWM2
-                0xffa01760                lasers_off
-                0xffa00770                clear_sdram
-                0xffa007b4                led1_on
-                0xffa01af8                change_image_quality
-                0xffa00798                stack_remaining
-                0xffa00ddc                check_bounds_0_100
-                0xffa008bc                move_image
-                0xffa02960                write_user_sector
-                0xffa01b74                process_neuralnet
-                0xffa01988                motor2_command
-                0xffa018c8                ppm2_command
-                0xffa00ad8                setPWM
-                0xffa0097c                initPWM2
-                0xffa027e4                init_analog
-                0xffa023f8                show_laser_range
-                0xffa02a84                crc_flash_buffer
-                0xffa02e30                send_frame
-                0xffa01738                check_battery
-                0xffa0153c                motor_increase_base_speed
-                0xffa01708                ping_sonar
-                0xffa0167c                enable_horizon_detect
-                0xffa015b0                clear_flash_buffer
-                0xffa01874                enable_failsafe
-                0xffa01780                lasers_on
-                0xffa01928                ppm1_command
-                0xffa01488                motor_action
-                0xffa00eb8                readRTC
-                0xffa00df8                motor_trim_right
-                0xffa007a4                led0_on
-                0xffa00e48                motor_trim_left
-                0xffa00674                init_io
-                0xffa017bc                serial_out_version
-                0xffa00f2c                sonar
-                0xffa007c4                compute_frame_diff
-                0xffa02aa8                launch_editor
-                0xffa016a4                enable_edge_detect
-                0xffa033ac                grab_frame
-                0xffa016cc                enable_segmentation
-                0xffa029c0                write_user_flash
-                0xffa0113c                motor_set
-                0xffa009cc                initTMR4
-                0xffa00a30                initPPM1
-                0xffa00d20                setPPM2
-                0xffa014c8                motor_decrease_base_speed
-                0xffa00a84                initPPM2
-                0xffa01654                enable_obstacle_detect
-                0xffa017a0                serial_out_time
-                0xffa0081c                set_caption
-                0xffa01614                disable_frame_diff
-                0xffa00744                reset_cpu
-                0xffa02a44                read_user_flash
-                0xffa01444                isqrt
-                0xffa02668                analog
-                0xffa012fc                reset_failsafe_clock
-                0xffa01470                disable_failsafe
-                0xffa027a8                read_analog
-                0xffa015e4                overlay_off
-                0xffa016e4                enable_frame_diff
-                0xffa02cf4                camera_setup
+ .text          0xffa0067c     0x39d0 srv.o
+                0xffa01b50                motor_command
+                0xffa02648                process_i2c
+                0xffa02024                restore_video
+                0xffa02bc0                xmodem_receive
+                0xffa0111c                clearRTC
+                0xffa01238                delayUS
+                0xffa0204c                invert_video
+                0xffa00904                grab_reference_frame
+                0xffa0112c                delayMS
+                0xffa01c54                set_edge_thresh
+                0xffa012a8                delayNS
+                0xffa00c84                setPPM1
+                0xffa0147c                rand
+                0xffa0193c                testSD
+                0xffa025a8                tilt
+                0xffa02afc                read_user_sector
+                0xffa00eb8                initRTC
+                0xffa02ed8                serial_out_flashbuffer
+                0xffa02c2c                camera_reset
+                0xffa02074                init_tilt
+                0xffa02a0c                write_boot_flash
+                0xffa0261c                read_tilt
+                0xffa00938                initPWM
+                0xffa00a20                init_sonar
+                0xffa01334                check_failsafe
+                0xffa0192c                show_stack_ptr
+                0xffa02524                read_compass
+                0xffa03610                process_colors
+                0xffa020a4                laser_range
+                0xffa01914                show_heap_ptr
+                0xffa0170c                overlay_on
+                0xffa00be4                setPWM2
+                0xffa01870                lasers_off
+                0xffa00790                clear_sdram
+                0xffa007d4                led1_on
+                0xffa01c08                change_image_quality
+                0xffa007b8                stack_remaining
+                0xffa00dfc                check_bounds_0_100
+                0xffa008dc                move_image
+                0xffa02a70                write_user_sector
+                0xffa01c84                process_neuralnet
+                0xffa01a98                motor2_command
+                0xffa019d8                ppm2_command
+                0xffa00af8                setPWM
+                0xffa0099c                initPWM2
+                0xffa01554                read_encoders
+                0xffa028f4                init_analog
+                0xffa02508                show_laser_range
+                0xffa02b94                crc_flash_buffer
+                0xffa02f40                send_frame
+                0xffa01848                check_battery
+                0xffa0164c                motor_increase_base_speed
+                0xffa01818                ping_sonar
+                0xffa0178c                enable_horizon_detect
+                0xffa013f0                encoders
+                0xffa016c0                clear_flash_buffer
+                0xffa01984                enable_failsafe
+                0xffa01890                lasers_on
+                0xffa01a38                ppm1_command
+                0xffa01598                motor_action
+                0xffa00ed8                readRTC
+                0xffa00e18                motor_trim_right
+                0xffa007c4                led0_on
+                0xffa00e68                motor_trim_left
+                0xffa0067c                init_io
+                0xffa018cc                serial_out_version
+                0xffa00f4c                sonar
+                0xffa013b8                init_encoders
+                0xffa007e4                compute_frame_diff
+                0xffa02bb8                launch_editor
+                0xffa017b4                enable_edge_detect
+                0xffa034bc                grab_frame
+                0xffa017dc                enable_segmentation
+                0xffa02ad0                write_user_flash
+                0xffa0115c                motor_set
+                0xffa009ec                initTMR4
+                0xffa00a50                initPPM1
+                0xffa00d40                setPPM2
+                0xffa015d8                motor_decrease_base_speed
+                0xffa00aa4                initPPM2
+                0xffa01764                enable_obstacle_detect
+                0xffa018b0                serial_out_time
+                0xffa0083c                set_caption
+                0xffa01724                disable_frame_diff
+                0xffa00764                reset_cpu
+                0xffa02b54                read_user_flash
+                0xffa01528                isqrt
+                0xffa02778                analog
+                0xffa0131c                reset_failsafe_clock
+                0xffa01580                disable_failsafe
+                0xffa028b8                read_analog
+                0xffa016f4                overlay_off
+                0xffa017f4                enable_frame_diff
+                0xffa02e04                camera_setup
  uart.o(.text)
- .text          0xffa03ea0      0x318 uart.o
-                0xffa0400c                uart1SendChar
-                0xffa04080                uart1GetCh
-                0xffa03fd8                uart0GetChar
-                0xffa03f98                uart0SendChars
-                0xffa03fbc                uart0GetCh
-                0xffa03f6c                uart0SendString
-                0xffa03f3c                uart0SendChar
-                0xffa0405c                uart1SendChars
-                0xffa03ea0                init_uart0
-                0xffa03ffc                uart0Signal
-                0xffa040d0                printNumber
-                0xffa04030                uart1SendString
-                0xffa0409c                uart1GetChar
-                0xffa040c0                uart1Signal
-                0xffa03eec                init_uart1
+ .text          0xffa0404c      0x318 uart.o
+                0xffa041b8                uart1SendChar
+                0xffa0422c                uart1GetCh
+                0xffa04184                uart0GetChar
+                0xffa04144                uart0SendChars
+                0xffa04168                uart0GetCh
+                0xffa04118                uart0SendString
+                0xffa040e8                uart0SendChar
+                0xffa04208                uart1SendChars
+                0xffa0404c                init_uart0
+                0xffa041a8                uart0Signal
+                0xffa0427c                printNumber
+                0xffa041dc                uart1SendString
+                0xffa04248                uart1GetChar
+                0xffa0426c                uart1Signal
+                0xffa04098                init_uart1
  float.o(.text)
- .text          0xffa041b8      0xb9c float.o
-                0xffa041b8                bytesToFloat
-                0xffa04b24                printFloat
-                0xffa048ec                bigMulti
-                0xffa04a88                power
-                0xffa04754                isOne
-                0xffa041e8                minus
-                0xffa04aa0                printBinary
-                0xffa04800                intToFloat
-                0xffa041f4                divFloat
-                0xffa041dc                parseFloat
-                0xffa04d2c                printExponent
-                0xffa04ae0                printMantissa
-                0xffa047f4                lteFloat
-                0xffa042b0                addFloat
-                0xffa04968                mulFloat
-                0xffa04764                gteFloat
-                0xffa045a4                subFloat
-                0xffa04cbc                floatInBinary
+ .text          0xffa04364      0xb9c float.o
+                0xffa04364                bytesToFloat
+                0xffa04cd0                printFloat
+                0xffa04a98                bigMulti
+                0xffa04c34                power
+                0xffa04900                isOne
+                0xffa04394                minus
+                0xffa04c4c                printBinary
+                0xffa049ac                intToFloat
+                0xffa043a0                divFloat
+                0xffa04388                parseFloat
+                0xffa04ed8                printExponent
+                0xffa04c8c                printMantissa
+                0xffa049a0                lteFloat
+                0xffa0445c                addFloat
+                0xffa04b14                mulFloat
+                0xffa04910                gteFloat
+                0xffa04750                subFloat
+                0xffa04e68                floatInBinary
  colors.o(.text)
- .text          0xffa04d54      0xfa4 colors.o
-                0xffa04f00                vmean
-                0xffa05274                edge_detect
-                0xffa05174                vfind
-                0xffa0540c                svs_segcode
-                0xffa0555c                vhorizon
-                0xffa04fc4                color_segment
-                0xffa05758                addvect
-                0xffa057e4                vblob
-                0xffa04dd8                blob_merge
-                0xffa056c0                svs_segview
-                0xffa04d54                init_colors
-                0xffa05608                vscan
-                0xffa04e34                vhist
-                0xffa04da4                vpix
+ .text          0xffa04f00     0x1228 colors.o
+                0xffa050ac                vmean
+                0xffa05420                edge_detect
+                0xffa05320                vfind
+                0xffa055b8                svs_segcode
+                0xffa05994                vhorizon
+                0xffa05170                color_segment
+                0xffa05858                addvect
+                0xffa05c14                vblob
+                0xffa04f84                blob_merge
+                0xffa057c0                svs_segview
+                0xffa04f00                init_colors
+                0xffa05708                vscan
+                0xffa04fe0                vhist
+                0xffa058e4                addline
+                0xffa04f50                vpix
  jpeg.o(.text)
- .text          0xffa05cf8      0xd9c jpeg.o
-                0xffa068a4                DCT
-                0xffa0629c                close_bitstream
-                0xffa068b8                encodeMCU
-                0xffa05de4                huffman
-                0xffa06310                write_markers
-                0xffa069b4                encode_image
-                0xffa06530                initialize_quantization_tables
-                0xffa066f0                read_422_format
-                0xffa05cf8                initialization
-                0xffa05dc4                levelshift
-                0xffa06620                quantization
-                0xffa06670                read_400_format
+ .text          0xffa06128      0xd9c jpeg.o
+                0xffa06cd4                DCT
+                0xffa066cc                close_bitstream
+                0xffa06ce8                encodeMCU
+                0xffa06214                huffman
+                0xffa06740                write_markers
+                0xffa06de4                encode_image
+                0xffa06960                initialize_quantization_tables
+                0xffa06b20                read_422_format
+                0xffa06128                initialization
+                0xffa061f4                levelshift
+                0xffa06a50                quantization
+                0xffa06aa0                read_400_format
  r8x8dct.o(.text)
- *fill*         0xffa06a94        0x4 00
- .text          0xffa06a98       0xf0 r8x8dct.o
-                0xffa06a98                _r8x8dct
+ *fill*         0xffa06ec4        0x4 00
+ .text          0xffa06ec8       0xf0 r8x8dct.o
+                0xffa06ec8                _r8x8dct
  spi.o(.text)
- .text          0xffa06b88      0x1e0 spi.o
-                0xffa06c6c                svs_master
-                0xffa06b88                svs_slave
+ .text          0xffa06fb8      0x1e0 spi.o
+                0xffa0709c                svs_master
+                0xffa06fb8                svs_slave
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa06d68      0x184 setjmp.o
-                0xffa06d68                longjmp
-                0xffa06e30                setjmp
+ .text          0xffa07198      0x184 setjmp.o
+                0xffa07198                longjmp
+                0xffa07260                setjmp
  neural.o(.text)
- .text          0xffa06eec      0x5c4 neural.o
-                0xffa0728c                nnpack8x8
-                0xffa07478                nninit_network
-                0xffa07308                nndisplay
-                0xffa06f84                f_logic
-                0xffa06fe4                nncalculate_network
-                0xffa070cc                nncalculate_errors
-                0xffa0739c                nntrain_network
-                0xffa07388                nninit_pattern
-                0xffa06eec                nnset_pattern
-                0xffa07180                nnscale8x8
+ .text          0xffa0731c      0x5c4 neural.o
+                0xffa076bc                nnpack8x8
+                0xffa078a8                nninit_network
+                0xffa07738                nndisplay
+                0xffa073b4                f_logic
+                0xffa07414                nncalculate_network
+                0xffa074fc                nncalculate_errors
+                0xffa077cc                nntrain_network
+                0xffa077b8                nninit_pattern
+                0xffa0731c                nnset_pattern
+                0xffa075b0                nnscale8x8
 
 .text           0x00000000     0x8178
  .text          0x00000000       0xf0 camera.o
@@ -671,7 +678,7 @@ Linker script and memory map
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff8016f0     0x287c
+.rodata         0xff8016f0     0x28e4
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
                 0xff8016f0       0xb2 edit.o
@@ -692,68 +699,68 @@ Linker script and memory map
  .rodata        0xff801ac8      0x36c main.o
  .rodata        0xff801e34      0x118 srv.o
  .rodata.str1.4
-                0xff801f4c      0x6b2 srv.o
-                                0x6c0 (size before relaxing)
- *fill*         0xff8025fe        0x2 00
- .rodata        0xff802600       0x10 uart.o
+                0xff801f4c      0x6ee srv.o
+                                0x6fc (size before relaxing)
+ *fill*         0xff80263a        0x2 00
+ .rodata        0xff80263c       0x10 uart.o
  .rodata.str1.4
-                0xff802610       0x33 float.o
+                0xff80264c       0x33 float.o
                                  0x34 (size before relaxing)
- *fill*         0xff802643        0x1 00
+ *fill*         0xff80267f        0x1 00
  .rodata.str1.4
-                0xff802644       0x27 colors.o
-                                 0x28 (size before relaxing)
- *fill*         0xff80266b        0x1 00
+                0xff802680       0x53 colors.o
+                                 0x54 (size before relaxing)
+ *fill*         0xff8026d3        0x1 00
  .rodata.str1.4
-                0xff80266c       0x5b spi.o
+                0xff8026d4       0x5b spi.o
                                  0x5c (size before relaxing)
- *fill*         0xff8026c7        0x1 00
+ *fill*         0xff80272f        0x1 00
  .rodata.str1.4
-                0xff8026c8        0x4 neural.o
+                0xff802730        0x4 neural.o
                                   0xc (size before relaxing)
  .rodata.str1.4
-                0xff8026cc       0x57 picoc/picoc.o
+                0xff802734       0x57 picoc/picoc.o
                                  0x58 (size before relaxing)
- *fill*         0xff802723        0x1 00
+ *fill*         0xff80278b        0x1 00
  .rodata.str1.4
-                0xff802724        0xe picoc/table.o
+                0xff80278c        0xe picoc/table.o
                                  0x14 (size before relaxing)
- *fill*         0xff802732        0x2 00
- .rodata        0xff802734      0x2e0 picoc/lex.o
+ *fill*         0xff80279a        0x2 00
+ .rodata        0xff80279c      0x2e0 picoc/lex.o
  .rodata.str1.4
-                0xff802a14       0xe6 picoc/lex.o
+                0xff802a7c       0xe6 picoc/lex.o
                                 0x108 (size before relaxing)
- *fill*         0xff802afa        0x2 00
+ *fill*         0xff802b62        0x2 00
  .rodata.str1.4
-                0xff802afc      0x1a1 picoc/parse.o
+                0xff802b64      0x1a1 picoc/parse.o
                                 0x1a8 (size before relaxing)
- *fill*         0xff802c9d        0x3 00
- .rodata        0xff802ca0       0x98 picoc/parse.o
+ *fill*         0xff802d05        0x3 00
+ .rodata        0xff802d08       0x98 picoc/parse.o
  .rodata.str1.4
-                0xff802d38      0x36a picoc/expression.o
+                0xff802da0      0x36a picoc/expression.o
                                 0x3b0 (size before relaxing)
- *fill*         0xff8030a2        0x2 00
- .rodata        0xff8030a4      0x264 picoc/expression.o
+ *fill*         0xff80310a        0x2 00
+ .rodata        0xff80310c      0x264 picoc/expression.o
  .rodata.str1.4
-                0xff803308      0x12d picoc/type.o
+                0xff803370      0x12d picoc/type.o
                                 0x164 (size before relaxing)
- *fill*         0xff803435        0x3 00
- .rodata        0xff803438       0x2c picoc/type.o
+ *fill*         0xff80349d        0x3 00
+ .rodata        0xff8034a0       0x2c picoc/type.o
  .rodata.str1.4
-                0xff803464       0x9b picoc/variable.o
+                0xff8034cc       0x9b picoc/variable.o
                                  0xc4 (size before relaxing)
- *fill*         0xff8034ff        0x1 00
+ *fill*         0xff803567        0x1 00
  .rodata.str1.4
-                0xff803500       0xd2 picoc/clibrary.o
+                0xff803568       0xd2 picoc/clibrary.o
                                  0xf4 (size before relaxing)
- *fill*         0xff8035d2        0x2 00
- .rodata        0xff8035d4       0x28 picoc/clibrary.o
+ *fill*         0xff80363a        0x2 00
+ .rodata        0xff80363c       0x28 picoc/clibrary.o
  .rodata.str1.4
-                0xff8035fc      0x7ec picoc/library_surveyor.o
+                0xff803664      0x7ec picoc/library_surveyor.o
                                 0x800 (size before relaxing)
- .rodata        0xff803de8      0x17c picoc/library_surveyor.o
+ .rodata        0xff803e50      0x17c picoc/library_surveyor.o
  .rodata.str1.4
-                0xff803f64        0x8 picoc/platform.o
+                0xff803fcc        0x8 picoc/platform.o
                                   0xc (size before relaxing)
  .rodata.str1.4
                 0x00000000       0x10 picoc/platform_surveyor.o
@@ -779,7 +786,7 @@ Linker script and memory map
                 0x00008178                . = ALIGN (0x4)
                 0x00008178                __sdram_bss_end = .
 
-.bss            0xff900000     0x3808
+.bss            0xff900000     0x3864
                 0xff900000                __bss_start = .
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
@@ -802,147 +809,150 @@ Linker script and memory map
                 0xff900020                thumbnail_flag
  .bss           0xff900024        0x0 uart.o
  .bss           0xff900024        0x0 float.o
- .bss           0xff900024        0x0 colors.o
- .bss           0xff900024        0x8 jpeg.o
-                0xff900024                lcode
-                0xff900028                bitindex
- .bss           0xff90002c        0x0 r8x8dct.o
- .bss           0xff90002c        0x0 spi.o
- .bss           0xff90002c        0x0 setjmp.o
- .bss           0xff90002c        0x0 neural.o
- .bss           0xff90002c        0x0 init.o
- .bss           0xff90002c        0x0 string.o
- .bss           0xff90002c        0x0 sdcard.o
- .bss           0xff90002c        0x0 picoc/picoc.o
- .bss           0xff90002c        0x4 picoc/table.o
-                0xff90002c                StrEmpty
- .bss           0xff900030       0x3c picoc/lex.o
- .bss           0xff90006c        0x4 picoc/parse.o
- .bss           0xff900070        0x0 picoc/expression.o
- .bss           0xff900070       0x24 picoc/heap.o
- .bss           0xff900094        0x0 picoc/type.o
- .bss           0xff900094        0x4 picoc/variable.o
-                0xff900094                TopStackFrame
- .bss           0xff900098        0x4 picoc/clibrary.o
- .bss           0xff90009c       0x8c picoc/library_surveyor.o
- .bss           0xff900128        0x0 picoc/platform.o
- .bss           0xff900128        0x0 picoc/platform_surveyor.o
+ .bss           0xff900024       0x50 colors.o
+ .bss           0xff900074        0x8 jpeg.o
+                0xff900074                lcode
+                0xff900078                bitindex
+ .bss           0xff90007c        0x0 r8x8dct.o
+ .bss           0xff90007c        0x0 spi.o
+ .bss           0xff90007c        0x0 setjmp.o
+ .bss           0xff90007c        0x0 neural.o
+ .bss           0xff90007c        0x0 init.o
+ .bss           0xff90007c        0x0 string.o
+ .bss           0xff90007c        0x0 sdcard.o
+ .bss           0xff90007c        0x0 picoc/picoc.o
+ .bss           0xff90007c        0x4 picoc/table.o
+                0xff90007c                StrEmpty
+ .bss           0xff900080       0x3c picoc/lex.o
+ .bss           0xff9000bc        0x4 picoc/parse.o
+ .bss           0xff9000c0        0x0 picoc/expression.o
+ .bss           0xff9000c0       0x24 picoc/heap.o
+ .bss           0xff9000e4        0x0 picoc/type.o
+ .bss           0xff9000e4        0x4 picoc/variable.o
+                0xff9000e4                TopStackFrame
+ .bss           0xff9000e8        0x4 picoc/clibrary.o
+ .bss           0xff9000ec       0x8c picoc/library_surveyor.o
+ .bss           0xff900178        0x0 picoc/platform.o
+ .bss           0xff900178        0x0 picoc/platform_surveyor.o
  *(COMMON)
- COMMON         0xff900128       0x18 camera.o
-                0xff900128                dlist2
-                0xff900134                dlist1
- COMMON         0xff900140      0x406 xmodem.o
-                0xff900140                xbuff
- *fill*         0xff900546        0x2 00
- COMMON         0xff900548       0x20 gps.o
-                0xff900548                gps_gga
- COMMON         0xff900568       0x14 malloc.o
-                0xff900568                base
-                0xff900570                heap_end
-                0xff900574                heap_start
-                0xff900578                heap_ptr
- COMMON         0xff90057c       0xbc srv.o
-                0xff90057c                imgWidth
-                0xff900580                rfailsafe
-                0xff900584                j
-                0xff900588                x_acc
-                0xff90058c                i
-                0xff900590                segmentation_flag
-                0xff900594                pwm2_init
-                0xff900598                sonar_data
-                0xff9005ac                y_acc0
-                0xff9005b0                quality
-                0xff9005b4                y_acc
-                0xff9005b8                output_start
-                0xff9005bc                pwm1_init
-                0xff9005c0                image_size
-                0xff9005c4                pwm1_mode
-                0xff9005c8                x_center
-                0xff9005cc                lfailsafe
-                0xff9005d0                edge_thresh
-                0xff9005d4                horizon_detect_flag
-                0xff9005d8                master
-                0xff9005dc                base_speed
-                0xff9005e0                rspeed2
-                0xff9005e4                lspeed
-                0xff9005e8                overlay_flag
-                0xff9005ec                lspeed2
-                0xff9005f0                err1
-                0xff9005f4                cp
-                0xff9005f8                output_end
-                0xff9005fc                pwm2_mode
-                0xff900600                obstacle_detect_flag
-                0xff900604                framecount
-                0xff900608                x_acc0
-                0xff90060c                imgHead
-                0xff900618                edge_detect_flag
-                0xff90061c                imgHeight
-                0xff900620                failsafe_clock
-                0xff900624                y_center
-                0xff900628                rspeed
-                0xff90062c                base_speed2
-                0xff900630                frame_diff_flag
-                0xff900634                ix
- COMMON         0xff900638      0xf8c colors.o
-                0xff900638                blobcnt
-                0xff900734                ymax
-                0xff900778                blobx1
-                0xff900874                umax
-                0xff9008b8                hist0
-                0xff900cb8                hist1
-                0xff9010b8                blobix
-                0xff9011b4                bloby2
-                0xff9012b0                mean
-                0xff9012bc                vmax
-                0xff901300                vmin
-                0xff901344                bloby1
-                0xff901440                blobx2
-                0xff90153c                ymin
-                0xff901580                umin
- COMMON         0xff9015c4      0x584 jpeg.o
-                0xff9015c4                Y2
-                0xff901644                Temp
-                0xff9016c4                Cqt
-                0xff901704                Y3
-                0xff901784                Y4
-                0xff901804                ICqt
-                0xff901884                ILqt
-                0xff901904                CR
-                0xff901984                Lqt
-                0xff9019c4                CB
-                0xff901a44                fdct_temp
-                0xff901ac4                read_format
-                0xff901ac8                Y1
- COMMON         0xff901b48     0x1640 neural.o
-                0xff901b48                weights
-                0xff902f48                teach_neurons
-                0xff902f88                nerror
-                0xff903008                neurons
- COMMON         0xff903188      0x18c picoc/table.o
-                0xff903188                StringHashTable
-                0xff90330c                StringTable
- COMMON         0xff903314      0x128 picoc/type.o
-                0xff903314                CharArrayType
-                0xff903318                FunctionType
-                0xff90333c                EnumType
-                0xff903360                VoidType
-                0xff903384                MacroType
-                0xff9033a8                CharType
-                0xff9033cc                CharPtrType
-                0xff9033d0                WordType
-                0xff9033f4                IntType
-                0xff903418                UberType
- COMMON         0xff90343c      0x318 picoc/variable.o
-                0xff90343c                StringLiteralHashTable
-                0xff9035c0                GlobalHashTable
-                0xff903744                GlobalTable
-                0xff90374c                StringLiteralTable
- COMMON         0xff903754       0x10 picoc/clibrary.o
-                0xff903754                CStdOut
- COMMON         0xff903764       0xa4 picoc/platform_surveyor.o
-                0xff903764                ExitBuf
-                0xff903808                . = ALIGN (0x4)
-                0xff903808                __bss_end = .
+ COMMON         0xff900178       0x18 camera.o
+                0xff900178                dlist2
+                0xff900184                dlist1
+ COMMON         0xff900190      0x406 xmodem.o
+                0xff900190                xbuff
+ *fill*         0xff900596        0x2 00
+ COMMON         0xff900598       0x20 gps.o
+                0xff900598                gps_gga
+ COMMON         0xff9005b8       0x14 malloc.o
+                0xff9005b8                base
+                0xff9005c0                heap_end
+                0xff9005c4                heap_start
+                0xff9005c8                heap_ptr
+ COMMON         0xff9005cc       0xc8 srv.o
+                0xff9005cc                imgWidth
+                0xff9005d0                rfailsafe
+                0xff9005d4                j
+                0xff9005d8                x_acc
+                0xff9005dc                i
+                0xff9005e0                segmentation_flag
+                0xff9005e4                pwm2_init
+                0xff9005e8                sonar_data
+                0xff9005fc                y_acc0
+                0xff900600                quality
+                0xff900604                y_acc
+                0xff900608                output_start
+                0xff90060c                lcount
+                0xff900610                pwm1_init
+                0xff900614                image_size
+                0xff900618                pwm1_mode
+                0xff90061c                x_center
+                0xff900620                lfailsafe
+                0xff900624                edge_thresh
+                0xff900628                horizon_detect_flag
+                0xff90062c                master
+                0xff900630                base_speed
+                0xff900634                rspeed2
+                0xff900638                lspeed
+                0xff90063c                overlay_flag
+                0xff900640                lspeed2
+                0xff900644                err1
+                0xff900648                cp
+                0xff90064c                output_end
+                0xff900650                pwm2_mode
+                0xff900654                obstacle_detect_flag
+                0xff900658                framecount
+                0xff90065c                rcount
+                0xff900660                x_acc0
+                0xff900664                imgHead
+                0xff900670                edge_detect_flag
+                0xff900674                encoder_flag
+                0xff900678                imgHeight
+                0xff90067c                failsafe_clock
+                0xff900680                y_center
+                0xff900684                rspeed
+                0xff900688                base_speed2
+                0xff90068c                frame_diff_flag
+                0xff900690                ix
+ COMMON         0xff900694      0xf8c colors.o
+                0xff900694                blobcnt
+                0xff900790                ymax
+                0xff9007d4                blobx1
+                0xff9008d0                umax
+                0xff900914                hist0
+                0xff900d14                hist1
+                0xff901114                blobix
+                0xff901210                bloby2
+                0xff90130c                mean
+                0xff901318                vmax
+                0xff90135c                vmin
+                0xff9013a0                bloby1
+                0xff90149c                blobx2
+                0xff901598                ymin
+                0xff9015dc                umin
+ COMMON         0xff901620      0x584 jpeg.o
+                0xff901620                Y2
+                0xff9016a0                Temp
+                0xff901720                Cqt
+                0xff901760                Y3
+                0xff9017e0                Y4
+                0xff901860                ICqt
+                0xff9018e0                ILqt
+                0xff901960                CR
+                0xff9019e0                Lqt
+                0xff901a20                CB
+                0xff901aa0                fdct_temp
+                0xff901b20                read_format
+                0xff901b24                Y1
+ COMMON         0xff901ba4     0x1640 neural.o
+                0xff901ba4                weights
+                0xff902fa4                teach_neurons
+                0xff902fe4                nerror
+                0xff903064                neurons
+ COMMON         0xff9031e4      0x18c picoc/table.o
+                0xff9031e4                StringHashTable
+                0xff903368                StringTable
+ COMMON         0xff903370      0x128 picoc/type.o
+                0xff903370                CharArrayType
+                0xff903374                FunctionType
+                0xff903398                EnumType
+                0xff9033bc                VoidType
+                0xff9033e0                MacroType
+                0xff903404                CharType
+                0xff903428                CharPtrType
+                0xff90342c                WordType
+                0xff903450                IntType
+                0xff903474                UberType
+ COMMON         0xff903498      0x318 picoc/variable.o
+                0xff903498                StringLiteralHashTable
+                0xff90361c                GlobalHashTable
+                0xff9037a0                GlobalTable
+                0xff9037a8                StringLiteralTable
+ COMMON         0xff9037b0       0x10 picoc/clibrary.o
+                0xff9037b0                CStdOut
+ COMMON         0xff9037c0       0xa4 picoc/platform_surveyor.o
+                0xff9037c0                ExitBuf
+                0xff903864                . = ALIGN (0x4)
+                0xff903864                __bss_end = .
                 0xffb00ffc                . = 0xffb00ffc
                 0xffb00ffc                PROVIDE (_supervisor_stack, .)
 LOAD init.o
@@ -1016,7 +1026,7 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_abbrev  0x00002c2c      0x142 picoc/platform.o
  .debug_abbrev  0x00002d6e      0x168 picoc/platform_surveyor.o
 
-.debug_info     0x00000000     0xe169
+.debug_info     0x00000000     0xe3a1
  .debug_info    0x00000000      0x136 camera.o
  .debug_info    0x00000136      0x1e7 edit.o
  .debug_info    0x0000031d      0x158 i2c.o
@@ -1027,30 +1037,30 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x00001347       0x54 myfunc.o
  .debug_info    0x0000139b       0x7c main.o
  .debug_info    0x00001417      0x23a malloc.o
- .debug_info    0x00001651     0x1769 srv.o
- .debug_info    0x00002dba      0x338 uart.o
- .debug_info    0x000030f2      0x781 float.o
- .debug_info    0x00003873      0xac9 colors.o
- .debug_info    0x0000433c      0xb0b jpeg.o
- .debug_info    0x00004e47       0xfa spi.o
- .debug_info    0x00004f41      0x438 neural.o
- .debug_info    0x00005379       0x64 init.o
- .debug_info    0x000053dd      0x516 string.o
- .debug_info    0x000058f3      0x391 sdcard.o
- .debug_info    0x00005c84      0x54f picoc/picoc.o
- .debug_info    0x000061d3      0x8db picoc/table.o
- .debug_info    0x00006aae      0xf3c picoc/lex.o
- .debug_info    0x000079ea      0xc1e picoc/parse.o
- .debug_info    0x00008608     0x12a0 picoc/expression.o
- .debug_info    0x000098a8      0x29f picoc/heap.o
- .debug_info    0x00009b47      0xcda picoc/type.o
- .debug_info    0x0000a821      0xb67 picoc/variable.o
- .debug_info    0x0000b388      0xaa1 picoc/clibrary.o
- .debug_info    0x0000be29     0x1e06 picoc/library_surveyor.o
- .debug_info    0x0000dc2f      0x2fb picoc/platform.o
- .debug_info    0x0000df2a      0x23f picoc/platform_surveyor.o
+ .debug_info    0x00001651     0x186c srv.o
+ .debug_info    0x00002ebd      0x338 uart.o
+ .debug_info    0x000031f5      0x781 float.o
+ .debug_info    0x00003976      0xbfe colors.o
+ .debug_info    0x00004574      0xb0b jpeg.o
+ .debug_info    0x0000507f       0xfa spi.o
+ .debug_info    0x00005179      0x438 neural.o
+ .debug_info    0x000055b1       0x64 init.o
+ .debug_info    0x00005615      0x516 string.o
+ .debug_info    0x00005b2b      0x391 sdcard.o
+ .debug_info    0x00005ebc      0x54f picoc/picoc.o
+ .debug_info    0x0000640b      0x8db picoc/table.o
+ .debug_info    0x00006ce6      0xf3c picoc/lex.o
+ .debug_info    0x00007c22      0xc1e picoc/parse.o
+ .debug_info    0x00008840     0x12a0 picoc/expression.o
+ .debug_info    0x00009ae0      0x29f picoc/heap.o
+ .debug_info    0x00009d7f      0xcda picoc/type.o
+ .debug_info    0x0000aa59      0xb67 picoc/variable.o
+ .debug_info    0x0000b5c0      0xaa1 picoc/clibrary.o
+ .debug_info    0x0000c061     0x1e06 picoc/library_surveyor.o
+ .debug_info    0x0000de67      0x2fb picoc/platform.o
+ .debug_info    0x0000e162      0x23f picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x37f4
+.debug_line     0x00000000     0x38a5
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143       0xa7 i2c.o
@@ -1059,32 +1069,32 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_line    0x0000048e      0x139 xmodem.o
  .debug_line    0x000005c7      0x13d gps.o
  .debug_line    0x00000704       0x3c myfunc.o
- .debug_line    0x00000740      0x10c main.o
- .debug_line    0x0000084c       0xa6 malloc.o
- .debug_line    0x000008f2      0x97e srv.o
- .debug_line    0x00001270       0xd5 uart.o
- .debug_line    0x00001345      0x316 float.o
- .debug_line    0x0000165b      0x31e colors.o
- .debug_line    0x00001979      0x315 jpeg.o
- .debug_line    0x00001c8e       0x94 spi.o
- .debug_line    0x00001d22      0x11e neural.o
- .debug_line    0x00001e40       0x53 init.o
- .debug_line    0x00001e93      0x10a string.o
- .debug_line    0x00001f9d      0x10b sdcard.o
- .debug_line    0x000020a8       0x94 picoc/picoc.o
- .debug_line    0x0000213c       0xe3 picoc/table.o
- .debug_line    0x0000221f      0x36e picoc/lex.o
- .debug_line    0x0000258d      0x26b picoc/parse.o
- .debug_line    0x000027f8      0x46f picoc/expression.o
- .debug_line    0x00002c67       0xe9 picoc/heap.o
- .debug_line    0x00002d50      0x1e4 picoc/type.o
- .debug_line    0x00002f34      0x1a2 picoc/variable.o
- .debug_line    0x000030d6      0x176 picoc/clibrary.o
- .debug_line    0x0000324c      0x451 picoc/library_surveyor.o
- .debug_line    0x0000369d       0xc7 picoc/platform.o
- .debug_line    0x00003764       0x90 picoc/platform_surveyor.o
+ .debug_line    0x00000740      0x110 main.o
+ .debug_line    0x00000850       0xa6 malloc.o
+ .debug_line    0x000008f6      0x9c9 srv.o
+ .debug_line    0x000012bf       0xd5 uart.o
+ .debug_line    0x00001394      0x316 float.o
+ .debug_line    0x000016aa      0x380 colors.o
+ .debug_line    0x00001a2a      0x315 jpeg.o
+ .debug_line    0x00001d3f       0x94 spi.o
+ .debug_line    0x00001dd3      0x11e neural.o
+ .debug_line    0x00001ef1       0x53 init.o
+ .debug_line    0x00001f44      0x10a string.o
+ .debug_line    0x0000204e      0x10b sdcard.o
+ .debug_line    0x00002159       0x94 picoc/picoc.o
+ .debug_line    0x000021ed       0xe3 picoc/table.o
+ .debug_line    0x000022d0      0x36e picoc/lex.o
+ .debug_line    0x0000263e      0x26b picoc/parse.o
+ .debug_line    0x000028a9      0x46f picoc/expression.o
+ .debug_line    0x00002d18       0xe9 picoc/heap.o
+ .debug_line    0x00002e01      0x1e4 picoc/type.o
+ .debug_line    0x00002fe5      0x1a2 picoc/variable.o
+ .debug_line    0x00003187      0x176 picoc/clibrary.o
+ .debug_line    0x000032fd      0x451 picoc/library_surveyor.o
+ .debug_line    0x0000374e       0xc7 picoc/platform.o
+ .debug_line    0x00003815       0x90 picoc/platform_surveyor.o
 
-.debug_frame    0x00000000     0x3484
+.debug_frame    0x00000000     0x3508
  .debug_frame   0x00000000       0x4c camera.o
  .debug_frame   0x0000004c      0x100 edit.o
  .debug_frame   0x0000014c       0x40 i2c.o
@@ -1095,65 +1105,65 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_frame   0x00000598       0x28 myfunc.o
  .debug_frame   0x000005c0       0x38 main.o
  .debug_frame   0x000005f8       0x94 malloc.o
- .debug_frame   0x0000068c      0x970 srv.o
- .debug_frame   0x00000ffc      0x164 uart.o
- .debug_frame   0x00001160      0x244 float.o
- .debug_frame   0x000013a4      0x248 colors.o
- .debug_frame   0x000015ec      0x1b0 jpeg.o
- .debug_frame   0x0000179c       0x5c spi.o
- .debug_frame   0x000017f8      0x16c neural.o
- .debug_frame   0x00001964       0xa4 init.o
- .debug_frame   0x00001a08      0x18c string.o
- .debug_frame   0x00001b94      0x1a8 sdcard.o
- .debug_frame   0x00001d3c       0x74 picoc/picoc.o
- .debug_frame   0x00001db0      0x14c picoc/table.o
- .debug_frame   0x00001efc      0x29c picoc/lex.o
- .debug_frame   0x00002198      0x1b8 picoc/parse.o
- .debug_frame   0x00002350      0x2e0 picoc/expression.o
- .debug_frame   0x00002630       0xbc picoc/heap.o
- .debug_frame   0x000026ec      0x1dc picoc/type.o
- .debug_frame   0x000028c8      0x2e0 picoc/variable.o
- .debug_frame   0x00002ba8      0x1b4 picoc/clibrary.o
- .debug_frame   0x00002d5c      0x620 picoc/library_surveyor.o
- .debug_frame   0x0000337c       0x7c picoc/platform.o
- .debug_frame   0x000033f8       0x8c picoc/platform_surveyor.o
+ .debug_frame   0x0000068c      0x9c8 srv.o
+ .debug_frame   0x00001054      0x164 uart.o
+ .debug_frame   0x000011b8      0x244 float.o
+ .debug_frame   0x000013fc      0x274 colors.o
+ .debug_frame   0x00001670      0x1b0 jpeg.o
+ .debug_frame   0x00001820       0x5c spi.o
+ .debug_frame   0x0000187c      0x16c neural.o
+ .debug_frame   0x000019e8       0xa4 init.o
+ .debug_frame   0x00001a8c      0x18c string.o
+ .debug_frame   0x00001c18      0x1a8 sdcard.o
+ .debug_frame   0x00001dc0       0x74 picoc/picoc.o
+ .debug_frame   0x00001e34      0x14c picoc/table.o
+ .debug_frame   0x00001f80      0x29c picoc/lex.o
+ .debug_frame   0x0000221c      0x1b8 picoc/parse.o
+ .debug_frame   0x000023d4      0x2e0 picoc/expression.o
+ .debug_frame   0x000026b4       0xbc picoc/heap.o
+ .debug_frame   0x00002770      0x1dc picoc/type.o
+ .debug_frame   0x0000294c      0x2e0 picoc/variable.o
+ .debug_frame   0x00002c2c      0x1b4 picoc/clibrary.o
+ .debug_frame   0x00002de0      0x620 picoc/library_surveyor.o
+ .debug_frame   0x00003400       0x7c picoc/platform.o
+ .debug_frame   0x0000347c       0x8c picoc/platform_surveyor.o
 
-.debug_loc      0x00000000    0x11726
+.debug_loc      0x00000000    0x11a2c
  .debug_loc     0x00000000       0x5b camera.o
  .debug_loc     0x0000005b      0x2eb edit.o
  .debug_loc     0x00000346      0x23f i2c.o
  .debug_loc     0x00000585      0x89e stm_m25p32.o
  .debug_loc     0x00000e23      0x79d printf.o
  .debug_loc     0x000015c0      0x6ac xmodem.o
- .debug_loc     0x00001c6c      0x7e9 gps.o
- .debug_loc     0x00002455       0x3e myfunc.o
- .debug_loc     0x00002493       0x2b main.o
- .debug_loc     0x000024be      0x1e1 malloc.o
- .debug_loc     0x0000269f     0x1b7d srv.o
- .debug_loc     0x0000421c      0x4aa uart.o
- .debug_loc     0x000046c6      0xf44 float.o
- .debug_loc     0x0000560a     0x1202 colors.o
- .debug_loc     0x0000680c     0x1539 jpeg.o
- .debug_loc     0x00007d45      0x1b5 spi.o
- .debug_loc     0x00007efa      0x460 neural.o
- .debug_loc     0x0000835a      0x122 init.o
- .debug_loc     0x0000847c      0x716 string.o
- .debug_loc     0x00008b92      0x6cb sdcard.o
- .debug_loc     0x0000925d       0xfa picoc/picoc.o
- .debug_loc     0x00009357      0x614 picoc/table.o
- .debug_loc     0x0000996b      0xfb2 picoc/lex.o
- .debug_loc     0x0000a91d      0xb6e picoc/parse.o
- .debug_loc     0x0000b48b     0x1d84 picoc/expression.o
- .debug_loc     0x0000d20f      0x2e2 picoc/heap.o
- .debug_loc     0x0000d4f1      0x946 picoc/type.o
- .debug_loc     0x0000de37      0xd45 picoc/variable.o
- .debug_loc     0x0000eb7c      0x8db picoc/clibrary.o
- .debug_loc     0x0000f457     0x1f25 picoc/library_surveyor.o
- .debug_loc     0x0001137c      0x20f picoc/platform.o
- .debug_loc     0x0001158b      0x19b picoc/platform_surveyor.o
+ .debug_loc     0x00001c6c      0x7de gps.o
+ .debug_loc     0x0000244a       0x3e myfunc.o
+ .debug_loc     0x00002488       0x2b main.o
+ .debug_loc     0x000024b3      0x1e1 malloc.o
+ .debug_loc     0x00002694     0x1c63 srv.o
+ .debug_loc     0x000042f7      0x4aa uart.o
+ .debug_loc     0x000047a1      0xf44 float.o
+ .debug_loc     0x000056e5     0x1422 colors.o
+ .debug_loc     0x00006b07     0x1539 jpeg.o
+ .debug_loc     0x00008040      0x1b5 spi.o
+ .debug_loc     0x000081f5      0x460 neural.o
+ .debug_loc     0x00008655      0x122 init.o
+ .debug_loc     0x00008777      0x716 string.o
+ .debug_loc     0x00008e8d      0x6d6 sdcard.o
+ .debug_loc     0x00009563       0xfa picoc/picoc.o
+ .debug_loc     0x0000965d      0x614 picoc/table.o
+ .debug_loc     0x00009c71      0xfb2 picoc/lex.o
+ .debug_loc     0x0000ac23      0xb6e picoc/parse.o
+ .debug_loc     0x0000b791     0x1d84 picoc/expression.o
+ .debug_loc     0x0000d515      0x2e2 picoc/heap.o
+ .debug_loc     0x0000d7f7      0x946 picoc/type.o
+ .debug_loc     0x0000e13d      0xd45 picoc/variable.o
+ .debug_loc     0x0000ee82      0x8db picoc/clibrary.o
+ .debug_loc     0x0000f75d     0x1f25 picoc/library_surveyor.o
+ .debug_loc     0x00011682      0x20f picoc/platform.o
+ .debug_loc     0x00011891      0x19b picoc/platform_surveyor.o
 
 .debug_pubnames
-                0x00000000     0x24cf
+                0x00000000     0x2533
  .debug_pubnames
                 0x00000000       0x59 camera.o
  .debug_pubnames
@@ -1175,49 +1185,49 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_pubnames
                 0x00000341       0x87 malloc.o
  .debug_pubnames
-                0x000003c8      0x8fd srv.o
+                0x000003c8      0x955 srv.o
  .debug_pubnames
-                0x00000cc5      0x112 uart.o
+                0x00000d1d      0x112 uart.o
  .debug_pubnames
-                0x00000dd7      0x10f float.o
+                0x00000e2f      0x10f float.o
  .debug_pubnames
-                0x00000ee6      0x15d colors.o
+                0x00000f3e      0x169 colors.o
  .debug_pubnames
-                0x00001043      0x2cc jpeg.o
+                0x000010a7      0x2cc jpeg.o
  .debug_pubnames
-                0x0000130f       0x2f spi.o
+                0x00001373       0x2f spi.o
  .debug_pubnames
-                0x0000133e      0x11a neural.o
+                0x000013a2      0x11a neural.o
  .debug_pubnames
-                0x00001458       0x1f init.o
+                0x000014bc       0x1f init.o
  .debug_pubnames
-                0x00001477       0xdb string.o
+                0x000014db       0xdb string.o
  .debug_pubnames
-                0x00001552       0xd1 sdcard.o
+                0x000015b6       0xd1 sdcard.o
  .debug_pubnames
-                0x00001623       0x37 picoc/picoc.o
+                0x00001687       0x37 picoc/picoc.o
  .debug_pubnames
-                0x0000165a       0xe1 picoc/table.o
+                0x000016be       0xe1 picoc/table.o
  .debug_pubnames
-                0x0000173b      0x1b8 picoc/lex.o
+                0x0000179f      0x1b8 picoc/lex.o
  .debug_pubnames
-                0x000018f3       0xe8 picoc/parse.o
+                0x00001957       0xe8 picoc/parse.o
  .debug_pubnames
-                0x000019db      0x208 picoc/expression.o
+                0x00001a3f      0x208 picoc/expression.o
  .debug_pubnames
-                0x00001be3       0xad picoc/heap.o
+                0x00001c47       0xad picoc/heap.o
  .debug_pubnames
-                0x00001c90      0x1b6 picoc/type.o
+                0x00001cf4      0x1b6 picoc/type.o
  .debug_pubnames
-                0x00001e46      0x274 picoc/variable.o
+                0x00001eaa      0x274 picoc/variable.o
  .debug_pubnames
-                0x000020ba       0xd1 picoc/clibrary.o
+                0x0000211e       0xd1 picoc/clibrary.o
  .debug_pubnames
-                0x0000218b      0x26e picoc/library_surveyor.o
+                0x000021ef      0x26e picoc/library_surveyor.o
  .debug_pubnames
-                0x000023f9       0x55 picoc/platform.o
+                0x0000245d       0x55 picoc/platform.o
  .debug_pubnames
-                0x0000244e       0x81 picoc/platform_surveyor.o
+                0x000024b2       0x81 picoc/platform_surveyor.o
 
 .debug_aranges  0x00000000      0x400
  .debug_aranges
@@ -1285,7 +1295,7 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_aranges
                 0x000003e0       0x20 picoc/platform_surveyor.o
 
-.debug_str      0x00000000     0x3394
+.debug_str      0x00000000     0x3409
  .debug_str     0x00000000       0xc7 camera.o
                                  0xcd (size before relaxing)
  .debug_str     0x000000c7       0x94 edit.o
@@ -1306,49 +1316,49 @@ OUTPUT(srv1.bin elf32-bfin)
                                  0x5f (size before relaxing)
  .debug_str     0x0000059b       0x6a malloc.o
                                  0xb8 (size before relaxing)
- .debug_str     0x00000605      0x7c4 srv.o
-                                0x908 (size before relaxing)
- .debug_str     0x00000dc9       0xee uart.o
+ .debug_str     0x00000605      0x821 srv.o
+                                0x96e (size before relaxing)
+ .debug_str     0x00000e26       0xee uart.o
                                 0x169 (size before relaxing)
- .debug_str     0x00000eb7      0x15a float.o
+ .debug_str     0x00000f14      0x15a float.o
                                 0x1dc (size before relaxing)
- .debug_str     0x00001011       0xc6 colors.o
-                                0x1be (size before relaxing)
- .debug_str     0x000010d7      0x444 jpeg.o
+ .debug_str     0x0000106e       0xde colors.o
+                                0x1ed (size before relaxing)
+ .debug_str     0x0000114c      0x444 jpeg.o
                                 0x4f5 (size before relaxing)
- .debug_str     0x0000151b       0x40 spi.o
+ .debug_str     0x00001590       0x40 spi.o
                                  0x82 (size before relaxing)
- .debug_str     0x0000155b       0xd9 neural.o
+ .debug_str     0x000015d0       0xd9 neural.o
                                 0x14f (size before relaxing)
- .debug_str     0x00001634       0x43 init.o
+ .debug_str     0x000016a9       0x43 init.o
                                  0x6c (size before relaxing)
- .debug_str     0x00001677       0xba string.o
+ .debug_str     0x000016ec       0xba string.o
                                 0x115 (size before relaxing)
- .debug_str     0x00001731       0xce sdcard.o
+ .debug_str     0x000017a6       0xce sdcard.o
                                 0x127 (size before relaxing)
- .debug_str     0x000017ff      0x232 picoc/picoc.o
+ .debug_str     0x00001874      0x232 picoc/picoc.o
                                 0x34b (size before relaxing)
- .debug_str     0x00001a31      0x11f picoc/table.o
+ .debug_str     0x00001aa6      0x11f picoc/table.o
                                 0x3fe (size before relaxing)
- .debug_str     0x00001b50      0x84b picoc/lex.o
+ .debug_str     0x00001bc5      0x84b picoc/lex.o
                                 0xb74 (size before relaxing)
- .debug_str     0x0000239b      0x248 picoc/parse.o
+ .debug_str     0x00002410      0x248 picoc/parse.o
                                 0xa83 (size before relaxing)
- .debug_str     0x000025e3      0x459 picoc/expression.o
+ .debug_str     0x00002658      0x459 picoc/expression.o
                                 0xd3f (size before relaxing)
- .debug_str     0x00002a3c       0xf8 picoc/heap.o
+ .debug_str     0x00002ab1       0xf8 picoc/heap.o
                                 0x17f (size before relaxing)
- .debug_str     0x00002b34      0x18a picoc/type.o
+ .debug_str     0x00002ba9      0x18a picoc/type.o
                                 0xa65 (size before relaxing)
- .debug_str     0x00002cbe      0x25c picoc/variable.o
+ .debug_str     0x00002d33      0x25c picoc/variable.o
                                 0x617 (size before relaxing)
- .debug_str     0x00002f1a      0x16f picoc/clibrary.o
+ .debug_str     0x00002f8f      0x16f picoc/clibrary.o
                                 0x50c (size before relaxing)
- .debug_str     0x00003089      0x247 picoc/library_surveyor.o
+ .debug_str     0x000030fe      0x247 picoc/library_surveyor.o
                                 0x6dc (size before relaxing)
- .debug_str     0x000032d0       0x54 picoc/platform.o
+ .debug_str     0x00003345       0x54 picoc/platform.o
                                 0x1c0 (size before relaxing)
- .debug_str     0x00003324       0x70 picoc/platform_surveyor.o
+ .debug_str     0x00003399       0x70 picoc/platform_surveyor.o
                                 0x1ab (size before relaxing)
 
 .comment        0x00000000      0x380

@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 16 May 2009 
+SRV-1 firmware build for Blackfin - 22 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added sdcard.c and sdcard.h for microSD card interface.  work in progress - 
@@ -53,6 +53,12 @@ SRV-1 firmware build for Blackfin - 16 May 2009
 * added uart0Signal() and uart1Signal() functions to check for incoming 
   character without emptying the serial input FIFO.  macro is print.h is
   getsignal().  this corrects a problem with the C signal() function
+
+* updated vhorizon() and g3 to compute slope/intercept with filtering and draw a 
+  line via addline()
+  
+* added '$e' and encoder() functions to support wheel rotation counters using
+  GPIO-H14 and H15 as inputs for left and right channels
   
 ============================================================================
 

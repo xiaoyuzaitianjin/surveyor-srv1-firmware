@@ -56,8 +56,9 @@ unsigned int image_size; /* JPEG image size */
 char imgHead[11]; /* image frame header for I command */
 
 /* Motor globals */
-int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, err1;
+int lspeed, rspeed, lcount, rcount, lspeed2, rspeed2, base_speed, base_speed2, err1;
 int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
+int encoder_flag;
 
 /* IMU globals */
 int x_acc, x_acc0, x_center;
@@ -100,8 +101,10 @@ void init_io() {
     sonar_flag = 0;
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
+    edge_thresh = 3200;
     obstacle_detect_flag = 0;
     segmentation_flag = 0;
+    encoder_flag = 0;
     
 }
 
@@ -569,6 +572,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
 
 void grab_frame () {
     unsigned int vect[16];
+    int slope, intercept;
     
     move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
@@ -581,8 +585,9 @@ void grab_frame () {
         svs_segcode((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh);
         svs_segview((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF);
     } else if (horizon_detect_flag) {
-        vhorizon((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 16, &vect[0]);
-        addvect((unsigned char *)FRAME_BUF, 16, &vect[0]);
+        vhorizon((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 
+                16, &vect[0], &slope, &intercept, 5);
+        addline((unsigned char *)FRAME_BUF, slope, intercept);
     } else if (obstacle_detect_flag) {
         vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 16, &vect[0]);
         addvect((unsigned char *)FRAME_BUF, 16, &vect[0]);
@@ -1418,6 +1423,7 @@ void process_colors() {
     unsigned int ix, iy, i1, i2, itot;
     unsigned int ulo[4], uhi[4], vlo[4], vhi[4];
     int vect[16];  // used by vscan()
+    int slope, intercept;
     unsigned char i2c_data[2];
               // vision processing commands
                     //    va = enable/disable AGC / AWB / AEC camera controls
@@ -1591,6 +1597,16 @@ void process_colors() {
             edge_thresh = ch1*1000 + ch2*100 + ch3*10 + ch4;
             printf("##vthresh %d\n\r", edge_thresh);
             break;
+        case 'u':  //    vu = scan for horizon, 
+            x1 = (unsigned int)getch() & 0x0F;  // get number of columns to use
+            grab_frame();
+            ix = vhorizon((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 
+                        (unsigned int)x1, (unsigned int *)&vect[0], &slope, &intercept, 5);
+            printf("##vhorizon = %d ", ix);
+            for (i1=0; i1<x1; i1++)
+                printf("%4d ", vect[i1]);
+            printf("\n\r");
+            break;
         case 'z':  //    vz = clear or segment colors
             ix = (unsigned int)getch() & 0x0F;
             printf("##vzero\n\r");
@@ -1751,6 +1767,48 @@ void process_neuralnet() {
             nnpack8x8(ix);
             nndisplay(ix);
             break;
+    }
+}
+
+/* use GPIO H14 and H15 for 2-channel wheel encoder inputs -
+    H14 (pin 31) is left motor, H15 (pin 32) is right motor */
+void init_encoders() {  
+    if (encoder_flag)
+        return;
+    encoder_flag = 1;
+    *pPORTHIO_INEN |= 0xC000;  // enable H14 and H15 as inputs
+    *pPORTHIO_DIR &= 0x3FFF;   // set H14 and H15 as inputs
+    initTMR4();
+}
+
+void read_encoders()
+{
+    encoders();
+    printf("##$encoders:  left = %d  right = %d\n\r", lcount, rcount);
+}
+
+void encoders() {
+    int t0;
+    unsigned int llast, rlast, lnew, rnew;
+    
+    init_encoders();
+
+    t0 = readRTC();
+    llast = *pPORTHIO & 0x4000;
+    rlast = *pPORTHIO & 0x8000;
+    lcount = rcount = 0;
+    
+    while ((readRTC() - t0) < 50) {  // count pulses for 50ms
+        lnew = *pPORTHIO & 0x4000;
+        if (llast != lnew) {
+            llast = lnew;
+            lcount++;
+        }
+        rnew = *pPORTHIO & 0x8000;
+        if (rlast != rnew) {
+            rlast = rnew;
+            rcount++;
+        }
     }
 }
 

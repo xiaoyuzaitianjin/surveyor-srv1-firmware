@@ -403,10 +403,14 @@ unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh,
 
 /* search for image horizon.  similar to vscan(), but search is top-to-bottom rather than bottom-to-top */
 unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
-           unsigned int columns, unsigned int *outvect) {
+           int columns, unsigned int *outvect, int *slope, int *intercept, int filter) {
     int x, y;
-    unsigned int ix, hits;
+    int ix, hits;
     unsigned char *pp;
+    static int sfilter[10], ifilter[10];
+    
+    if (filter > 10) filter = 10;  // max number of filter taps
+    if (filter < 1) filter = 1;
     
     svs_segcode(outbuf, inbuf, thresh);  // find edge pixels
 
@@ -418,12 +422,59 @@ unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh,
         pp = outbuf + (y * imgWidth / 2);
         for (x=0; x<imgWidth; x+=2) {  // note that edge detect used full UYVY per pixel position
             if (*pp & 0xC0) {   // look for edge hit 
-                outvect[((x * columns) / imgWidth)] = imgHeight - y;
+                outvect[((x * columns) / imgWidth)] = y;
                 hits++;
             }
             pp++;
         }
     }
+    /*int sx, sy, sxx, sxy, dx, delta;
+    sx = sy = sxx = sxy = 0;
+    dx = imgWidth / columns;
+    for (ix=0; ix<columns; ix++) {
+        x = ix*dx + dx/2;
+        y = (int)outvect[ix];
+        sx += x;
+        sy += y;
+        sxx += x*x;
+        sxy += x*y;
+    }
+    delta = columns*sxx - sx*sx;
+    *slope = (1000 * (columns*sxy - sx*sx))/ delta;  // slope is scaled by 1000
+    *intercept = (sxx*sy - sx*sxy) / delta; */
+    int sx, sy, stt, sts, t, dx;
+    sx = sy = stt = sts = 0;
+    dx = imgWidth / columns;
+    for (ix = 0; ix < columns; ix++) {
+        sx += ix*dx + dx/2;
+        sy += (int)outvect[ix];
+    }
+    for (ix = 0; ix < columns; ix++) {
+        t = ix*dx + dx/2 - sx/columns;
+        stt += t*t;
+        sts += t*(int)outvect[ix];
+    }
+	*slope = (1000*sts)/stt;
+	*intercept = (sy*1000 - sx*(*slope))/(columns*1000);
+    if (*intercept > (imgHeight-1)) *intercept = imgHeight-1;
+    if (*intercept < 0) *intercept = 0;
+
+    if (filter > 1) {
+        for (ix=filter; ix>1; ix--) {  // push old values to make room for latest
+            sfilter[ix-1] = sfilter[ix-2];
+            ifilter[ix-1] = ifilter[ix-2];
+        }
+        sfilter[0] = *slope;
+        ifilter[0] = *intercept;
+        sx = sy = 0;
+        for (ix=0; ix<filter; ix++) {  // now average the data
+            sx += sfilter[ix];
+            sy += ifilter[ix];
+        }
+        *slope = sx / filter;
+        *intercept = sy / filter;
+    }
+    printf("vhorizon:  slope = %d   intercept = %d\n\r", *slope, *intercept);
     return hits;
 }
 
@@ -499,11 +550,30 @@ void addvect(unsigned char *outbuf, unsigned int columns, unsigned int *vect)
     if (imgWidth > 640)   // buffer size limits this function to 640x480 resolution
         return;
     for (xx=0; xx<imgWidth; xx++) {
-        yy = (imgHeight-1) - (vect[(xx * columns) / imgWidth]);
+        yy = (imgHeight) - (vect[(xx * columns) / imgWidth]);
         ix = index(xx, yy);
-        outbuf[ix+1] =  outbuf[ix+3] = 59;
-        outbuf[ix] = 94;
-        outbuf[ix+2] = 228;
+        outbuf[ix+1] =  outbuf[ix+3] = 72;
+        outbuf[ix] = 84;
+        outbuf[ix+2] = 255;
+    }
+}
+
+/* display line as red pixels (red YUV = 72 84 255) (yellow YUV = 194 18 145)
+   note that slope is scaled up by 1000 */
+void addline(unsigned char *outbuf, int slope, int intercept)
+{
+    int xx, yy, ix;
+
+    if (imgWidth > 640)   // buffer size limits this function to 640x480 resolution
+        return;
+    for (xx=0; xx<imgWidth; xx+=2) {
+        yy = ((slope * xx) / 1000) + intercept; 
+        if (yy > (imgHeight-1)) yy = imgHeight - 1;
+        if (yy < 0) yy = 0; 
+        ix = index(xx, yy);
+        outbuf[ix+1] =  outbuf[ix+3] = 72;
+        outbuf[ix] = 84;
+        outbuf[ix+2] = 255;
     }
 }
 

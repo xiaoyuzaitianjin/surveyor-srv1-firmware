@@ -137,6 +137,9 @@ void testSD();
 /* Motors */
 void init_motors ();
 void init_servos();
+void init_encoders();
+void read_encoders();
+void encoders();
 void update_servos();
 void motor_command(), motor2_command();
 void motor_increase_base_speed ();
@@ -172,7 +175,7 @@ void delayNS (int delay);  // delay up to 100000 nanoseconds (.0001 sec)
 
 /* Globals */
 extern int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
-extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2;
+extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, lcount, rcount;
 extern int sonar_data[];
 extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag;
 extern unsigned int uart1_flag, thumbnail_flag;
