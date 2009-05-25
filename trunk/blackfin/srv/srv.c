@@ -1787,29 +1787,60 @@ void read_encoders()
     printf("##$encoders:  left = %d  right = %d\n\r", lcount, rcount);
 }
 
-void encoders() {
+/* read encoder pulses from GPIO-H14 and H15.  compute pulses per second, and
+      pack left and right encoder counts into 32-bit unsigned */
+unsigned int encoders() {
     int t0;
-    unsigned int llast, rlast, lnew, rnew;
+    unsigned int llast, rlast, lnew, rnew, ltime0, ltime1, rtime0, rtime1;
     
     init_encoders();
 
     t0 = readRTC();
     llast = *pPORTHIO & 0x4000;
     rlast = *pPORTHIO & 0x8000;
+    ltime0 = ltime1 = rtime0 = rtime1 = 0;
     lcount = rcount = 0;
     
-    while ((readRTC() - t0) < 50) {  // count pulses for 50ms
+    while ((readRTC() - t0) < 40) {  
         lnew = *pPORTHIO & 0x4000;
         if (llast != lnew) {
             llast = lnew;
             lcount++;
+            if (lcount == 1)
+                ltime0 = *pTIMER4_COUNTER;
+            if (lcount == 3)
+                ltime1 = *pTIMER4_COUNTER;
         }
         rnew = *pPORTHIO & 0x8000;
         if (rlast != rnew) {
             rlast = rnew;
             rcount++;
+            if (rcount == 1)
+                rtime0 = *pTIMER4_COUNTER;
+            if (rcount == 3)
+                rtime1 = *pTIMER4_COUNTER;
         }
+        if ((lcount>=3) && (rcount>=3))
+            break;
     }
+    if (!ltime1) ltime0 = 0;
+    if (ltime1 < ltime0) ltime1 += PERIPHERAL_CLOCK;   // fix wraparound
+    if (!rtime1) rtime0 = 0;
+    if (rtime1 < rtime0) rtime1 += PERIPHERAL_CLOCK;   // fix wraparound
+
+    ltime1 -= ltime0;  // compute pulse width
+    if (ltime1) 
+        lcount = PERIPHERAL_CLOCK / ltime1;  // compute pulses per second
+    else 
+        lcount = 0;
+
+    rtime1 -= rtime0;  
+    if (rtime1) 
+        rcount = PERIPHERAL_CLOCK / rtime1;  // compute pulses per second
+    else 
+        rcount = 0;
+    
+    return ((unsigned int)lcount << 16) + (unsigned int)rcount;
 }
 
 void testSD() {
@@ -1834,17 +1865,6 @@ unsigned int rand() {
     for (ix=0; ix<19; ix++)  // use every 19th result
         rand_seed = (rand_seed >> 1) ^ (-(rand_seed & 0x00000001) & 0x80200003); 
     return (rand_seed);
-}
-
-unsigned int isqrt(unsigned int val) {
-    unsigned int temp, g=0, b = 0x8000, bshft = 15;
-    do {
-        if (val >= (temp = (((g << 1) + b)<<bshft--))) {
-           g += b;
-           val -= temp;
-        }
-    } while (b >>= 1);
-    return g;
 }
 
 

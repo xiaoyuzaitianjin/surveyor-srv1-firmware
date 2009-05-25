@@ -139,7 +139,7 @@ void init_motors ();
 void init_servos();
 void init_encoders();
 void read_encoders();
-void encoders();
+unsigned int encoders();
 void update_servos();
 void motor_command(), motor2_command();
 void motor_increase_base_speed ();
@@ -162,7 +162,6 @@ int check_bounds_0_100(int ix);
 
 /* Misc */
 unsigned int rand();
-unsigned int isqrt(unsigned int);
 
 /* Clock */
 void initRTC ();

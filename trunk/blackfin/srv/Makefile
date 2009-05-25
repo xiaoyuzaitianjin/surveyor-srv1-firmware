@@ -11,7 +11,8 @@ INCLUDES = -I../include
 ASMFLAGS = -x assembler-with-cpp $(CPUDEFINES) $(INCLUDES)
 CFLAGS = $(INCLUDES) -g -O2 -Wall -fomit-frame-pointer -fno-builtin-printf -fno-builtin-puts \
 	-fno-builtin-strchr -fno-builtin-strcpy -fno-builtin-strlen -fno-builtin-strdup \
-	-fno-builtin-memset -fno-builtin-memcpy -fno-builtin-isdigit
+	-fno-builtin-memset -fno-builtin-memcpy -fno-builtin-isdigit -fno-builtin-cos -fno-builtin-sin \
+	-fno-builtin-tan -fno-builtin-acos -fno-builtin-asin -fno-builtin-atan
 CFLAGS += $(CPUDEFINES)
 
 OBJS = $(CSRCS:%.c=%.o) $(ASMSRCS:%.asm=%.o) 

@@ -1,8 +1,29 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 25 May 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* updated vhorizon() and g3 to compute slope/intercept with filtering and draw a 
+  line via addline()
+  
+* added '$e' and encoders() functions to support wheel rotation counters using
+  GPIO-H14 and H15 as inputs for left and right channels
+
+* changed gps functions to compute decimal minutes combine degrees+minutes to
+  single 32-bit integer
+
+* added gps_head() and gps_dist() functions to C for waypoint navigation -
+  distance is measured in meters
+  
+* added sqrt() function to C
+
+* replaced atan(y,x) function
+
+* changed cos(), sin() and tan() to scale by 1000 rather than 100
+
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 22 May 2009 
+SRV-1 firmware build for Blackfin - 17 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added sdcard.c and sdcard.h for microSD card interface.  work in progress - 
@@ -54,12 +75,6 @@ SRV-1 firmware build for Blackfin - 22 May 2009
   character without emptying the serial input FIFO.  macro is print.h is
   getsignal().  this corrects a problem with the C signal() function
 
-* updated vhorizon() and g3 to compute slope/intercept with filtering and draw a 
-  line via addline()
-  
-* added '$e' and encoder() functions to support wheel rotation counters using
-  GPIO-H14 and H15 as inputs for left and right channels
-  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 18 April 2009 
