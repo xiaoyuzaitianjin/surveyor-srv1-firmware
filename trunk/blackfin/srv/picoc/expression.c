@@ -143,7 +143,7 @@ int ExpressionAssignInt(struct ParseState *Parser, struct Value *DestValue, int 
 
 #ifndef NO_FP
 /* assign a floating point value */
-int ExpressionAssignFP(struct ParseState *Parser, struct Value *DestValue, double FromFP)
+double ExpressionAssignFP(struct ParseState *Parser, struct Value *DestValue, double FromFP)
 {
     if (!DestValue->IsLValue) 
         ProgramFail(Parser, "can't assign to this"); 
@@ -328,7 +328,23 @@ void ExpressionPrefixOperator(struct ParseState *Parser, struct ExpressionStack 
 
         default:
             /* an arithmetic operator */
-            if (IS_INTEGER_COERCIBLE(TopValue))
+#ifndef NO_FP
+            if (TopValue->Typ == &FPType)
+            {
+                /* floating point prefix arithmetic */
+                double ResultFP;
+                switch (Op)
+                {
+                    case TokenPlus:         ResultFP = TopValue->Val->FP; break;
+                    case TokenMinus:        ResultFP = -TopValue->Val->FP; break;
+                    default:                ProgramFail(Parser, "invalid operation"); break;
+                }
+                
+                ExpressionPushFP(Parser, StackTop, ResultFP);
+            }
+            else 
+#endif
+            if (IS_NUMERIC_COERCIBLE(TopValue))
             {
                 /* integer prefix arithmetic */
                 int ResultInt = 0;
@@ -346,19 +362,6 @@ void ExpressionPrefixOperator(struct ParseState *Parser, struct ExpressionStack 
 
                 ExpressionPushInt(Parser, StackTop, ResultInt);
             }
-#ifndef NO_FP
-            else if (TopValue->Typ == &FPType)
-            {
-                /* floating point prefix arithmetic */
-                double ResultFP;
-                switch (Op)
-                {
-                    case TokenPlus:         ResultFP = TopValue->Val->FP; break;
-                    case TokenMinus:        ResultFP = -TopValue->Val->FP; break;
-                    default:                ProgramFail(Parser, "invalid operation"); break;
-                }
-            }
-#endif
             else if (TopValue->Typ->Base == TypePointer)
             {
                 /* pointer prefix arithmetic */
@@ -421,7 +424,7 @@ void ExpressionPostfixOperator(struct ParseState *Parser, struct ExpressionStack
     }
     
     debugf("ExpressionPostfixOperator()\n");
-    if (IS_INTEGER_COERCIBLE(TopValue))
+    if (IS_NUMERIC_COERCIBLE(TopValue))
     {
         int ResultInt = 0;
         int TopInt = COERCE_INTEGER(TopValue);
@@ -517,7 +520,7 @@ void ExpressionInfixOperator(struct ParseState *Parser, struct ExpressionStack *
         if (BottomValue->Typ->Base != TypeArray)
             ProgramFail(Parser, "this %t is not an array", BottomValue->Typ);
         
-        if (!IS_INTEGER_COERCIBLE(TopValue))
+        if (!IS_NUMERIC_COERCIBLE(TopValue))
             ProgramFail(Parser, "array index must be an integer");
         
         ArrayIndex = COERCE_INTEGER(TopValue);
@@ -529,7 +532,44 @@ void ExpressionInfixOperator(struct ParseState *Parser, struct ExpressionStack *
         Result = VariableAllocValueFromExistingData(Parser, BottomValue->Typ->FromType, (union AnyValue *)(BottomValue->Val->Array.Data + TypeSize(BottomValue->Typ->FromType, 0, FALSE) * ArrayIndex), BottomValue->IsLValue, BottomValue->LValueFrom);
         ExpressionStackPushValueNode(Parser, StackTop, Result);
     }
-    else if (IS_INTEGER_COERCIBLE(TopValue) && IS_INTEGER_COERCIBLE(BottomValue))
+#ifndef NO_FP
+    else if ( (TopValue->Typ == &FPType && BottomValue->Typ == &FPType) ||
+              (TopValue->Typ == &FPType && IS_NUMERIC_COERCIBLE(BottomValue)) ||
+              (IS_NUMERIC_COERCIBLE(TopValue) && BottomValue->Typ == &FPType) )
+    {
+        /* floating point infix arithmetic */
+        int ResultIsInt = FALSE;
+        double ResultFP = 0.0;
+        double TopFP = (TopValue->Typ == &FPType) ? TopValue->Val->FP : (double)COERCE_INTEGER(TopValue);
+        double BottomFP = (BottomValue->Typ == &FPType) ? BottomValue->Val->FP : (double)COERCE_INTEGER(BottomValue);
+
+        switch (Op)
+        {
+            case TokenAssign:               ResultFP = ExpressionAssignFP(Parser, BottomValue, TopFP); break;
+            case TokenAddAssign:            ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP + TopFP); break;
+            case TokenSubtractAssign:       ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP - TopFP); break;
+            case TokenMultiplyAssign:       ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP * TopFP); break;
+            case TokenDivideAssign:         ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP / TopFP); break;
+            case TokenEqual:                ResultInt = BottomFP == TopFP; ResultIsInt = TRUE; break;
+            case TokenNotEqual:             ResultInt = BottomFP != TopFP; ResultIsInt = TRUE; break;
+            case TokenLessThan:             ResultInt = BottomFP < TopFP; ResultIsInt = TRUE; break;
+            case TokenGreaterThan:          ResultInt = BottomFP > TopFP; ResultIsInt = TRUE; break;
+            case TokenLessEqual:            ResultInt = BottomFP <= TopFP; ResultIsInt = TRUE; break;
+            case TokenGreaterEqual:         ResultInt = BottomFP >= TopFP; ResultIsInt = TRUE; break;
+            case TokenPlus:                 ResultFP = BottomFP + TopFP; break;
+            case TokenMinus:                ResultFP = BottomFP - TopFP; break;
+            case TokenAsterisk:             ResultFP = BottomFP * TopFP; break;
+            case TokenSlash:                ResultFP = BottomFP / TopFP; break;
+            default:                        ProgramFail(Parser, "invalid operation"); break;
+        }
+
+        if (ResultIsInt)
+            ExpressionPushInt(Parser, StackTop, ResultInt);
+        else
+            ExpressionPushFP(Parser, StackTop, ResultFP);
+    }
+#endif
+    else if (IS_NUMERIC_COERCIBLE(TopValue) && IS_NUMERIC_COERCIBLE(BottomValue))
     { 
         /* integer operation */
         int TopInt = COERCE_INTEGER(TopValue);
@@ -576,44 +616,7 @@ void ExpressionInfixOperator(struct ParseState *Parser, struct ExpressionStack *
         
         ExpressionPushInt(Parser, StackTop, ResultInt);
     }
-#ifndef NO_FP
-    else if ( (TopValue->Typ == &FPType && BottomValue->Typ == &FPType) ||
-              (TopValue->Typ == &FPType && IS_INTEGER_COERCIBLE(BottomValue)) ||
-              (IS_INTEGER_COERCIBLE(TopValue) && BottomValue->Typ == &FPType) )
-    {
-        /* floating point infix arithmetic */
-        int ResultIsInt = FALSE;
-        double ResultFP = 0.0;
-        double TopFP = (TopValue->Typ == &FPType) ? TopValue->Val->FP : (double)COERCE_INTEGER(TopValue);
-        double BottomFP = (BottomValue->Typ == &FPType) ? BottomValue->Val->FP : (double)COERCE_INTEGER(BottomValue);
-
-        switch (Op)
-        {
-            case TokenAssign:               ResultFP = ExpressionAssignFP(Parser, BottomValue, TopFP); break;
-            case TokenAddAssign:            ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP + TopFP); break;
-            case TokenSubtractAssign:       ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP - TopFP); break;
-            case TokenMultiplyAssign:       ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP * TopFP); break;
-            case TokenDivideAssign:         ResultFP = ExpressionAssignFP(Parser, BottomValue, BottomFP / TopFP); break;
-            case TokenEqual:                ResultInt = BottomFP == TopFP; ResultIsInt = TRUE; break;
-            case TokenNotEqual:             ResultInt = BottomFP != TopFP; ResultIsInt = TRUE; break;
-            case TokenLessThan:             ResultInt = BottomFP < TopFP; ResultIsInt = TRUE; break;
-            case TokenGreaterThan:          ResultInt = BottomFP > TopFP; ResultIsInt = TRUE; break;
-            case TokenLessEqual:            ResultInt = BottomFP <= TopFP; ResultIsInt = TRUE; break;
-            case TokenGreaterEqual:         ResultInt = BottomFP >= TopFP; ResultIsInt = TRUE; break;
-            case TokenPlus:                 ResultFP = BottomFP + TopFP; break;
-            case TokenMinus:                ResultFP = BottomFP - TopFP; break;
-            case TokenAsterisk:             ResultFP = BottomFP * TopFP; break;
-            case TokenSlash:                ResultFP = BottomFP / TopFP; break;
-            default:                        ProgramFail(Parser, "invalid operation"); break;
-        }
-
-        if (ResultIsInt)
-            ExpressionPushInt(Parser, StackTop, ResultInt);
-        else
-            ExpressionPushFP(Parser, StackTop, ResultFP);
-    }
-#endif
-    else if (BottomValue->Typ->Base == TypePointer && IS_INTEGER_COERCIBLE(TopValue))
+    else if (BottomValue->Typ->Base == TypePointer && IS_NUMERIC_COERCIBLE(TopValue))
     {
         /* pointer/integer infix arithmetic */
         int TopInt = COERCE_INTEGER(TopValue);
@@ -793,6 +796,8 @@ void ExpressionStackCollapse(struct ParseState *Parser, struct ExpressionStack *
                     break;
 
                 case OrderNone:
+                    /* this should never happen */
+                    assert(TopOperatorNode->Order != OrderNone);
                     break;
             }
         }
@@ -966,6 +971,9 @@ int ExpressionParse(struct ParseState *Parser, struct Value **Result)
         else if (Token == TokenIdentifier)
         { 
             /* it's a variable, function or a macro */
+            if (!PrefixState)
+                ProgramFail(Parser, "identifier not expected here");
+                
             if (LexGetToken(Parser, NULL, FALSE) == TokenOpenBracket)
                 ExpressionParseFunctionCall(Parser, &StackTop, LexValue->Val->Identifier);
             else
@@ -1063,7 +1071,7 @@ void ExpressionParseFunctionCall(struct ParseState *Parser, struct ExpressionSta
         ExpressionStackPushValueByType(Parser, StackTop, FuncValue->Val->FuncDef.ReturnType);
         ReturnValue = (*StackTop)->p.Val;
         HeapPushStackFrame();
-        ParamArray = HeapAllocStack(sizeof(struct Value *) * FuncValue->Val->FuncDef.NumParams);
+        ParamArray = HeapAllocStack(sizeof(struct Value *) * FuncValue->Val->FuncDef.NumParams);    
         if (ParamArray == NULL)
             ProgramFail(Parser, "out of memory");
     }
@@ -1087,21 +1095,23 @@ void ExpressionParseFunctionCall(struct ParseState *Parser, struct ExpressionSta
                     if (FuncValue->Val->FuncDef.ParamType[ArgCount] != Param->Typ)
                     {
                         /* parameter is the wrong type - can we coerce it to being the type we want? */
-                        if (FuncValue->Val->FuncDef.ParamType[ArgCount] == &IntType && IS_INTEGER_COERCIBLE(Param))
+                        if (FuncValue->Val->FuncDef.ParamType[ArgCount] == &IntType && IS_NUMERIC_COERCIBLE(Param))
                             Param->Val->Integer = COERCE_INTEGER(Param);        /* cast to int */
 
-                        else if (FuncValue->Val->FuncDef.ParamType[ArgCount] == &CharType && IS_INTEGER_COERCIBLE(Param))
+                        else if (FuncValue->Val->FuncDef.ParamType[ArgCount] == &CharType && IS_NUMERIC_COERCIBLE(Param))
                             Param->Val->Character = COERCE_INTEGER(Param);      /* cast to char */
-
+#ifndef NO_FP
+                        else if (FuncValue->Val->FuncDef.ParamType[ArgCount] == &FPType && IS_NUMERIC_COERCIBLE(Param))
+                            Param->Val->FP = COERCE_FP(Param);                  /* cast to floating point */
+#endif
                         else
                             ProgramFail(Parser, "parameter %d to %s() is %t instead of %t", ArgCount+1, FuncName, Param->Typ, FuncValue->Val->FuncDef.ParamType[ArgCount]);
                         
                         Param->Typ = FuncValue->Val->FuncDef.ParamType[ArgCount];
                     }
-                }
-                
-                if (ArgCount < FuncValue->Val->FuncDef.NumParams)
+                    
                     ParamArray[ArgCount] = Param;
+                }
             }
             
             ArgCount++;
@@ -1162,7 +1172,7 @@ int ExpressionParseInt(struct ParseState *Parser)
     
     if (Parser->Mode == RunModeRun)
     { 
-        if (!IS_INTEGER_COERCIBLE(Val))
+        if (!IS_NUMERIC_COERCIBLE(Val))
             ProgramFail(Parser, "integer value expected instead of %t", Val->Typ);
     
         Result = COERCE_INTEGER(Val);

@@ -183,6 +183,8 @@ enum LexToken LexGetNumber(struct LexState *Lexer, struct Value *Value)
         FPResult *= pow((double)Base, (double)Result);
     }
     
+    Value->Val->FP = FPResult;
+    
     return TokenFPConstant;
 #else
     return ResultToken;
@@ -589,7 +591,7 @@ enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int I
         { 
             switch (Token)
             {
-                case TokenStringConstant:       LexValue.Typ = CharPtrType; break;
+                case TokenStringConstant:       LexValue.Typ = CharPtrType; LexValue.Val->Pointer.Offset = 0; break;
                 case TokenIdentifier:           LexValue.Typ = NULL; break;
                 case TokenIntegerConstant:      LexValue.Typ = &IntType; break;
                 case TokenCharacterConstant:    LexValue.Typ = &CharType; break;

@@ -19,6 +19,7 @@
 #include "string.h"
 #include "srv.h"
 #include "uart.h"
+#include "i2c.h"
 
 /* typedef struct gps_data {
     int lat;
@@ -52,11 +53,16 @@ $GPGGA,hhmmss.sss,ddmm.mmmm,n,dddmm.mmmm,e,q,ss,y.y,a.a,z,g.g,z,t.t,iii*CC
 
 extern unsigned int uart1_flag;
 struct gps_data gps_gga;
+static int ublox = 0;
+static int locosys = 0;
 
 void gps_show() {
-    printf("##gps\r\n");
     if (!gps_parse())
         printf("no response from gps\n\r");
+    if (ublox)
+        printf("##gps: ublox\r\n");
+    else
+        printf("##gps: locosys\r\n");
     printf("gps lat: %d\n\r", gps_gga.lat);
     printf("gps lon: %d\n\r", gps_gga.lon);
     printf("gps alt: %d\n\r", gps_gga.alt);
@@ -65,37 +71,76 @@ void gps_show() {
     printf("gps utc: %d\n\r", gps_gga.utc);
 }
 
+unsigned char read_ublox() {
+    unsigned char idat[2];
+    int ix;
+
+    for (ix=0; ix<10; ix++) {  
+        idat[0] = 0;  
+        i2cread(0x42, (unsigned char *)idat, 1, SCCB_ON);
+        if (idat[0] != 0xff)   // if there's no data, i2cread() reads 0xff
+            return idat[0];
+        delayUS(100);
+    }
+    return 0xff;  // no data
+}
+
 int gps_parse() {
     unsigned char buf[100];
     unsigned char ch;
-    unsigned int t0, sum, pow10;
+    unsigned int t0, sum, pow10, div10;
     int i1, i2, ilast, ix;
     int latdeg, londeg, latmin, lonmin;
     
     i1 = i2 = ilast = 0;  // to get rid of compiler warnings
-    
-    if (!uart1_flag) {
-        init_uart1();
-        uart1_flag = 1;
+
+    if ((ublox == 0) && (locosys == 0)) {  // check first for ublox on i2c channel 042
+        for (ix=0; ix<200; ix++) {
+            ch = read_ublox();
+            delayUS(500);
+            if (ch != 0xff) {
+                ublox = 1;
+                break;
+            }
+        }
+        if (!ublox) {
+            init_uart1();
+            uart1_flag = 1;
+            locosys = 1;
+        }
     }
+
     t0 = readRTC();  // set up for 1-second timeout
-    
     while (1) {
         if ((readRTC() - t0) > 1000) { // check for timeout
             gps_gga.fix = 0;
             gps_gga.sat = 0;
             return 0;
         }
-        if (!uart1GetChar(&ch)) 
-            continue;
+        if (ublox) {
+            ch = read_ublox();
+            if (ch == 0xff)
+                continue;
+        } else {
+            if (!uart1GetChar(&ch)) 
+                continue;
+        }
         if (ch != '$')   // look for "$GPGGA," header
             continue;
-        for (i1=0; i1<6; i1++)     
-            buf[i1] = uart1GetCh();
+        for (i1=0; i1<6; i1++) { 
+            if (ublox)
+                buf[i1] = read_ublox();
+            else
+                buf[i1] = uart1GetCh();
+        }
         if ((buf[2] != 'G') || (buf[3] != 'G') || (buf[4] != 'A'))
             continue;
         for (i1=0; i1<100; i1++) {
-            buf[i1] = uart1GetCh();  // read 100 chars into data buffer
+            if (ublox)
+                buf[i1] = read_ublox();
+            else
+                buf[i1] = uart1GetCh();
+
             if (buf[i1] == '\r') {
                 buf[i1] = 0;
                 ilast = i1;
@@ -110,6 +155,7 @@ int gps_parse() {
         i1 = 0;
         sum = 0;
         pow10 = 1;
+        div10 = 0;
         for (ix=0; ix<ilast; ix++) {
             if (buf[ix] == ',') {
                 i2 = ix;
@@ -117,17 +163,22 @@ int gps_parse() {
             }
         }
         for (ix=(i2-1); ix>=i1; ix--) {
-            if (buf[ix] == '.')
+            if (buf[ix] == '.') {
+                div10 = 1;
                 continue;
+            }
             sum += pow10 * (buf[ix] & 0x0F);
             pow10 *= 10;
+            div10 *= 10;
         }
-        gps_gga.utc = sum / 1000;
+        div10 = pow10 / div10;
+        gps_gga.utc = sum / div10;
         
         // parse lat
         i1 = i2+1;
         sum = 0;
         pow10 = 1;
+        div10 = 0;
         for (ix=i1; ix<ilast; ix++) {
             if (buf[ix] == ',') {
                 i2 = ix;
@@ -135,15 +186,23 @@ int gps_parse() {
             }
         }
         for (ix=(i2-1); ix>=i1; ix--) {
-            if (buf[ix] == '.')
+            if (buf[ix] == '.') {
+                div10 = 1;
                 continue;
+            }
             sum += pow10 * (buf[ix] & 0x0F);
-            pow10 *= 10;
+            if (ix>i1) {  // to prevent overflow
+                pow10 *= 10;
+                div10 *= 10;
+            }
         }
-        latdeg = sum / 1000000;
-        latmin = sum - (latdeg * 1000000);
+        div10 = pow10 / div10;
+        latdeg = sum / (div10*100);
+        latmin = sum - (latdeg*div10*100);
         latmin = (latmin * 100) / 60;  // convert to decimal minutes
-        gps_gga.lat = (latdeg*1000000) + latmin;
+        gps_gga.lat = (latdeg*div10*100) + latmin;
+        if (div10 > 10000)
+            gps_gga.lat /= (div10 / 10000);  // normalize lat minutes to 6 decimal places
             
         // skip N/S field
         i1 = i2+1;
@@ -160,6 +219,7 @@ int gps_parse() {
         i1 = i2+1;
         sum = 0;
         pow10 = 1;
+        div10 = 0;
         for (ix=i1; ix<ilast; ix++) {
             if (buf[ix] == ',') {
                 i2 = ix;
@@ -167,15 +227,23 @@ int gps_parse() {
             }
         }
         for (ix=(i2-1); ix>=i1; ix--) {
-            if (buf[ix] == '.')
+            if (buf[ix] == '.') {
+                div10 = 1;
                 continue;
+            }
             sum += pow10 * (buf[ix] & 0x0F);
-            pow10 *= 10;
+            if (ix>i1) {  // to prevent overflow
+                pow10 *= 10;
+                div10 *= 10;
+            }
         }
-        londeg = sum / 1000000;
-        lonmin = sum - (londeg * 1000000);
+        div10 = pow10 / div10;
+        londeg = sum / (div10*100);
+        lonmin = sum - (londeg*div10*100);
         lonmin = (lonmin * 100) / 60;  // convert to decimal minutes
-        gps_gga.lon = (londeg*1000000) + lonmin;        
+        gps_gga.lon = (londeg*div10*100) + lonmin;        
+        if (div10 > 10000)
+            gps_gga.lon /= (div10 / 10000);  // normalize lon minutes to 6 decimal places
 
         // skip E/W field
         i1 = i2+1;

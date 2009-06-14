@@ -1,5 +1,5 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  spi.c - routines to interface with the SRV-1 Blackfin robot.
+ *  stereo.c - SVS (stereo vision system) functions
  *    Copyright (C) 2005-2009  Surveyor Corporation
  *
  *  This program is free software; you can redistribute it and/or modify

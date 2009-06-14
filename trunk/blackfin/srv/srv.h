@@ -29,10 +29,11 @@
 #define HEAPSTART    0x00300000  // put this above FLASH_BUFFER 
 #define HEAPSIZE     0x00C00000  // 12MB for now - leave 1MB for JPEG buffer
 #define DMA_BUF1     0x01000000  // address in SDRAM for DMA transfer of frames from camera
-#define DMA_BUF2     0x01300000  //   second DMA buffer for double buffering
-#define FRAME_BUF    0x01600000  // address in SDRAM for staging images for processing/jpeg
-#define FRAME_BUF2   0x01900000  //   second buffer for storing reference frame
-#define FRAME_BUF3   0x01C00000  //   another buffer for edge data
+#define DMA_BUF2     0x01280000  //   second DMA buffer for double buffering
+#define FRAME_BUF    0x01500000  // address in SDRAM for staging images for processing/jpeg
+#define FRAME_BUF2   0x01780000  //   second frame buffer for storing reference frame
+#define FRAME_BUF3   0x01A00000  //   third frame buffer for edge data or YUV planar data
+#define FRAME_BUF4   0x01C80000  //   fourth frame buffer 
 #define JPEG_BUF     0x00F00000  // address in SDRAM for JPEG compressed image
 
 /* Stack info */
@@ -107,11 +108,16 @@ void camera_reset (unsigned int width);
 void change_image_quality ();
 void set_caption (unsigned char *str, unsigned int width);
 void move_image (unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height);
-void move_interleave (unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height);
+void copy_image (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height);
+void move_yuv422_to_planar (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height);
+void send_80x64planar();
+void scale_image_to_80x64_planar (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height);
 void invert_video(), restore_video();
 
 /* Image Processing */
 void process_colors(), init_colors();
+void motion_vect_test();
+void motion_vect80x64();
 void process_neuralnet();
 
 /* Failsafe */

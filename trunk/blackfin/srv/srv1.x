@@ -29,8 +29,8 @@ MEMORY
 
 SECTIONS
 {
-    .sdram.text     : { camera.o(.sdram.text) edit.o(.sdram.text) i2c.o(.sdram.text) stm_m25p32.o(.sdram.text) printf.o(.sdram.text) xmodem.o(.sdram.text) gps.o (.sdram.text) myfunc.o(.sdram.text) *(.gnu.warning) } > ram
-    .l1code         : { main.o(.text) math.o(.text) malloc.o(.text) srv.o(.text) uart.o(.text) float.o(.text) colors.o(.text) jpeg.o(.text) r8x8dct.o(.text) spi.o(.text) uart.o(.text) setjmp.o(.text) neural.o(.text)} > l1code
+    .sdram.text     : { camera.o(.sdram.text) edit.o(.sdram.text) i2c.o(.sdram.text) stm_m25p32.o(.sdram.text) printf.o(.sdram.text) xmodem.o(.sdram.text) float.o(.sdram.text) gps.o(.sdram.text) myfunc.o(.sdram.text) *(.gnu.warning) } > ram
+    .l1code         : { main.o(.text) math.o(.text) malloc.o(.text) srv.o(.text) uart.o(.text) colors.o(.text) jpeg.o(.text) r8x8dct.o(.text) motionvect.o(.text) stereo.o(.text) uart.o(.text) setjmp.o(.text) neural.o(.text)} > l1code
     .l1data         :
     {
         *(.data) *(.l1data)*(.l1data.a)

@@ -27,15 +27,16 @@
 #include "font8x8.h"
 #include "colors.h"
 #include "malloc.h"
-#include "spi.h"
+#include "stereo.h"
 #include "edit.h"
 #include "print.h"
 #include "string.h"
 #include "neural.h"
-#include "float.h"
 #include "sdcard.h"
 
 #include "srv.h"
+
+void _motionvect(unsigned char *, unsigned char *, char *, char *, int, int, int);
 
 /* Size of frame */
 unsigned int imgWidth, imgHeight;
@@ -356,7 +357,7 @@ void read_compass()
 
     i2c_data[0] = 0x41;  // read compass twice to clear last reading
     i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
-    delayUS(1000);
+    delayUS(20000);
     i2c_data[0] = 0x41;
     i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
     ix = (((unsigned int)i2c_data[0] << 8) + i2c_data[1]) / 10;
@@ -600,6 +601,59 @@ void grab_reference_frame () {
             (unsigned char *)FRAME_BUF2, imgWidth, imgHeight); 
 }
 
+void motion_vect_test (int srange) {  
+    char hvect[300], vvect[300];
+    int ix, iy, hb, vb;
+    
+    if (srange < 1) srange = 1;
+    if (srange > 3) srange = 3;
+    hb = imgWidth / 16;
+    vb = imgHeight / 16;
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    copy_image((unsigned char *)FRAME_BUF4, (unsigned char *)FRAME_BUF3, imgWidth, imgHeight);
+    move_yuv422_to_planar((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF4, imgWidth, imgHeight);
+    _motionvect((unsigned char *)FRAME_BUF4, (unsigned char *)FRAME_BUF3, 
+        vvect, hvect, (int)imgWidth, (int)imgHeight, 3);
+    for (iy=0; iy<vb; iy++) {
+        for (ix=0; ix<hb; ix++) {
+            printf("%2d %2d  ", hvect[iy*hb + ix], vvect[iy*hb + ix]);
+        }
+        printf("\n\r");
+    }
+}
+
+void motion_vect80x64 () {  
+    char hvect[20], vvect[20], hsum[20], vsum[20];
+    int ix, iy;
+    
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    copy_image((unsigned char *)FRAME_BUF4, (unsigned char *)FRAME_BUF3, 80, 192);
+    scale_image_to_80x64_planar ((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF4, imgWidth, imgHeight);
+    _motionvect((unsigned char *)FRAME_BUF4, (unsigned char *)FRAME_BUF3, vvect, hvect, 80, 64, 3);
+    for (ix=0; ix<20; ix++) {
+        hsum[ix] = hvect[ix];
+        vsum[ix] = vvect[ix];
+    }
+    _motionvect((unsigned char *)FRAME_BUF4+5120, (unsigned char *)FRAME_BUF3+5120, vvect, hvect, 80, 64, 3);
+    for (ix=0; ix<20; ix++) {
+        hsum[ix] += hvect[ix];
+        vsum[ix] += vvect[ix];
+    }
+    _motionvect((unsigned char *)FRAME_BUF4+10240, (unsigned char *)FRAME_BUF3+10240, vvect, hvect, 80, 64, 3);
+    for (ix=0; ix<20; ix++) {
+        hsum[ix] += hvect[ix];
+        vsum[ix] += vvect[ix];
+    }
+    for (iy=0; iy<4; iy++) {
+        for (ix=0; ix<5; ix++) {
+            printf("%2d %2d  ", hsum[iy*5 + ix], vsum[iy*5 + ix]);
+        }
+        printf("\n\r");
+    }
+}
+
 /*  compute frame difference between two frames 
      U and V are computed by U1 + 128 - U2
      Y is computed as abs(Y1 - Y2) 
@@ -679,6 +733,28 @@ void send_frame () {
     }
     cp = (unsigned char *)JPEG_BUF;
     for (i=0; i<image_size; i++) 
+        putchar(*cp++);
+
+    while (getchar(&ch)) {
+        // flush input 
+        continue;
+    }
+}
+
+void send_80x64planar () {
+    unsigned char ch, *cp;
+    unsigned int i;
+    
+    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    scale_image_to_80x64_planar ((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF2, 
+            imgWidth, imgHeight);
+
+    led1_on();
+
+    printf("P5\n80\n192\n255\n");  // send pgm header
+    cp = (unsigned char *)FRAME_BUF2;
+    for (i=0; i<80*64*3; i++) 
         putchar(*cp++);
 
     while (getchar(&ch)) {
@@ -819,11 +895,11 @@ void set_caption(unsigned char *str, unsigned int width) {
 }
 
 
-void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height) {
-
+void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height) 
+{
     unsigned char *src;
     unsigned short *isrc, *idst;
-    unsigned int ix;
+    int ix;
         
     if (*pDMA0_CURR_ADDR < (void *)src2)
         src = src2;
@@ -834,8 +910,84 @@ void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, un
     idst = (unsigned short *)dst;
     for (ix = 0; ix < (width * height); ix++)
         *idst++ = *isrc++;
-    return;
 }
+
+/* copy frame buffer 
+   - works whether pixels are interleaved or planar
+*/
+void copy_image(unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height) 
+{
+    int ix, xy;
+    unsigned short *isrc, *idst;
+        
+    xy = width * height;
+    isrc = (unsigned short *)src;
+    idst = (unsigned short *)dst;
+    for (ix=0; ix<xy; ix++)
+        *idst++ = *isrc++;
+}
+
+
+/* move YUV422 interleaved pixels to separate Y, U and V planar buffers 
+   - incoming pixels are UYVY
+   - Y buffer is twice the size of U or V buffer 
+*/
+void move_yuv422_to_planar (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height)
+{
+    unsigned char *py, *pu, *pv;
+    int ix, xy, xy2;
+    
+    xy = width * height;
+    xy2 = xy / 2;
+    py = dst;
+    pu = dst + xy;
+    pv = pu + xy2;
+    
+    for (ix=0; ix<xy2; ix++) {
+        *pu++ = *src++;
+        *py++ = *src++;
+        *pv++ = *src++;
+        *py++ = *src++;
+    }
+}
+
+/* scale YUV422 interleaved pixels to separate 80x64 Y, U and V planar buffers 
+   - incoming pixels are UYVY, so Y pixels will be averaged
+*/
+void scale_image_to_80x64_planar (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height)
+{
+    unsigned char *py, *pu, *pv;
+    int ix, iy, xskip, yskip; 
+    unsigned int y1, y2;
+    
+    xskip = (width / 40) - 4;
+    yskip = ((height / 60) - 1) * width * 2;
+    py = dst;
+    pu = dst + 5120;  // 80*64
+    pv = pu + 5120;
+    
+    for (iy=0; iy<64; iy++) {
+        if ((iy==1) || (iy==2) || (iy==62) || (iy==63)) {  // duplicate first 2 and last 2 lines 
+            for (ix=0; ix<80; ix++) {                      // to fill out 60 lines to 64
+                *pu = *(pu-80);
+                *pv = *(pv-80);
+                *py = *(py-80);
+                py++; pu++; pv++;                
+            }
+            continue;
+        }
+        for (ix=0; ix<80; ix++) {
+            *pu++ = *src++;
+            y1 = (unsigned int)*src++;
+            *pv++ = *src++;
+            y2 = (unsigned int)*src++;
+            *py++ = (unsigned char)((y1+y2)>>1);
+            src += xskip;
+        }
+        src += yskip;
+    }
+}
+
 
 /* XModem Receive.
    Serial protocol char: X */
@@ -930,11 +1082,12 @@ void write_boot_flash () {
 /* Process i2c command:  
         irxy  - i2c read device x, register y, return '##ir value'
         iRxy  - i2c read device x, register y, return 2-byte '##iR value'
+        iMxyz - i2c read device x, register y, count z, return z-byte '##iM values'
         iwxyz - i2c write device x, register y, value z, return '##iw'
         iWabcd - i2c write device a, data b, c, d, return '##ix'
    Serial protocol char: i */
 void process_i2c() {
-    unsigned char i2c_device, i2c_data[2];
+    unsigned char i2c_device, i2c_data[16], cx, count;
     
     switch ((unsigned char)getch()) {
         case 'r':
@@ -948,6 +1101,15 @@ void process_i2c() {
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
             printf("##iR%2x %d\n\r",i2c_device, (i2c_data[0] << 8) + i2c_data[1]);
+            break;
+        case 'M':
+            i2c_device = (unsigned char)getch();
+            i2c_data[0] = (unsigned char)getch();
+            count = (unsigned char)getch() & 0x0F;
+            i2cread(i2c_device, (unsigned char *)i2c_data, (unsigned int)count, SCCB_ON);
+            printf("##iM%2x  ", i2c_device);
+            for (cx=0; cx<count; cx++) printf("%d ", i2c_data[cx]);
+            printf("\n\r");
             break;
         case 'w':
             i2c_device = (unsigned char)getch();
@@ -1668,7 +1830,7 @@ void process_colors() {
             for(ix=0; ix<256; ix++) {
                 i2c_data[0] = ix;
                 i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
-                printf("%d %d\n\r", ix, i2c_data[0]);
+                printf("%x %x\n\r", ix, i2c_data[0]);
             }
             break;
     }

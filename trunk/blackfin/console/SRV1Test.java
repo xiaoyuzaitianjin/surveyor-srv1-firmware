@@ -1,6 +1,6 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  *  SRV1Test.java - TCP/UDP test console for SRV-1 robot
- *    Copyright (C) 2005-2008  Surveyor Corporation
+ *    Copyright (C) 2005-2009  Surveyor Corporation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -74,8 +74,8 @@ public class SRV1Test
                 }
             });
 
-        java.util.List frameListeners = new ArrayList();
-        frameListeners.add(jpegRender);
+        java.util.List<FrameListener> frameListeners = new ArrayList<FrameListener>();
+        frameListeners.add((FrameListener) jpegRender);
         if (args.containsKey("archive")) {  
             frameListeners.add(new SimpleFrameArchiver((String) args.get("archive")));
         }
@@ -84,9 +84,9 @@ public class SRV1Test
         srv1.start();
     }
 
-    private static Map parseCommandLine(String[] cmdLine)
+    private static Map<String,Object> parseCommandLine(String[] cmdLine)
     {
-        Map args = new HashMap();
+        Map<String,Object> args = new HashMap<String,Object>();
         int count = cmdLine.length;
         for (int i = 0; i < count; i++) {
             if (cmdLine[i].startsWith("-")) {
@@ -345,12 +345,12 @@ public class SRV1Test
 
         private DatagramPacket frameRequest = null;
 
-        private java.util.List/*<FrameListener>*/ frameListeners = new ArrayList();
+        private java.util.List<FrameListener> frameListeners = new ArrayList<FrameListener>();
 
-        private java.util.List/*<SRV1Command>*/ commandQueue = new ArrayList();
+        private java.util.List<SRV1Command> commandQueue = new ArrayList<SRV1Command>();
 
         public NetworkSRV1Reader(String host, int port, String transport, 
-                                 java.util.List/*<FrameListener>*/ frameListeners)
+                                 java.util.List<FrameListener> frameListeners)
         {
             try { this.host = InetAddress.getByName(host); } 
             catch (Exception e) { throw new RuntimeException(e); }

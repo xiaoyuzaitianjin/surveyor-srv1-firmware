@@ -1,5 +1,6 @@
 void gps_show();
 int gps_parse();
+unsigned char read_ublox();
 int cos(int);
 int sin(int);
 int tan(int);

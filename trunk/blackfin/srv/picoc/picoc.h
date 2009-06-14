@@ -28,10 +28,11 @@
 
 /* coercion of numeric types to other numeric types */
 #ifndef NO_FP
-#define IS_INTEGER_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeFP || (v)->Typ->Base == TypeChar)
-#define COERCE_INTEGER(v) (((v)->Typ->Base == TypeInt) ? (int)(v)->Val->Integer : (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (v)->Val->FP))
+#define IS_NUMERIC_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeFP || (v)->Typ->Base == TypeChar)
+#define COERCE_INTEGER(v) (((v)->Typ->Base == TypeInt) ? (v)->Val->Integer : (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (int)(v)->Val->FP))
+#define COERCE_FP(v) (((v)->Typ->Base == TypeInt) ? (double)(v)->Val->Integer : (((v)->Typ->Base == TypeChar) ? (double)(v)->Val->Character : (v)->Val->FP))
 #else
-#define IS_INTEGER_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeChar)
+#define IS_NUMERIC_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeChar)
 #define COERCE_INTEGER(v) (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (v)->Val->Integer)
 #endif
 
@@ -41,32 +42,32 @@ struct Table;
 /* lexical tokens */
 enum LexToken
 {
-    TokenNone, 
-    TokenComma,
-    TokenAssign, TokenAddAssign, TokenSubtractAssign, TokenMultiplyAssign, TokenDivideAssign, TokenModulusAssign,
-    TokenShiftLeftAssign, TokenShiftRightAssign, TokenArithmeticAndAssign, TokenArithmeticOrAssign, TokenArithmeticExorAssign,
-    TokenQuestionMark, TokenColon, 
-    TokenLogicalOr, 
-    TokenLogicalAnd, 
-    TokenArithmeticOr, 
-    TokenArithmeticExor, 
-    TokenAmpersand, 
-    TokenEqual, TokenNotEqual, 
-    TokenLessThan, TokenGreaterThan, TokenLessEqual, TokenGreaterEqual,
-    TokenShiftLeft, TokenShiftRight, 
-    TokenPlus, TokenMinus, 
-    TokenAsterisk, TokenSlash, TokenModulus,
-    TokenIncrement, TokenDecrement, TokenUnaryNot, TokenUnaryExor, TokenSizeof,
-    TokenLeftSquareBracket, TokenRightSquareBracket, TokenDot, TokenArrow, 
-    TokenOpenBracket, TokenCloseBracket,
-    TokenIdentifier, TokenIntegerConstant, TokenFPConstant, TokenStringConstant, TokenCharacterConstant,
-    TokenSemicolon, TokenEllipsis,
-    TokenLeftBrace, TokenRightBrace,
-    TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
-    TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
-    TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
-    TokenHashDefine, TokenHashInclude, TokenNew, TokenDelete,
-    TokenEOF, TokenEndOfLine, TokenEndOfFunction
+    /* 0x00 */ TokenNone, 
+    /* 0x01 */ TokenComma,
+    /* 0x02 */ TokenAssign, TokenAddAssign, TokenSubtractAssign, TokenMultiplyAssign, TokenDivideAssign, TokenModulusAssign,
+    /* 0x08 */ TokenShiftLeftAssign, TokenShiftRightAssign, TokenArithmeticAndAssign, TokenArithmeticOrAssign, TokenArithmeticExorAssign,
+    /* 0x0d */ TokenQuestionMark, TokenColon, 
+    /* 0x0f */ TokenLogicalOr, 
+    /* 0x10 */ TokenLogicalAnd, 
+    /* 0x11 */ TokenArithmeticOr, 
+    /* 0x12 */ TokenArithmeticExor, 
+    /* 0x13 */ TokenAmpersand, 
+    /* 0x14 */ TokenEqual, TokenNotEqual, 
+    /* 0x16 */ TokenLessThan, TokenGreaterThan, TokenLessEqual, TokenGreaterEqual,
+    /* 0x1a */ TokenShiftLeft, TokenShiftRight, 
+    /* 0x1c */ TokenPlus, TokenMinus, 
+    /* 0x1e */ TokenAsterisk, TokenSlash, TokenModulus,
+    /* 0x21 */ TokenIncrement, TokenDecrement, TokenUnaryNot, TokenUnaryExor, TokenSizeof,
+    /* 0x26 */ TokenLeftSquareBracket, TokenRightSquareBracket, TokenDot, TokenArrow, 
+    /* 0x2a */ TokenOpenBracket, TokenCloseBracket,
+    /* 0x2c */ TokenIdentifier, TokenIntegerConstant, TokenFPConstant, TokenStringConstant, TokenCharacterConstant,
+    /* 0x31 */ TokenSemicolon, TokenEllipsis,
+    /* 0x33 */ TokenLeftBrace, TokenRightBrace,
+    /* 0x35 */ TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
+    /* 0x3b */ TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
+    /* 0x42 */ TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
+    /* 0x4d */ TokenHashDefine, TokenHashInclude, TokenNew, TokenDelete,
+    /* 0x51 */ TokenEOF, TokenEndOfLine, TokenEndOfFunction
 };
 
 /* used in dynamic memory allocation */

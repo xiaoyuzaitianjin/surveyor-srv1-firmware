@@ -1,5 +1,22 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 13 June 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* created neuron[] output array for picoC's nntest() and nnmatchblob() 
+  functions.  also, return value from nntest() and nnmatchblob() is an index 
+  to the neuron[] entry with highest value (i.e. best match)
+
+* added support for uBlox5 gps via I2C.  gps functions now autodetect
+  Locosys gps (uart) and uBlox5 gps (i2c).
+
+* added '$Mx' and '$m' optical flow test functions.  $Mx compares consecutive
+  frames at full resolution, where x=1,2 or 3 represents +/-4, +/-8, +/-16
+  search range for 16x16 blocks.  $m scales the image to 80x64 and compares 
+  consecutive frames with 16x16 blocks over +/-16 pixel range.
+  
+============================================================================
+
 SRV-1 firmware build for Blackfin - 25 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 

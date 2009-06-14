@@ -625,7 +625,6 @@ void printFloat(_float f,int ddigits)
 
     e = f.float_parts.exponent;
     e -=127; //get true exponent
-    aradix = 0;
 
     _float sum;
     parseFloat(0.0,&sum);
@@ -633,86 +632,87 @@ void printFloat(_float f,int ddigits)
 
     if(e >= 0)
     {
-        bradix = (f.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
+	  bradix = (f.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
 
+	  _float one = intToFloat(1);
+	  _float eleos,division;
 
-        _float one = intToFloat(1);
-        _float eleos,division;
+	  //now going for the real thing,let's get what the bits after the radix sum up to
+	  for(i = e,j=1; i < 23; i ++,j++)
+	  {
 
-        //now going for the real thing,let's get what the bits after the radix sum up to
-        for(i = e,j=1; i < 23; i ++,j++)
-        {
-            //gets stuck inside this for, for number:f1 = 1.0001;
-
-            if(f.float_parts.mantissa & (0x01<<(22-i)) )//was 22-i
-            {
-                //sum += bigptwo/power(2,j);
-                if(i >=22)
-                    e = 1;
-                eleos = intToFloat(power(2,j));
-                division = divFloat(one,eleos);
-                sum = addFloat(sum,division);
-            }
-        }
+		if(f.float_parts.mantissa & (0x01<<(22-i)) )//was 22-i
+		{
+		    //sum += bigptwo/power(2,j);
+		    if(i >=22)
+			  e = 1;
+		    eleos = intToFloat(power(2,j));
+		    division = divFloat(one,eleos);
+		    sum = addFloat(sum,division);
+		}
+	  }
     }
     else if( e < 0)
     {
-        bradix = 0;
-        f.float_parts.mantissa = (f.float_parts.mantissa>>1) | (0x01 << 22);
-        f.float_parts.mantissa >>= (int)(e*(-1));
+	  bradix = 0;
+	  f.float_parts.mantissa = (f.float_parts.mantissa>>1) | (0x01 << 22);
+	  f.float_parts.mantissa >>= (int)(e*(-1));
 
 
-        _float one = intToFloat(1);
-        _float eleos,division;
-        //now going for the real thing,let's get what the bits after the radix sum up to
-        for(i = 0,j=0; i < 23; i ++,j++)
-        {
-            if(f.float_parts.mantissa & (0x01<<(22-i)) )//if(manBitSet(f,i))
-            {
-                 //sum += bigptwo/power(2,j);
-                eleos = intToFloat(power(2,j));
-                division = divFloat(one,eleos);
-                sum = addFloat(sum,division);
-            }
-        }
+	  _float one = intToFloat(1);
+	  _float eleos,division;
+	  //now going for the real thing,let's get what the bits after the radix sum up to
+	  for(i = 0,j=0; i < 23; i ++,j++)
+	  {
+		if(f.float_parts.mantissa & (0x01<<(22-i)) )//if(manBitSet(f,i))
+		{
+		     //sum += bigptwo/power(2,j);
+		    eleos = intToFloat(power(2,j));
+		    division = divFloat(one,eleos);
+		    sum = addFloat(sum,division);
+		}
+	  }
     }
 
 
-    /*if(f.float_parts.sign == 0)
-        printf("\n%d.",bradix);
+    if(f.float_parts.sign == 0)
+	  printf("\n%d.",bradix);
     else
-        printf("\n-%d.",bradix);
-    */
-    
-    //UART printing
-      if(f.float_parts.sign == 1)
-        putchar('-');
-    printf("%08d", (int)bradix);
-    putchar('.');
+	  printf("\n-%d.",bradix);
 
+
+
+    _float temp;
     for(i = 0; i < ddigits; i ++)
     {
-         sum = mulFInt(sum,10);
-         e = sum.float_parts.exponent;
-         e -=127; //get true exponent
-         if(e >= 0)
-            aradix = (sum.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
-         else
-         {//that is to print the leading zeros after the radix if there are any ofcourse
-            aradix = 0;
-            //printf("%d",aradix);
-            putchar('0');
-         }
+	  //then it means we go
+	  //beyond the precision
+	  //this library can achieve
+	  if( i >= 6)
+		break;
+
+
+	   temp = mulFInt(sum,power(10,i+1));
+	   //e = sum.float_parts.exponent;
+	   e = temp.float_parts.exponent;
+	   e -=127; //get true exponent
+	   if(e >= 0)
+	   {
+	     aradix = (temp.float_parts.mantissa >>(23-(int)e)) | (0x01<<(int)e);
+
+	   }
+	   else
+	   {//that is to print the leading zeros after the radix if there are any ofcourse
+		aradix = 0;
+		printf("%d",aradix);
+	   }
 
     }
 
-        //lastly print the rest of the number after the radix
-        //printf("%d",aradix);
-        //uart printing ...
-        printf("%08d", (int)aradix);
+	  //and finally print the rest of the number after the radix
+	  printf("%d",aradix);
 
-}
-
+} 
 
 _float intToFloat(int number)
 {

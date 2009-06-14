@@ -15,7 +15,7 @@
 
 #include "srv.h"
 #include "print.h"
-#include "spi.h"
+#include "stereo.h"
 #include "string.h"
 #include "gps.h"
 #include "myfunc.h"
@@ -46,6 +46,9 @@ int main() {
                 case 'I':
                     grab_frame();
                     send_frame();
+                    break;
+                case 'J':
+                    send_80x64planar();
                     break;
                 case 'y':
                     invert_video();
@@ -99,9 +102,6 @@ int main() {
                 case '$': // prototype zone
                     switch (getch()) {
                         case '!':  // reset processor
-                            #ifdef SRV1X
-                            SRV1X_reboot();
-                            #endif
                             reset_cpu();
                         case 'X':
                             svs_master((unsigned short *)FLASH_BUFFER, 131072);
@@ -114,6 +114,13 @@ int main() {
                             break;
                         case 'e':  // read motor encoders
                             read_encoders();
+                            break;
+                        case 'm':  // 80x64 motion vect test
+                            motion_vect80x64();
+                            break;
+                        case 'M':  // full frame motion vect test
+                            ix = getch() & 0x0F;
+                            motion_vect_test(ix);
                             break;
                         case 'A':  // read analog channel 1-8, 11-18 or 21-28
                             read_analog();

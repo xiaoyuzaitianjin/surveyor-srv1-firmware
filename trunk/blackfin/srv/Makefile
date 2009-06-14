@@ -1,10 +1,10 @@
-CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c \
-  xmodem.c colors.c edit.c malloc.c string.c spi.c printf.c myfunc.c neural.c gps.c sdcard.c \
+CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c\
+  xmodem.c colors.c edit.c malloc.c string.c stereo.c printf.c myfunc.c neural.c gps.c sdcard.c \
   picoc/picoc.c picoc/table.c picoc/lex.c picoc/parse.c picoc/expression.c \
   picoc/heap.c picoc/type.c picoc/variable.c picoc/clibrary.c \
   picoc/library_surveyor.c picoc/platform.c picoc/platform_surveyor.c
  
-ASMSRCS = r8x8dct.asm math.asm setjmp.asm
+ASMSRCS = r8x8dct.asm math.asm setjmp.asm motionvect.asm
 
 CPUDEFINES = -D__ADSPBF537__ -D__ADSPLPBLACKFIN__ -DSURVEYOR_HOST
 INCLUDES = -I../include
@@ -30,10 +30,13 @@ all:  srv1.bin srv1.ldr
 srv1.bin: $(OBJS)
 	$(LD) -T srv1.x -Map srv1.map -O binary -o srv1.bin $(OBJS) 
 
+80x64: 80x64.c
+	gcc -g -O2 -Wall -I/usr/include/SDL  -L/usr/lib -lSDLmain -lSDL -lSDL_net -lSDL_image -o 80x64 80x64.c
+
 main.o:  main.c srv.h ov9655.h uart.h xmodem.h i2c.h print.h config.h
 
 srv.o:   srv.c config.h uart.h i2c.h ov9655.h camera.h jpeg.h xmodem.h  \
-         stm_m25p32.h font8x8.h colors.h malloc.h spi.h print.h sdcard.h $Sfloat.h
+         stm_m25p32.h font8x8.h colors.h malloc.h stereo.h print.h sdcard.h $Sfloat.h
 
 uart.o:  uart.c config.h
 
