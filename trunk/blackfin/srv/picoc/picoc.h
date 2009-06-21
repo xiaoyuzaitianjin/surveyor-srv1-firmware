@@ -91,11 +91,15 @@ enum RunMode
 /* parser state - has all this detail so we can parse nested files */
 struct ParseState
 {
-    const void *Pos;
+    const unsigned char *Pos;
     int Line;
     const char *FileName;
     enum RunMode Mode;          /* whether to skip or run code */
     int SearchLabel;            /* what case label we're searching for */
+#ifdef FANCY_ERROR_REPORTING
+    int CharacterPos;
+    const char *SourceText;
+#endif
 };
 
 /* values */
@@ -113,7 +117,7 @@ enum BaseType
     TypeArray,                  /* an array of a sub-type */
     TypeStruct,                 /* aggregate type */
     TypeUnion,                  /* merged type */
-    TypeEnum,                   /* enumated integer type */
+    TypeEnum                    /* enumated integer type */
 };
 
 /* data type */
@@ -229,8 +233,12 @@ struct LexState
 {
     const char *Pos;
     const char *End;
-    int Line;
     const char *FileName;
+    int Line;
+#ifdef FANCY_ERROR_REPORTING
+    int CharacterPos;
+    const char *SourceText;
+#endif
 };
 
 /* library function definition */
@@ -260,6 +268,9 @@ struct OutputStream
     CharWriter *Putch;
     union OutputStreamInfo i;
 };
+
+/* possible results of parsing a statement */
+enum ParseResult { ParseResultEOF, ParseResultError, ParseResultOk };
 
 /* globals */
 extern void *HeapStackTop;
@@ -298,7 +309,7 @@ void TableStrFree();
 void LexInit();
 void LexCleanup();
 void *LexAnalyse(const char *FileName, const char *Source, int SourceLen, int *TokenLen);
-void LexInitParser(struct ParseState *Parser, void *TokenSource, const char *FileName, int Line, int RunIt);
+void LexInitParser(struct ParseState *Parser, const char *SourceText, void *TokenSource, const char *FileName, int RunIt);
 enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int IncPos);
 void LexToEndOfLine(struct ParseState *Parser);
 void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser);
@@ -307,7 +318,7 @@ void LexInteractiveCompleted(struct ParseState *Parser);
 void LexInteractiveStatementPrompt();
 
 /* parse.c */
-int ParseStatement(struct ParseState *Parser);
+enum ParseResult ParseStatement(struct ParseState *Parser);
 struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueType *ReturnType, char *Identifier, int IsProtoType);
 void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt);
 void ParseInteractive();
@@ -317,6 +328,7 @@ void ParserCopyPos(struct ParseState *To, struct ParseState *From);
 /* expression.c */
 int ExpressionParse(struct ParseState *Parser, struct Value **Result);
 int ExpressionParseInt(struct ParseState *Parser);
+void ExpressionAssign(struct ParseState *Parser, struct Value *DestValue, struct Value *SourceValue, int Force, const char *FuncName, int ParamNo);
 
 /* type.c */
 void TypeInit();
@@ -334,10 +346,11 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
 void HeapInit();
 void *HeapAllocStack(int Size);
 int HeapPopStack(void *Addr, int Size);
+void HeapUnpopStack(int Size);
 void HeapPushStackFrame();
 int HeapPopStackFrame();
-void *HeapAlloc(int Size);
-void HeapFree(void *Mem);
+void *HeapAllocMem(int Size);
+void HeapFreeMem(void *Mem);
 
 /* variable.c */
 void VariableInit();
@@ -348,10 +361,10 @@ void *VariableAlloc(struct ParseState *Parser, int Size, int OnHeap);
 void VariableStackPop(struct ParseState *Parser, struct Value *Var);
 struct Value *VariableAllocValueAndData(struct ParseState *Parser, int DataSize, int IsLValue, struct Value *LValueFrom, int OnHeap);
 struct Value *VariableAllocValueAndCopy(struct ParseState *Parser, struct Value *FromValue, int OnHeap);
-struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct ValueType *Typ, int IsLValue, struct Value *LValueFrom);
+struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct ValueType *Typ, int IsLValue, struct Value *LValueFrom, int OnHeap);
 struct Value *VariableAllocValueFromExistingData(struct ParseState *Parser, struct ValueType *Typ, union AnyValue *FromValue, int IsLValue, struct Value *LValueFrom);
 struct Value *VariableAllocValueShared(struct ParseState *Parser, struct Value *FromValue);
-void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue, int MakeWritable);
+struct Value *VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue, struct ValueType *Typ, int MakeWritable);
 int VariableDefined(const char *Ident);
 void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LVal);
 void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct ValueType *Typ, union AnyValue *FromValue, int IsWritable);
@@ -359,7 +372,7 @@ void VariableStackFrameAdd(struct ParseState *Parser, int NumParams);
 void VariableStackFramePop(struct ParseState *Parser);
 struct Value *VariableStringLiteralGet(char *Ident);
 void VariableStringLiteralDefine(char *Ident, struct Value *Val);
-void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType);
+void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType, int *DerefIsLValue);
 
 /* clibrary.c */
 void LibraryInit(struct Table *GlobalTable, const char *LibraryName, struct LibraryFunction (*FuncList)[]);
@@ -372,6 +385,7 @@ void PrintType(struct ValueType *Typ, struct OutputStream *Stream);
 
 /* platform.c */
 void ProgramFail(struct ParseState *Parser, const char *Message, ...);
+void AssignFail(struct ParseState *Parser, const char *Format, struct ValueType *Type1, struct ValueType *Type2, int Num1, int Num2, const char *FuncName, int ParamNo);
 void LexFail(struct LexState *Lexer, const char *Message, ...);
 void PlatformCleanup();
 void PlatformScanFile(const char *FileName);

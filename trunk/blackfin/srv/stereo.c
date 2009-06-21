@@ -20,7 +20,7 @@
 #include "xmodem.h"
 #include "srv.h"
 
-void svs_master(unsigned short *buf16, int bufsize) {
+void svs_master(unsigned short *outbuf16, unsigned short *inbuf16, int bufsize) {
     int remainingBytes;
     unsigned short ix, dummy;
     
@@ -33,10 +33,10 @@ void svs_master(unsigned short *buf16, int bufsize) {
 
     remainingBytes = bufsize;
 
-    ix = (unsigned int)crc16_ccitt((void *)buf16, bufsize-8); 
-    buf16[(bufsize/2)-2] = ix; // write CRC into buffer
+    ix = (unsigned int)crc16_ccitt((void *)outbuf16, bufsize-8); 
+    outbuf16[(bufsize/2)-2] = ix; // write CRC into buffer
         
-    *pSPI_TDBR = *buf16++;
+    *pSPI_TDBR = *outbuf16++;
     dummy = *pSPI_RDBR;  // slave will not have written yet
     remainingBytes -= 2;
     SSYNC;
@@ -45,9 +45,12 @@ void svs_master(unsigned short *buf16, int bufsize) {
         while((*pSPI_STAT&SPIF) ==0 ); // ensure spi tranfer complete 
         while((*pSPI_STAT&TXS) >0 );  // ensure tx buffer empty
         while((*pSPI_STAT&RXS) ==0 ); // ensure rx buffer full
-        *pSPI_TDBR = *buf16++;
+        *pSPI_TDBR = *outbuf16++;
         SSYNC;
-        dummy = *pSPI_RDBR; // read the dummy value from slave processor
+        if (remainingBytes == (bufsize-2))  // first data is junk
+            dummy = *pSPI_RDBR;
+        else
+            *inbuf16++ = *pSPI_RDBR; // read data from slave processor
         SSYNC;
         remainingBytes -= 2;
     }
@@ -58,11 +61,11 @@ void svs_master(unsigned short *buf16, int bufsize) {
     SSYNC;
 }
 
-void svs_slave(unsigned short *buf16, int bufsize) {
+void svs_slave(unsigned short *inbuf16, unsigned short *outbuf16, int bufsize) {
     int remainingBytes;
     unsigned short ix, *bufsave;
 
-    bufsave = buf16;
+    bufsave = inbuf16;
     *pPORTF_FER    |= (PF14|PF13|PF12|PF11|PF10);    // SPISS select PF14 input as slave,
                         // MOSI PF11 enabled (note shouldn't need PF10 as that's the flash memory)
     *pPORT_MUX    |= PJSE;     // Enable PJ10 SSEL2 & 3 PORT_MUX PJSE=1  not required as we're slave..
@@ -79,9 +82,9 @@ void svs_slave(unsigned short *buf16, int bufsize) {
         while( (*pSPI_STAT&SPIF) == 0 ); // ensure spif transfer complete
         while( (*pSPI_STAT&RXS) == 0  ); // ensure rx buffer full
 
-        *pSPI_TDBR = 0x5555; 
+        *pSPI_TDBR = *outbuf16++; 
         SSYNC;
-        *buf16++ = *pSPI_RDBR; // read full 16 bits in one
+        *inbuf16++ = *pSPI_RDBR; // read full 16 bits in one
         remainingBytes -= 2;
         while( (remainingBytes>0) && ((*pSPI_STAT&TXS) > 0)  ); // ensure tx buffer empty
     };
@@ -93,7 +96,7 @@ void svs_slave(unsigned short *buf16, int bufsize) {
 
     printf("##$R SPI Slave\n\r");
     ix = (unsigned int)crc16_ccitt((void *)bufsave, bufsize-8); 
-    buf16 -= 2;
-    printf("     CRC-sent: 0x%x CRC-received: 0x%x\n", (unsigned short)*buf16, ix);
+    inbuf16 -= 2;
+    printf("     CRC-sent: 0x%x CRC-received: 0x%x\n", (unsigned short)*inbuf16, ix);
 }
 

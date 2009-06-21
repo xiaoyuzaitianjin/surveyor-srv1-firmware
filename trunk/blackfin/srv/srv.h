@@ -50,6 +50,7 @@ void show_heap_ptr ();
 void reset_cpu ();
 unsigned int stack_remaining();
 unsigned int ctoi(unsigned char);
+void check_for_autorun();
 
 /* Serial outputs */
 void serial_out_version ();
@@ -182,7 +183,7 @@ void delayNS (int delay);  // delay up to 100000 nanoseconds (.0001 sec)
 extern int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
 extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, lcount, rcount;
 extern int sonar_data[];
-extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag;
+extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag, quality;
 extern unsigned int uart1_flag, thumbnail_flag;
 
 #endif

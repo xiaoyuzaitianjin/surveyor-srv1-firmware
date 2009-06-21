@@ -1,5 +1,45 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 21 June 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* created neuron[] output array for picoC's nntest() and nnmatchblob() 
+  functions.  also, return value from nntest() and nnmatchblob() is an index 
+  to the neuron[] entry with highest value (i.e. best match)
+
+* added support for uBlox5 gps via I2C.  gps functions now autodetect
+  Locosys gps (uart) and uBlox5 gps (i2c).
+
+* added '$Mx' and '$m' optical flow test functions.  $Mx compares consecutive
+  frames at full resolution, where x=1,2 or 3 represents +/-4, +/-8, +/-16
+  search range for 16x16 blocks.  $m scales the image to 80x64 and compares 
+  consecutive frames with 16x16 blocks over +/-16 pixel range.
+
+* removed 'G' command - now any 'g' command that doesn't match existing
+  g commands (g0, g1, g2, g3, g4), e.g. 'gx. will turn off all g functions.
+  
+* updated to picoC v0.92.  added picoC version # to SRV-1 ##version string
+
+* added 'G' command to support HTTP GET requests with httpd() function.  
+  this is experimental, and does not yet work correctly
+ 
+* added autorun() function to picoC.  if "autorun" string is found at the 
+  beginning of flash buffer #4 (user flash sector), firmware will launch
+  picoC with program stored in flash sector #4.  autorun() provides an escape
+  mechanism - it takes a parameter which tells how many seconds to wait for
+  and ESC character.  e.g. autorun(5) will listen for 5 seconds to the 
+  serial / wifi channel for an ESC character.  if no ESC is received, picoC
+  will continue execution of stored picoC program, else it will return control
+  to main() SRV-1 control loop.  note that to set up flash sector 4, use 
+  'zw' command to write the contents of the flash buffer, 'zr' to read flash
+  sector 4, and 'zc' to clear flash buffer contents
+  
+* changed svs_master() and svs_slave() functions to support 2-way data transfer.
+  $X, $R, $1 and $2 test these functions.  still need to add CRC16 for reverse
+  direction
+  
+============================================================================
+
 SRV-1 firmware build for Blackfin - 25 May 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 

@@ -24,11 +24,16 @@
 #define LOCAL_TABLE_SIZE 11                 /* size of local variable table (can expand) */
 #define STRUCT_TABLE_SIZE 11                /* size of struct/union member table (can expand) */
 
+#define FANCY_ERROR_REPORTING               /* optional feature - gives more detailed error messages but uses more memory */
+
 #define INTERACTIVE_PROMPT_START "starting picoc\n"
 #define INTERACTIVE_PROMPT_STATEMENT "picoc> "
 #define INTERACTIVE_PROMPT_LINE "     > "
 
 #define PlatformSetExitPoint() setjmp(ExitBuf)
+
+/* defines for the optional "fdlibm" maths library */
+#define _IEEE_LIBM
 
 /* host platform includes */
 #ifdef UNIX_HOST
@@ -44,7 +49,9 @@
 # include <setjmp.h>
 # ifndef NO_FP
 # include <math.h>
-# define MATH_LIBRARY
+# define PICOC_MATH_LIBRARY
+# define NEED_MATH_LIBRARY
+# undef BIG_ENDIAN
 #endif
 
 extern jmp_buf ExitBuf;
@@ -60,6 +67,8 @@ extern jmp_buf ExitBuf;
 #  include <setjmp.h>
 #  include <math.h>
 #  define assert(x)
+#  undef BIG_ENDIAN
+#  undef FANCY_ERROR_REPORTING
 
 # else
 #  ifdef SURVEYOR_HOST
@@ -82,6 +91,7 @@ extern jmp_buf ExitBuf;
 #   undef INTERACTIVE_PROMPT_LINE
 #   define INTERACTIVE_PROMPT_STATEMENT "> "
 #   define INTERACTIVE_PROMPT_LINE "- "
+#   undef BIG_ENDIAN
 #  else
 #   ifdef UMON_HOST
 #    define NO_FP
@@ -103,5 +113,48 @@ extern int ExitBuf[];
 
 #endif
 
-#endif /* PLATFORM_H */
+#ifdef NEED_MATH_LIBRARY
+extern double math_sin(double x);
+extern double math_cos(double x);
+extern double math_tan(double x);
+extern double math_asin(double x);
+extern double math_acos(double x);
+extern double math_atan(double x);
+extern double math_sinh(double x);
+extern double math_cosh(double x);
+extern double math_tanh(double x);
+extern double math_asinh(double x);
+extern double math_acosh(double x);
+extern double math_atanh(double x);
+extern double math_exp(double x);
+extern double math_fabs(double x);
+extern double math_log(double x);
+extern double math_log10(double x);
+extern double math_pow(double x, double y);
+extern double math_sqrt(double x);
+extern double math_floor(double x);
+extern double math_ceil(double x);
+#else /* NEED_MATH_LIBRARY */
+#define math_sin(x) sin(x)
+#define math_cos(x) cos(x)
+#define math_tan(x) tan(x)
+#define math_asin(x) asin(x)
+#define math_acos(x) acos(x)
+#define math_atan(x) atan(x)
+#define math_sinh(x) sinh(x)
+#define math_cosh(x) cosh(x)
+#define math_tanh(x) tanh(x)
+#define math_asinh(x) asinh(x)
+#define math_acosh(x) acosh(x)
+#define math_atanh(x) atanh(x)
+#define math_exp(x) exp(x)
+#define math_fabs(x) fabs(x)
+#define math_log(x) log(x)
+#define math_log10(x) log10(x)
+#define math_pow(x,y) pow(x,y)
+#define math_sqrt(x) sqrt(x)
+#define math_floor(x) floor(x)
+#define math_ceil(x) ceil(x)
+#endif /* NEED_MATH_LIBRARY */
 
+#endif /* PLATFORM_H */

@@ -63,8 +63,8 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
 /* stack space used by a value */
 int TypeStackSizeValue(struct Value *Val)
 {
-    if (Val->ValOnStack)
-        return TypeSizeValue(Val); // XXX - doesn't handle passing system-memory arrays by value correctly
+    if (Val != NULL && Val->ValOnStack)
+        return TypeSizeValue(Val); /* XXX - doesn't handle passing system-memory arrays by value correctly */
     else
         return 0;
 }
@@ -152,11 +152,11 @@ void TypeCleanupNode(struct ValueType *Typ)
             if (SubType->Members != NULL)
             {
                 VariableTableCleanup(SubType->Members);
-                HeapFree(SubType->Members);
+                HeapFreeMem(SubType->Members);
             }
 
             /* free this node */
-            HeapFree(SubType);
+            HeapFreeMem(SubType);
         }
     }
 }
@@ -194,8 +194,8 @@ void TypeParseStruct(struct ParseState *Parser, struct ValueType **Typ, int IsSt
     
     LexGetToken(Parser, NULL, TRUE);    
     (*Typ)->Members = VariableAlloc(Parser, sizeof(struct Table) + STRUCT_TABLE_SIZE * sizeof(struct TableEntry), TRUE);
-    (*Typ)->Members->HashTable = (void *)(*Typ)->Members + sizeof(struct Table);
-    TableInitTable((*Typ)->Members, (void *)(*Typ)->Members + sizeof(struct Table), STRUCT_TABLE_SIZE, TRUE);
+    (*Typ)->Members->HashTable = (struct TableEntry **)((char *)(*Typ)->Members + sizeof(struct Table));
+    TableInitTable((*Typ)->Members, (struct TableEntry **)((char *)(*Typ)->Members + sizeof(struct Table)), STRUCT_TABLE_SIZE, TRUE);
     
     do {
         TypeParse(Parser, &MemberType, &MemberIdentifier);
@@ -270,7 +270,7 @@ void TypeParseEnum(struct ParseState *Parser, struct ValueType **Typ)
             EnumValue = ExpressionParseInt(Parser);
         }
         
-        VariableDefine(Parser, EnumIdentifier, &InitValue, FALSE);
+        VariableDefine(Parser, EnumIdentifier, &InitValue, NULL, FALSE);
             
         Token = LexGetToken(Parser, NULL, TRUE);
         if (Token != TokenComma && Token != TokenRightBrace)
@@ -288,9 +288,22 @@ int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ)
     enum LexToken Token = LexGetToken(Parser, NULL, TRUE);
     *Typ = NULL;
 
+    /* just ignore signed/unsigned for now */
+    if (Token == TokenSignedType || Token == TokenUnsignedType)
+    {
+        Token = LexGetToken(Parser, NULL, FALSE);
+        if (Token != TokenIntType && Token != TokenLongType && Token != TokenShortType && Token != TokenCharType)
+        {
+            *Typ = &IntType;
+            return TRUE;
+        }
+        
+        Token = LexGetToken(Parser, NULL, TRUE);
+    }
+    
     switch (Token)
     {
-        case TokenIntType: case TokenLongType: case TokenShortType: *Typ = &IntType; break;
+        case TokenIntType: case TokenLongType: case TokenShortType: case TokenSignedType: case TokenUnsignedType: *Typ = &IntType; break;
         case TokenCharType: *Typ = &CharType; break;
 #ifndef NO_FP
         case TokenFloatType: case TokenDoubleType: *Typ = &FPType; break;
@@ -375,8 +388,9 @@ void TypeParseIdentPart(struct ParseState *Parser, struct ValueType *BasicTyp, s
                 case TokenLeftSquareBracket:
                     {
                         enum RunMode OldMode = Parser->Mode;
+                        int ArraySize;
                         Parser->Mode = RunModeRun;
-                        int ArraySize = ExpressionParseInt(Parser);
+                        ArraySize = ExpressionParseInt(Parser);
                         Parser->Mode = OldMode;
                         
                         if (LexGetToken(Parser, NULL, TRUE) != TokenRightSquareBracket)
@@ -386,8 +400,10 @@ void TypeParseIdentPart(struct ParseState *Parser, struct ValueType *BasicTyp, s
                     }
                     break;
                     
-//                case TokenOpenBracket:
-//                    break;  // XXX - finish this
+#if 0
+                case TokenOpenBracket:
+                    break;  /* XXX - finish this */
+#endif
                 
                 default: *Parser = Before; Done = TRUE; break;
             }

@@ -679,6 +679,23 @@ void Cexit (struct ParseState *Parser, struct Value *ReturnValue, struct Value *
     longjmp(ExitBuf, 1);
 }
 
+void Cautorun (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    int ix, t0;
+    unsigned char ch;
+    
+    ix = Param[0]->Val->Integer;
+    t0 = readRTC();
+    while (readRTC() < (t0 + ix*1000)) { // watch for ESC in 'ix' seconds
+        if (getchar(&ch)) {
+            if (ch == 0x1B) {  // if ESC found, exit picoC
+                printf("found ESC\n");
+                ExitBuf[40] = 1;
+                longjmp(ExitBuf, 1);
+            }
+        }
+    }
+}
+
 /* list of all library functions and their prototypes */
 struct LibraryFunction PlatformLibrary[] =
 {
@@ -734,7 +751,8 @@ struct LibraryFunction PlatformLibrary[] =
     { Cnntest,      "int nntest(int, int, int, int, int, int, int, int)" },
     { Cnnmatchblob, "int nnmatchblob(int)" },
     { Cnnlearnblob, "void nnlearnblob(int)" },
-    { Cexit,        "void exit()" },
+//   { Cexit,        "void exit()" },
+    { Cautorun,     "void autorun(int)" },
     { NULL,         NULL }
 };
 

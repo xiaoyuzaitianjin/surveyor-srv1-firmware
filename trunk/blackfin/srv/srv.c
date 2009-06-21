@@ -37,12 +37,13 @@
 #include "srv.h"
 
 void _motionvect(unsigned char *, unsigned char *, char *, char *, int, int, int);
+extern int picoc(char *);
 
 /* Size of frame */
 unsigned int imgWidth, imgHeight;
 
 /* Version */
-unsigned char version_string[] = "SRV-1 Blackfin - "  __TIME__ " - " __DATE__ ;
+unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.92 "  __TIME__ " - " __DATE__ ;
 
 /* Frame count output string */
 unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
@@ -81,7 +82,6 @@ unsigned char *cp;
 unsigned int i, j; // Loop counter.
 unsigned int master;  // SVS master or slave ?
 unsigned int uart1_flag = 0;
-unsigned int thumbnail_flag = 0;
 
 void init_io() {
     *pPORTGIO_DIR = 0x0300;   // LEDs (PG8 and PG9)
@@ -95,6 +95,8 @@ void init_io() {
         master = 0;
     else
         master = 1;
+//    if (!master)
+//        *pPORTF_FER |= PF14;  // if SVS slave, enable SPISS bit to be viewed on GPIO-F14
     pwm1_mode = PWM_OFF;
     pwm2_mode = PWM_OFF;
     pwm1_init = 0;
@@ -163,6 +165,25 @@ void serial_out_version () {
    Serial protocol char: t */
 void serial_out_time () {
     printf("##time - millisecs:  %d\n\r", readRTC());
+}
+
+/* load flash sector 4 into flash buffer on startup.  
+   If "autorun" is found at beginning of buffer, launch picoC */
+void check_for_autorun() {
+    char *cp;
+    int ix;
+    
+    printf("##checking for picoC autorun() in flash sect#4 ... ");
+    spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00010000);  // read flash sector #4
+    cp = (char *)FLASH_BUFFER;
+    if (strncmp("autorun", cp, 7) == 0) {
+        printf("autorun() found.  launching picoC ...\n\r\n\r");
+        picoc((char *)FLASH_BUFFER);
+    } else {
+        printf("no autorun() found.\n\r\n\r");
+        for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)  // clear FLASH_BUFFER
+            *((unsigned char *)ix) = 0;
+    }
 }
 
 /* Dump flash buffer to serial
@@ -568,7 +589,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
     obstacle_detect_flag = 0;
-    printf("#G");
+    printf("#g_");
 }
 
 void grab_frame () {

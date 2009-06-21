@@ -21,6 +21,7 @@
 #include "myfunc.h"
 
 extern int picoc(char *);
+extern void httpd();
 
 int main() {
     unsigned char ch;
@@ -39,6 +40,8 @@ int main() {
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
     camera_setup(); // Sets up the camera to 320x240
     led1_on();
+    
+    check_for_autorun();
 
     while (1) {
         if (getchar(&ch)) {
@@ -50,8 +53,8 @@ int main() {
                 case 'J':
                     send_80x64planar();
                     break;
-                case 'y':
-                    invert_video();
+                case 'G':
+                    httpd();
                     break;
                 case 'Y':
                     restore_video();
@@ -104,10 +107,19 @@ int main() {
                         case '!':  // reset processor
                             reset_cpu();
                         case 'X':
-                            svs_master((unsigned short *)FLASH_BUFFER, 131072);
+                            svs_master((unsigned short *)FLASH_BUFFER, 
+                                (unsigned short *)(FLASH_BUFFER+131072), 131072);
                             break;
                         case 'R':
-                            svs_slave((unsigned short *)FLASH_BUFFER, 131072);
+                            svs_slave((unsigned short *)FLASH_BUFFER,
+                                (unsigned short *)(FLASH_BUFFER+131072), 131072);
+                        case '1':
+                            svs_master((unsigned short *)FLASH_BUFFER, 
+                                (unsigned short *)(FLASH_BUFFER+1024), 1024);
+                            break;
+                        case '2':
+                            svs_slave((unsigned short *)FLASH_BUFFER,
+                                (unsigned short *)(FLASH_BUFFER+1024), 1024);
                             break;
                         case 'g':  // gps test
                             gps_show();
@@ -248,6 +260,8 @@ int main() {
                             // g1 = enable color segmentation
                             // g2 = enable edge detection
                             // g3 = enable horizon detection
+                            // g4 = enable obstacle detection
+                            // g_ = anything else turns them all off
                     switch (getch()) {
                         case '0':
                             enable_frame_diff();
@@ -264,16 +278,10 @@ int main() {
                         case '4':
                             enable_obstacle_detect();
                             break;
+                        default:  // no match - turn them all off
+                            disable_frame_diff();
+                            break;
                     }
-                    break;
-                case 'G':   // disable frame differencing and color segmentation
-                    disable_frame_diff();
-                    break;
-                case 'h':   // toggle thumbnail_flag for SAA7113
-                    if (thumbnail_flag == 0)
-                        thumbnail_flag = 1;
-                    else
-                        thumbnail_flag = 0;
                     break;
                 case 'i':   // i2c read / write
                     process_i2c();
