@@ -15,10 +15,12 @@
 
 #include "srv.h"
 #include "print.h"
-#include "stereo.h"
 #include "string.h"
+#include "stereo.h"
 #include "gps.h"
 #include "myfunc.h"
+
+//#define STEREO
 
 extern int picoc(char *);
 extern void httpd();
@@ -40,9 +42,10 @@ int main() {
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
     camera_setup(); // Sets up the camera to 320x240
     led1_on();
+    init_svs();
     
     check_for_autorun();
-
+        
     while (1) {
         if (getchar(&ch)) {
             switch (ch) {
@@ -114,12 +117,19 @@ int main() {
                             svs_slave((unsigned short *)FLASH_BUFFER,
                                 (unsigned short *)(FLASH_BUFFER+131072), 131072);
                         case '1':
-                            svs_master((unsigned short *)FLASH_BUFFER, 
-                                (unsigned short *)(FLASH_BUFFER+1024), 1024);
+                            /* left camera */
+                            svs_grab(svs_calibration_offset_x, svs_calibration_offset_y, 1, 0);
                             break;
                         case '2':
-                            svs_slave((unsigned short *)FLASH_BUFFER,
-                                (unsigned short *)(FLASH_BUFFER+1024), 1024);
+                            /* right camera */
+                            svs_grab(svs_calibration_offset_x, svs_calibration_offset_y, 0, 0);
+                            svs_send_features();
+                            break;
+                        case '3':
+                            /* left camera */
+                            if (svs_receive_features() > -1) {
+                                svs_match(200, 40, 5, 18, 7, 3, 4, 0, 1);
+                            }
                             break;
                         case 'g':  // gps test
                             gps_show();
@@ -278,6 +288,9 @@ int main() {
                         case '4':
                             enable_obstacle_detect();
                             break;
+                        case '5':
+                            enable_stereo_processing();
+                            break;
                         default:  // no match - turn them all off
                             disable_frame_diff();
                             break;
@@ -291,8 +304,19 @@ int main() {
             while (getchar(&ch)) // flush recv buffer
                 continue;
         }
+        if (!master) {  // if slave processor on SVS, check whether stereo_sync_flag has triggered
+            if ((stereo_sync_flag == 0x0100) && (check_stereo_sync() == 0)) {
+                stereo_sync_flag = 0;
+                continue;
+            }
+            if ((stereo_sync_flag == 0) && (check_stereo_sync() == 0x0100)) {
+                printf("SVS slave:  stereo sync toggle\n\r");
+                stereo_sync_flag = 0x0100;
+                svs_grab(svs_calibration_offset_x, svs_calibration_offset_y, 0, 0);
+                svs_send_features();
+            }
+        }
         check_failsafe();
-        //check_trim();
         led0_on();
     }
 }

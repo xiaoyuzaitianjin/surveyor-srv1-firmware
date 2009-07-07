@@ -128,7 +128,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                     curBlob++;
                     if (curBlob >= MAX_BLOBS) { // max blob limit exceeded
                         printf("  vblob #%d: max blob limit exceeded\n\r", ii);
-                        return 0;
+                        return -1;
                     }
                 }
                 blob_buf[ix] = vME;

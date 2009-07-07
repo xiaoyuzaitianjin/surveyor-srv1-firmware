@@ -363,7 +363,7 @@ void Cvblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
         
     numblob = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ix);
 
-    if (blobcnt[iblob] == 0) {
+    if ((blobcnt[iblob] == 0) || (numblob == -1)) {
         Blobcnt = 0;
     } else {
         Blobcnt = blobcnt[iblob];

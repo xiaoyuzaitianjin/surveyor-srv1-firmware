@@ -30,13 +30,10 @@ all:  srv1.bin srv1.ldr
 srv1.bin: $(OBJS)
 	$(LD) -T srv1.x -Map srv1.map -O binary -o srv1.bin $(OBJS) 
 
-80x64: 80x64.c
-	gcc -g -O2 -Wall -I/usr/include/SDL  -L/usr/lib -lSDLmain -lSDL -lSDL_net -lSDL_image -o 80x64 80x64.c
-
 main.o:  main.c srv.h ov9655.h uart.h xmodem.h i2c.h print.h config.h
 
 srv.o:   srv.c config.h uart.h i2c.h ov9655.h camera.h jpeg.h xmodem.h  \
-         stm_m25p32.h font8x8.h colors.h malloc.h stereo.h print.h sdcard.h $Sfloat.h
+         stm_m25p32.h font8x8.h colors.h malloc.h stereo.h print.h sdcard.h 
 
 uart.o:  uart.c config.h
 

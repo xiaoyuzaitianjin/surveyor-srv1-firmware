@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 21 June 2009 
+SRV-1 firmware build for Blackfin - 6 July 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * created neuron[] output array for picoC's nntest() and nnmatchblob() 
@@ -13,15 +13,20 @@ SRV-1 firmware build for Blackfin - 21 June 2009
 * added '$Mx' and '$m' optical flow test functions.  $Mx compares consecutive
   frames at full resolution, where x=1,2 or 3 represents +/-4, +/-8, +/-16
   search range for 16x16 blocks.  $m scales the image to 80x64 and compares 
-  consecutive frames with 16x16 blocks over +/-16 pixel range.
+  consecutive frames with 16x16 blocks over +/-16 pixel range.  still need
+  to add a display function.
+
+* added 'iMabc' i2c command to read multiple registers - ('abc' parameters 
+  sent as 8-bit binary) a is device id, b is register, c is count, xx is 
+  8-bit return values from register displayed as decimal value 
 
 * removed 'G' command - now any 'g' command that doesn't match existing
-  g commands (g0, g1, g2, g3, g4), e.g. 'gx. will turn off all g functions.
+  g commands (g0, g1, g2, g3, g4, g5), e.g. 'gx' will turn off all g functions.
   
-* updated to picoC v0.92.  added picoC version # to SRV-1 ##version string
+* updated to picoC v0.92.  added picoC version # to SRV-1 ##Version string
 
-* added 'G' command to support HTTP GET requests with httpd() function.  
-  this is experimental, and does not yet work correctly
+* added new 'G' command to support HTTP GET requests with httpd() function.  
+  delivers statically defined HTML content in httpd.c
  
 * added autorun() function to picoC.  if "autorun" string is found at the 
   beginning of flash buffer #4 (user flash sector), firmware will launch
@@ -35,9 +40,13 @@ SRV-1 firmware build for Blackfin - 21 June 2009
   sector 4, and 'zc' to clear flash buffer contents
   
 * changed svs_master() and svs_slave() functions to support 2-way data transfer.
-  $X, $R, $1 and $2 test these functions.  still need to add CRC16 for reverse
-  direction
-  
+  $X, $R, $1 and $2 test these functions.  using GPIO-H8 to synchronize capture
+  and data transfer between left (master) and right (slave) Blackfins in SVS.  
+  'g5' command to master enables stereo processing.  display of stereo features
+  still needs to be added.
+
+* changed vblob() to return -1 if too many blobs found
+
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 25 May 2009 

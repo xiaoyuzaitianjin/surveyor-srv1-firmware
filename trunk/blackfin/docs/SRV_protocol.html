@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 21 June 2009</h3>
+<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 5 July 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -99,6 +99,8 @@ as needed until a frame is returned
 a is device id, b is register, cc is 8-bit return value from register displayed as decimal value
 </th></tr><tr><td>'iRab'</td><td>'##iRaa cc'</td><td>I2C register read ('ab' parameters sent as 8-bit binary)<br>
 a is device id, b is register, cc is 16-bit return value from register displayed as decimal value
+</th></tr><tr><td>'iMabc'</td><td>'##iMaa xx xx ... xx'</td><td>I2C multiple register read ('abc' parameters sent as 8-bit binary)<br>
+a is device id, b is register, c is count, xx is 8-bit return values from register displayed as decimal value
 </th></tr><tr><td>'iwabc'</td><td>'##iwaa'</td><td>I2C register write ('abc' parameters sent as 8-bit binary)<br>
 a is device id, b is register, c is value written to register
 </th></tr><tr><td>'iWabcd'</td><td>'##iWaa'</td><td>multi-byte I2C register write ('abcd' parameters sent as 8-bit binary)<br>
@@ -229,7 +231,7 @@ See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a>
 for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 21 June 2009 - 23:50 GMT
+last updated 5 July 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

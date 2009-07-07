@@ -98,6 +98,8 @@ void enable_segmentation();
 void enable_edge_detect();
 void enable_horizon_detect();
 void enable_obstacle_detect();
+void enable_stereo_processing();
+unsigned int check_stereo_sync();
 void set_edge_thresh();
 void grab_code_send();
 void recv_grab_code();
@@ -185,6 +187,13 @@ extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, lcount, rc
 extern int sonar_data[];
 extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag, quality;
 extern unsigned int uart1_flag, thumbnail_flag;
+extern unsigned int master;  // SVS master or slave ?
+extern unsigned int stereo_sync_flag;
+extern unsigned int stereo_processing_flag;
+extern int svs_calibration_offset_x, svs_calibration_offset_y;
+extern int svs_centre_of_disortion_x, svs_centre_of_disortion_x;
+extern int svs_scale_num, svs_scale_denom;
+extern long* svs_coeff;
 
 #endif
 

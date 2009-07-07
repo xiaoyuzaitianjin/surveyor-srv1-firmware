@@ -1,6 +1,6 @@
 #define MAX_BLOBS  63
 #define MAX_COLORS 17  // reserve color #16 for internal use
-#define MIN_BLOB_SIZE 5
+#define MIN_BLOB_SIZE 10
 
 #define index(xx, yy)  ((yy * imgWidth + xx) * 2) & 0xFFFFFFFC  // always a multiple of 4
 
