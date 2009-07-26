@@ -27,12 +27,15 @@
 #include "font8x8.h"
 #include "colors.h"
 #include "malloc.h"
-#include "stereo.h"
 #include "edit.h"
 #include "print.h"
 #include "string.h"
 #include "neural.h"
 #include "sdcard.h"
+
+#ifdef STEREO
+#include "stereo.h"
+#endif
 
 #include "srv.h"
 
@@ -43,11 +46,17 @@ extern int picoc(char *);
 unsigned int imgWidth, imgHeight;
 
 /* stereo vision globals */
+#ifdef STEREO
 int svs_calibration_offset_x, svs_calibration_offset_y;
 int svs_centre_of_disortion_x, svs_centre_of_disortion_y;
-int svs_scale_num, svs_scale_denom;
+int svs_scale_num, svs_scale_denom, svs_coeff_degree;
 unsigned int stereo_processing_flag, stereo_sync_flag;
 long* svs_coeff;
+int svs_width, svs_height;
+int svs_enable_horizontal;
+int svs_disp_left, svs_disp_right, svs_steer;
+unsigned int enable_stereo_flag;
+#endif /* STEREO */
 
 /* Version */
 unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.92 "  __TIME__ " - " __DATE__ ;
@@ -59,7 +68,7 @@ unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
 /* Camera globals */
 unsigned int quality, framecount, ix, overlay_flag;
 unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag;
-unsigned int enable_stereo_flag, obstacle_detect_flag;
+unsigned int obstacle_detect_flag;
 unsigned int edge_thresh;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
@@ -97,9 +106,10 @@ void init_io() {
     *pPORTHIO_DIR |= 0x0040;  // set PORTH6 to output for serial flow control
     *pPORTHIO = 0x0000;       // set output low 
     *pPORTHIO_INEN |= 0x000D; // enable inputs: Matchport RTS0 (H0), battery (H2), master/slave (H3)
-    *pPORTHIO_DIR |= 0x0280;  // set up lasers - note that GPIO-H8 is used for SD SPI select on RCM board
-                              //   as well as for stereo sync on the SVS board
+    *pPORTHIO_DIR |= 0x0380;  // set up lasers - note that GPIO-H8 is used for SD SPI select on RCM board
     //*pPORTHIO |= 0x0100;      // set GPIO-H8 high in case it's used for SD SPI select 
+
+    #ifdef STEREO
     if (*pPORTHIO & 0x0008) {  // check SVS master/slave bit
         master = 0;
         *pPORTHIO_DIR &= 0xFEFF;
@@ -109,6 +119,8 @@ void init_io() {
         master = 1;
         *pPORTHIO_DIR |= 0x0100;  // set GPIO-H8 as output on master for stereo sync        
     } 
+    #endif /* STEREO */
+
     pwm1_mode = PWM_OFF;
     pwm2_mode = PWM_OFF;
     pwm1_init = 0;
@@ -119,9 +131,11 @@ void init_io() {
     edge_thresh = 3200;
     obstacle_detect_flag = 0;
     segmentation_flag = 0;
-    stereo_processing_flag = 0;
     encoder_flag = 0;
-    
+
+    #ifdef STEREO
+    stereo_processing_flag = 0;
+    #endif /* STEREO */
 }
 
 /* reset CPU */
@@ -168,10 +182,13 @@ void show_heap_ptr() {
    Serial protocol char: V */
 void serial_out_version () {
     printf("##Version - %s", version_string);
+    #ifdef STEREO
     if (master)  // check master/slave bit
-        printf(" (stereo master)\n\r");     
+        printf(" (stereo master)");     
     else
-        printf(" (stereo slave)\n\r");     
+        printf(" (stereo slave)");     
+    #endif /* STEREO */
+    printf("\n\r");
 }
 
 /* Get current time
@@ -589,14 +606,18 @@ void enable_obstacle_detect() {
     printf("##g4");
 }
 
+#ifdef STEREO
 void enable_stereo_processing() {
-    stereo_processing_flag = 1;
-    printf("##g5");
+    if (master) {
+        stereo_processing_flag = 1;
+        printf("##g5");
+    }
 }
 
 unsigned int check_stereo_sync() {
     return (*pPORTHIO & 0x0100);
 }
+#endif /* STEREO */
 
 void set_edge_thresh () {
     unsigned char ch;
@@ -611,7 +632,9 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
     obstacle_detect_flag = 0;
+    #ifdef STEREO
     stereo_processing_flag = 0;
+    #endif /* STEREO */
     printf("#g_");
 }
 
@@ -619,14 +642,12 @@ void grab_frame () {
     unsigned int vect[16];
     int slope, intercept;
     
-    if (stereo_processing_flag) {
-        *pPORTHIO |= 0x0100;  // set stereo sync flag high
-        svs_grab(svs_calibration_offset_x, svs_calibration_offset_y, master, 1);
-        if (svs_receive_features() > -1) 
-            svs_match(200, 40, 5, 18, 7, 3, 4, 0, 1);
-        *pPORTHIO &= 0xFEFF;  // set stereo sync flag low
+    #ifdef STEREO
+    if (stereo_processing_flag != 0) {
+        svs_stereo(0);
         return;
     }
+    #endif /* STEREO */
 
     move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 

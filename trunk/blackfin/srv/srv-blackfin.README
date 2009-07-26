@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 6 July 2009 
+SRV-1 firmware build for Blackfin - 26 July 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * created neuron[] output array for picoC's nntest() and nnmatchblob() 
@@ -39,13 +39,18 @@ SRV-1 firmware build for Blackfin - 6 July 2009
   'zw' command to write the contents of the flash buffer, 'zr' to read flash
   sector 4, and 'zc' to clear flash buffer contents
   
+* changed vblob() to return -1 if too many blobs found
+
 * changed svs_master() and svs_slave() functions to support 2-way data transfer.
   $X, $R, $1 and $2 test these functions.  using GPIO-H8 to synchronize capture
   and data transfer between left (master) and right (slave) Blackfins in SVS.  
-  'g5' command to master enables stereo processing.  display of stereo features
-  still needs to be added.
+  'g5' command to master enables stereo processing and displays stereo features.
+  'gx' turns off stereo feature display.
 
-* changed vblob() to return -1 if too many blobs found
+* split SRV-1 and SVS firmare into separate builds, using Makefile.mono and
+  Makefile.stereo, along with -DSTEREO compiler flag.  Firmware images are now
+  srv1.ldr and srv1.ldr.stereo.  load0 script works for upload of srv1.ldr, 
+  load1 + load2 scripts for srv1.ldr.stereo
 
 ============================================================================
 

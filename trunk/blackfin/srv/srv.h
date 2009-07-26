@@ -35,6 +35,7 @@
 #define FRAME_BUF3   0x01A00000  //   third frame buffer for edge data or YUV planar data
 #define FRAME_BUF4   0x01C80000  //   fourth frame buffer 
 #define JPEG_BUF     0x00F00000  // address in SDRAM for JPEG compressed image
+#define DISP_BUF     0x00F00000  // buffer used to send disparity data
 
 /* Stack info */
 #define STACK_TOP    0xFFB00FFC
@@ -192,8 +193,11 @@ extern unsigned int stereo_sync_flag;
 extern unsigned int stereo_processing_flag;
 extern int svs_calibration_offset_x, svs_calibration_offset_y;
 extern int svs_centre_of_disortion_x, svs_centre_of_disortion_x;
-extern int svs_scale_num, svs_scale_denom;
+extern int svs_scale_num, svs_scale_denom, svs_coeff_degree;
 extern long* svs_coeff;
+extern int svs_width, svs_height;
+extern int svs_enable_horizontal;
+extern int svs_disp_left, svs_disp_right, svs_steer;
 
 #endif
 

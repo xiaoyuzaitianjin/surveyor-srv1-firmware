@@ -149,8 +149,22 @@ int isdigit(c)
 
 void memcpy (char *dst, char *src, int count)
 {
-    while (count--)
-        *dst++ = *src++;
+   short *isrc, *idst;
+
+   /* if count and pointers are even, transfer 16-bits at a time */
+   if ((count & 0x00000001) || 
+       ((int)dst & 0x00000001) || 
+       ((int)src & 0x00000001)) {
+       while (count--)
+           *dst++ = *src++;
+   } else {
+
+       idst = (short *)dst;
+       isrc = (short *)src;
+       count /= 2;
+       while (count--)
+           *idst++ = *isrc++;
+   }
 }
 
 void memset (char *dst, char ch, int count)
