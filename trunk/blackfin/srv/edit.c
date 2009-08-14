@@ -32,17 +32,17 @@ void edit (unsigned char *flashbuf)
     print_help();
         
     while (1) {
-        printf("\n* ");  // generate prompt
+        printf("\r\n* ");  // generate prompt
         ch = getch();
         switch (upper(ch)) { 
             case 'T':   // move to top of buffer
-                printf("TOP\n\r");
+                printf("TOP\r\n");
                 pcur = flashbuf;
                 break;
             case 'B':   // move to bottom of buffer
                 pend = find_buffer_end();
                 pcur = pend;
-                printf("BOTTOM\n\r");
+                printf("BOTTOM\r\n");
                 break;
             case 'P':   // move to previous line and display
                 pcur = find_previous_line();
@@ -57,7 +57,7 @@ void edit (unsigned char *flashbuf)
                 break;
             case 'I':   // insert text, end with ESC
                 pend = find_buffer_end();
-                printf("INSERT\n\r");
+                printf("INSERT\r\n");
                 while ((ch = getch()) != 0x1B) {  // loop until ESC char
                    if (ch == 0)   // filter out any nulls from the console
                        continue; 
@@ -81,22 +81,22 @@ void edit (unsigned char *flashbuf)
                 print_help();
                 break;
             case 'X':   // exit
-                printf("leaving editor \n\r");
+                printf("leaving editor \r\n");
                 return;
         }
     }
 }
 
 void print_help() {
-    printf("(T)op (B)ottom (P)revious line (N)ext line (L)ist \n\r");
-    printf("(I)nsert until ESC (D)elete line (H)elp (X)exit \n\r");
+    printf("(T)op (B)ottom (P)revious line (N)ext line (L)ist \r\n");
+    printf("(I)nsert until ESC (D)elete line (H)elp (X)exit \r\n");
 }
 
 void insert_char(unsigned char c) {
     unsigned char *cp;
 
     if (pcur > pflashbufend) {
-        printf("BUFFER FULL\n\r");
+        printf("BUFFER FULL\r\n");
         return;
     }
     for(cp=pend; cp>=pcur; cp--)

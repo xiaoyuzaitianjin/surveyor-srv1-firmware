@@ -127,7 +127,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                     vME = curBlob;
                     curBlob++;
                     if (curBlob >= MAX_BLOBS) { // max blob limit exceeded
-                        printf("  vblob #%d: max blob limit exceeded\n\r", ii);
+                        printf("  vblob #%d: max blob limit exceeded\r\n", ii);
                         return -1;
                     }
                 }
@@ -474,7 +474,7 @@ unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh,
         *slope = sx / filter;
         *intercept = sy / filter;
     }
-    printf("vhorizon:  slope = %d   intercept = %d\n\r", *slope, *intercept);
+    printf("vhorizon:  slope = %d   intercept = %d\r\n", *slope, *intercept);
     return hits;
 }
 

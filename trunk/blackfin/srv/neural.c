@@ -204,7 +204,7 @@ nndisplay(int ix)
             else
                 printf("   ");
         }
-        printf("\n\r");
+        printf("\r\n");
     }
 }
 

@@ -1,14 +1,29 @@
 #define SVS_MAX_FEATURES         2000
-#define SVS_MAX_MATCHES          400
+#define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280
 #define SVS_MAX_IMAGE_HEIGHT     1024
-#define SVS_VERTICAL_SAMPLING    2
+#define SVS_VERTICAL_SAMPLING    4
 #define SVS_HORIZONTAL_SAMPLING  8
 #define SVS_DESCRIPTOR_PIXELS    30
 #define SVS_PEAKS_HISTORY        10
 #define SVS_STEER_DEADBAND       2
-#define SVS_SHOW_STEERING
+//#define SVS_SHOW_STEERING
 #define SVS_SECTOR               3
+#define SVS_FILTER_SAMPLING      40
+
+#define SVS_BASELINE_MM          107
+#define SVS_FOCAL_LENGTH_MMx100  360
+#define SVS_FOV_DEGREES          90
+
+#define SVS_MAP_RDIM             75
+#define SVS_MAP_HYPRDIM          75   
+#define SVS_MAP_TDIM             400
+#define SVS_MAP_WIDTH_CELLS      40
+#define SVS_MAP_CELL_SIZE_MM     100
+#define SVS_EMPTY_CELL           999999
+
+#define SVS_MAX_REGIONS          200
+#define SVS_REGION_HISTORY       2
 
 //#define SVS_VERBOSE
 //#define SVS_PROFILE
@@ -50,16 +65,16 @@ typedef struct {
         unsigned int tail;  // use 0x55555555
 } svs_data_struct;
 
-extern int svs_update_sums(int cols, int y, unsigned char* rectified_frame_buf);
+extern int svs_update_sums(int cols, int y, unsigned char* rectified_frame_buf, int segment);
 extern void svs_non_max(int cols, int inhibition_radius, unsigned int min_response);
 extern int svs_compute_descriptor(int px, int py, unsigned char* rectified_frame_buf, int no_of_features, int row_mean);
-extern int svs_get_features_vertical(unsigned char* rectified_frame_buf, int inhibition_radius, unsigned int minimum_response, int calibration_offset_x, int calibration_offset_y);
-extern int svs_get_features_horizontal(unsigned char* rectified_frame_buf, int inhibition_radius, unsigned int minimum_response, int calibration_offset_x, int calibration_offset_y);
+extern int svs_get_features_vertical(unsigned char* rectified_frame_buf, int inhibition_radius, unsigned int minimum_response, int calibration_offset_x, int calibration_offset_y, int segment);
+extern int svs_get_features_horizontal(unsigned char* rectified_frame_buf, int inhibition_radius, unsigned int minimum_response, int calibration_offset_x, int calibration_offset_y, int segment);
 void svs_send_features();
 int svs_receive_features();
-extern int svs_match(int ideal_no_of_matches, int max_disparity_percent, int descriptor_match_threshold, int learnDesc, int learnLuma, int learnDisp, int learnPrior, int use_priors, int show_matches);
+extern int svs_match(int ideal_no_of_matches, int max_disparity_percent, int descriptor_match_threshold, int learnDesc, int learnLuma, int learnDisp, int learnPrior, int groundPrior, int use_priors);
 
-extern void svs_filter(int no_of_possible_matches, int max_disparity_pixels, int tolerance, int enable_secondary);
+extern void svs_filter_plane(int no_of_possible_matches, int max_disparity_pixels);
 extern void svs_rectify(unsigned char* raw_image, unsigned char* rectified_frame_buf);
 
 void svs_master(unsigned short *outbuf16, unsigned short *inbuf16, int bufsize);
@@ -72,8 +87,14 @@ void svs_make_map(long centre_of_distortion_x, long centre_of_distortion_y, long
 
 extern void svs_show_features(unsigned char *outbuf, int no_of_feats);
 extern void svs_show_matches(unsigned char *outbuf, int no_of_matches);
+extern void svs_show_ground_plane(unsigned char *outbuf);
 
+extern void svs_ground_plane();
 extern void svs_send_disparities (int no_of_matches);
 extern void svs_stereo(int send_disparities);
 
+extern void svs_map_update(int no_of_matches, int max_disparity_percent);
+extern void svs_map_recenter();
+extern void svs_visual_odometry(int right_turn_pixels, int tollerance);
+extern void svs_show_map(unsigned char* outbuf);
 

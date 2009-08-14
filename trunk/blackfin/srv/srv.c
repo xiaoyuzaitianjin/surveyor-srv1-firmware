@@ -52,11 +52,21 @@ int svs_centre_of_disortion_x, svs_centre_of_disortion_y;
 int svs_scale_num, svs_scale_denom, svs_coeff_degree;
 unsigned int stereo_processing_flag, stereo_sync_flag;
 long* svs_coeff;
+int svs_right_turn_percent;
+int svs_turn_tollerance_percent;
+int svs_sensor_width_mmx100;
 int svs_width, svs_height;
 int svs_enable_horizontal;
+int svs_ground_y_percent;
+int svs_ground_slope_percent;
+int svs_enable_ground_priors;
 int svs_disp_left, svs_disp_right, svs_steer;
 unsigned int enable_stereo_flag;
 #endif /* STEREO */
+
+/* motor move times */
+int move_start_time, move_stop_time, move_time_mS;
+int robot_moving;
 
 /* Version */
 unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.92 "  __TIME__ " - " __DATE__ ;
@@ -164,7 +174,7 @@ void clear_sdram() {
 void show_stack_ptr() {
     int x = 0;
     asm("%0 = SP;" : "=r"(x) : "0"(x));
-    printf("stack_ptr = 0x%x\n\r", x);
+    printf("stack_ptr = 0x%x\r\n", x);
     return;
 }
 
@@ -175,7 +185,7 @@ unsigned int stack_remaining() {
 }
 
 void show_heap_ptr() {
-    printf("heap_ptr  = 0x%x\n\r", (int)heap_ptr);
+    printf("heap_ptr  = 0x%x\r\n", (int)heap_ptr);
 }
 
 /* SRV-1 Firmware Version Request
@@ -188,13 +198,13 @@ void serial_out_version () {
     else
         printf(" (stereo slave)");     
     #endif /* STEREO */
-    printf("\n\r");
+    printf("\r\n");
 }
 
 /* Get current time
    Serial protocol char: t */
 void serial_out_time () {
-    printf("##time - millisecs:  %d\n\r", readRTC());
+    printf("##time - millisecs:  %d\r\n", readRTC());
 }
 
 /* load flash sector 4 into flash buffer on startup.  
@@ -207,10 +217,10 @@ void check_for_autorun() {
     spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00010000);  // read flash sector #4
     cp = (char *)FLASH_BUFFER;
     if (strncmp("autorun", cp, 7) == 0) {
-        printf("autorun() found.  launching picoC ...\n\r\n\r");
+        printf("autorun() found.  launching picoC ...\r\n\r\n");
         picoc((char *)FLASH_BUFFER);
     } else {
-        printf("no autorun() found.\n\r\n\r");
+        printf("no autorun() found.\r\n\r\n");
         for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)  // clear FLASH_BUFFER
             *((unsigned char *)ix) = 0;
     }
@@ -219,7 +229,7 @@ void check_for_autorun() {
 /* Dump flash buffer to serial
    Serial protocol char: z-d */
 void serial_out_flashbuffer () {
-    printf("##zdump: \n\r");
+    printf("##zdump: \r\n");
     cp = (unsigned char *)FLASH_BUFFER;
     for (i=0; i<0x10000; i++) {
         if (*cp == 0)
@@ -247,7 +257,7 @@ void lasers_off () {
 /* Show laser range
    Serial protocol char: R */
 void show_laser_range(int flag) {
-    printf("##Range(cm) = %d\n\r", laser_range(flag));
+    printf("##Range(cm) = %d\r\n", laser_range(flag));
 }
 
 /* Compute laser range 
@@ -289,7 +299,7 @@ unsigned int laser_range(int dflag) {
     for(ymin[16]=200; ymin[16]>0; ymin[16]-=10) {
         vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, 16);  // use the brightest blob
         if (dflag)
-            printf("right blobs: ymin=%d   %d %d %d %d %d  %d %d %d %d %d  %d %d %d %d %d\n\r",
+            printf("right blobs: ymin=%d   %d %d %d %d %d  %d %d %d %d %d  %d %d %d %d %d\r\n",
               ymin[16], 
               blobcnt[0], blobx1[0], blobx2[0], bloby1[0], bloby2[0],
               blobcnt[1], blobx1[1], blobx2[1], bloby1[1], bloby2[1],
@@ -315,7 +325,7 @@ unsigned int laser_range(int dflag) {
     for(ymin[16]=200; ymin[16]>0; ymin[16]-=10) {
         vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, 16);  // use the brightest blob
         if (dflag)
-            printf("left blobs: ymin=%d   %d %d %d %d %d  %d %d %d %d %d  %d %d %d %d %d\n\r",
+            printf("left blobs: ymin=%d   %d %d %d %d %d  %d %d %d %d %d  %d %d %d %d %d\r\n",
               ymin[16], 
               blobcnt[0], blobx1[0], blobx2[0], bloby1[0], bloby2[0],
               blobcnt[1], blobx1[1], blobx2[1], bloby1[1], bloby2[1],
@@ -331,7 +341,7 @@ unsigned int laser_range(int dflag) {
     lconf = (100 * ix) / ((blobx2[0]-blobx1[0]+1) * (bloby2[0]-bloby1[0]+1));
     
     if (dflag)
-        printf("lconf %d lrange %d rconf %d rrange %d\n\r", lconf, lrange, rconf, rrange);
+        printf("lconf %d lrange %d rconf %d rrange %d\r\n", lconf, lrange, rconf, rrange);
     if ((lrange==9999) && (rrange==9999))
         return 9999;
     if (lconf > rconf)
@@ -341,9 +351,9 @@ unsigned int laser_range(int dflag) {
 
 void check_battery() { // 'D' command
     if (*pPORTHIO & 0x0004)
-        printf("##D - low battery voltage detected\n\r");
+        printf("##D - low battery voltage detected\r\n");
     else
-        printf("##D - battery voltage okay\n\r");
+        printf("##D - battery voltage okay\r\n");
 }
 
 void led0_on() {
@@ -398,7 +408,7 @@ void read_tilt()
 {
     unsigned int channel;
     channel = (unsigned int)(getch() & 0x0F);
-    printf("##$T%d %4d\n\r", channel, tilt(channel));
+    printf("##$T%d %4d\r\n", channel, tilt(channel));
 }
 
 void read_compass()
@@ -412,7 +422,7 @@ void read_compass()
     i2c_data[0] = 0x41;
     i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
     ix = (((unsigned int)i2c_data[0] << 8) + i2c_data[1]) / 10;
-    printf("##$C %3d\n\r", ix);
+    printf("##$C %3d\r\n", ix);
 }
 
 /* init all 3 possible AD7998 A/D's */
@@ -498,7 +508,7 @@ void read_analog()
 {
     unsigned int channel;
     channel = ((unsigned int)(getch() & 0x0F) * 10) + (unsigned int)(getch() & 0x0F);
-    printf("##$A%d %4d\n\r", channel, analog(channel));
+    printf("##$A%d %4d\r\n", channel, analog(channel));
 }
 
 /* use GPIO H10 (pin 27), H11 (pin 28), H12 (pin 29), H13 (pin 30) as sonar inputs -
@@ -513,7 +523,7 @@ void init_sonar() {
 
 void ping_sonar() {
     sonar();
-    printf("##ping %d %d %d %d\n\r", sonar_data[1], sonar_data[2], sonar_data[3], sonar_data[4]);
+    printf("##ping %d %d %d %d\r\n", sonar_data[1], sonar_data[2], sonar_data[3], sonar_data[4]);
 }
 
 void sonar() {
@@ -693,7 +703,7 @@ void motion_vect_test (int srange) {
         for (ix=0; ix<hb; ix++) {
             printf("%2d %2d  ", hvect[iy*hb + ix], vvect[iy*hb + ix]);
         }
-        printf("\n\r");
+        printf("\r\n");
     }
 }
 
@@ -724,7 +734,7 @@ void motion_vect80x64 () {
         for (ix=0; ix<5; ix++) {
             printf("%2d %2d  ", hsum[iy*5 + ix], vsum[iy*5 + ix]);
         }
-        printf("\n\r");
+        printf("\r\n");
     }
 }
 
@@ -937,7 +947,7 @@ void change_image_quality () {
     } else if (quality > 8) {
         quality = 8;
     }
-    printf("##quality - %c\n\r", ch);
+    printf("##quality - %c\r\n", ch);
 }
 
 // write caption string of up to 40 characters to frame buffer 
@@ -1070,9 +1080,9 @@ void xmodem_receive () {
         *((unsigned char *)ix) = 0;   // clear the read buffer
       err1 = xmodemReceive((unsigned char *)FLASH_BUFFER, 131072);
       if (err1 < 0) {
-          printf("##Xmodem receive error: %d\n\r", err1);
+          printf("##Xmodem receive error: %d\r\n", err1);
       } else {
-          printf("##Xmodem success. Count: %d\n\r", err1);
+          printf("##Xmodem success. Count: %d\r\n", err1);
       }
 }
 
@@ -1085,7 +1095,7 @@ void launch_editor() {
 void clear_flash_buffer () {
     for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00020000); ix++)
       *((unsigned char *)ix) = 0;   // clear the read buffer
-    printf("##zclear buffer\n\r");
+    printf("##zclear buffer\r\n");
 }
 
 /* crc flash buffer using crc16_ccitt()
@@ -1093,7 +1103,7 @@ void clear_flash_buffer () {
 void crc_flash_buffer () {
     unsigned int ix;
     ix = (unsigned int)crc16_ccitt((void *)FLASH_BUFFER, 0x0001fff8);  // don't count last 8 bytes
-    printf("##zCRC: 0x%x\n\r", ix);
+    printf("##zCRC: 0x%x\r\n", ix);
 }
 
 /* Read user flash sector into flash buffer
@@ -1103,18 +1113,18 @@ void read_user_flash () {
     for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)
       *((unsigned char *)ix) = 0;   // clear the read buffer
     ix = spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00010000);
-    printf("##zread count: %d\n\r", ix);
+    printf("##zread count: %d\r\n", ix);
 }
 
 void read_user_sector (int isec) {
     int ix;
     printf("##zRead ");
     if ((isec < 2) || (isec > 63)) {
-        printf(" - sector %d not accessible\n\r", isec);
+        printf(" - sector %d not accessible\r\n", isec);
         return;
     }
     ix = spi_read((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 0x00010000);
-    printf (" - loaded %d bytes from flash sector %d\n\r", ix, isec);   
+    printf (" - loaded %d bytes from flash sector %d\r\n", ix, isec);   
 }
 
 /* Write user flash sector from flash buffer
@@ -1123,19 +1133,19 @@ void write_user_flash () {
     int ix;
     ix = spi_write(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 
         (unsigned char *)(FLASH_BUFFER + 0x00010000), 0x00010000);
-    printf("##zwrite count: %d\n\r", ix);
+    printf("##zwrite count: %d\r\n", ix);
 }
 
 void write_user_sector (int isec) {
     int ix;
     printf("##zWrite ");
     if ((isec < 2) || (isec > 63)) {
-        printf(" - sector %d not accessible\n\r", isec);
+        printf(" - sector %d not accessible\r\n", isec);
         return;
     }
     ix = spi_write((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 
         (unsigned char *)(FLASH_BUFFER + 0x00010000), 0x00010000);
-    printf (" - saved %d bytes to flash sector %d\n\r", ix, isec);   
+    printf (" - saved %d bytes to flash sector %d\r\n", ix, isec);   
 }
 
 /* Write boot flash sectors (1-2) from flash buffer
@@ -1145,12 +1155,12 @@ void write_boot_flash () {
     int ix;
     cp = (unsigned char *)FLASH_BUFFER;
     if (cp[1] != 0x00 && cp[2] != 0x80 && cp[3] != 0xFF) {
-        printf("##zZ boot image - invalid header\n\r");
+        printf("##zZ boot image - invalid header\r\n");
         return;
     }                        
     ix = spi_write(BOOT_SECTOR, (unsigned char *)FLASH_BUFFER, 
         (unsigned char *)(FLASH_BUFFER + 0x00020000), 0x00020000);
-    printf("##zZ boot image write count: %d\n\r", ix);
+    printf("##zZ boot image write count: %d\r\n", ix);
 }
 
 /* Process i2c command:  
@@ -1168,13 +1178,13 @@ void process_i2c() {
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
-            printf("##ir%2x %d\n\r", i2c_device, i2c_data[0]);
+            printf("##ir%2x %d\r\n", i2c_device, i2c_data[0]);
             break;
         case 'R':
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
-            printf("##iR%2x %d\n\r",i2c_device, (i2c_data[0] << 8) + i2c_data[1]);
+            printf("##iR%2x %d\r\n",i2c_device, (i2c_data[0] << 8) + i2c_data[1]);
             break;
         case 'M':
             i2c_device = (unsigned char)getch();
@@ -1183,14 +1193,14 @@ void process_i2c() {
             i2cread(i2c_device, (unsigned char *)i2c_data, (unsigned int)count, SCCB_ON);
             printf("##iM%2x  ", i2c_device);
             for (cx=0; cx<count; cx++) printf("%d ", i2c_data[cx]);
-            printf("\n\r");
+            printf("\r\n");
             break;
         case 'w':
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2c_data[1] = (unsigned char)getch();
             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
-            printf("##iw%2x\n\r", i2c_device);
+            printf("##iw%2x\r\n", i2c_device);
             break;
         case 'W':  // multi-write
             i2c_device = (unsigned char)getch();
@@ -1303,6 +1313,12 @@ void motor_trim_right() {
 
 /* Take motor action */
 void motor_action(unsigned char ch) {
+
+    #ifdef STEREO
+    if (ch == '.') svs_right_turn_percent = 21;
+    if (ch == '0') svs_right_turn_percent = -21;
+    #endif
+    
     motor_set(ch, base_speed, &lspeed, &rspeed);
     printf("#%c", ch);
 }
@@ -1313,7 +1329,13 @@ void motor_set(unsigned char cc, int speed, int *ls, int *rs)  {
 
     if (pwm1_mode != PWM_PWM) // only run the keypad commands in PWM mode
         return;
-        
+    
+    /* record the time at which the motors started moving */
+    if (cc != '5') {
+        move_start_time = readRTC();
+        robot_moving = 1;
+    }
+    
     left_speed = right_speed = 0;
     switch (cc) {
         case '7':     // drift left
@@ -1335,6 +1357,10 @@ void motor_set(unsigned char cc, int speed, int *ls, int *rs)  {
         case '5':        // stop
             left_speed = 0;
             right_speed = 0;
+            move_stop_time = readRTC();
+            move_time_mS = move_stop_time - move_start_time;
+            robot_moving = 0;
+            //printf("Move time at speed %d = %d mS\r\n", speed, move_time_mS);
             break;
         case '6':     // turn right
             left_speed = speed+30;
@@ -1354,17 +1380,31 @@ void motor_set(unsigned char cc, int speed, int *ls, int *rs)  {
             break;
         case '.':     // clockwise turn
             setPWM(70, -70);
+            #ifdef STEREO
+            delayMS(100);
+            #else
             delayMS(200);
+            #endif
             setPWM(0, 0);
             left_speed = 0;
             right_speed = 0;
+            move_stop_time = readRTC();
+            move_time_mS = move_stop_time - move_start_time;
+            robot_moving = 0;
             break;
         case '0':     // counter clockwise turn
             setPWM(-70, 70);
+            #ifdef STEREO
+            delayMS(100);
+            #else
             delayMS(200);
+            #endif
             setPWM(0, 0);
             left_speed = 0;
             right_speed = 0;
+            move_stop_time = readRTC();
+            move_time_mS = move_stop_time - move_start_time;
+            robot_moving = 0;
             break;
     }
     setPWM(left_speed, right_speed);
@@ -1681,7 +1721,7 @@ void process_colors() {
             i2c_data[1] = 0xC0 + ix;
             i2cwrite(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV9655
             i2cwrite(0x21, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV7725
-            printf("##va%d\n\r", ix);
+            printf("##va%d\r\n", ix);
             break;
         case 'c':  //    vc = set colors
             ix = (unsigned int)getch();
@@ -1713,7 +1753,7 @@ void process_colors() {
             ch2 = getch() & 0x0F;
             ch3 = getch() & 0x0F;
             vmax[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            printf("##vc %d\n\r", ix);
+            printf("##vc %d\r\n", ix);
             break;
         case 'p':  //    vp = sample individual pixel, print YUV value
             ch1 = getch() & 0x0F;
@@ -1728,7 +1768,7 @@ void process_colors() {
             i2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
             grab_frame();
             ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
-            printf("##vp %d %d %d\n\r",
+            printf("##vp %d %d %d\r\n",
                 ((ix>>16) & 0x000000FF),  // Y1
                 ((ix>>24) & 0x000000FF),  // U
                 ((ix>>8) & 0x000000FF));   // V
@@ -1756,7 +1796,7 @@ void process_colors() {
             ch4 = getch() & 0x0F;
             y2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
             grab_frame();
-            printf("##vf %d\n\r", vfind((unsigned char *)FRAME_BUF, clr, x1, x2, y1, y2));
+            printf("##vf %d\r\n", vfind((unsigned char *)FRAME_BUF, clr, x1, x2, y1, y2));
             break;
         case 'b':  //    vb = find blobs for a given color
             ch1 = getch();
@@ -1767,9 +1807,9 @@ void process_colors() {
                 ch1 &= 0x0F;
             grab_frame();
             ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
-            printf("##vb%c\n\r", ch2);
+            printf("##vb%c\r\n", ch2);
             for (iy=0; iy<ix; iy++) {
-                printf(" %d - %d %d %d %d  \n\r", 
+                printf(" %d - %d %d %d %d  \r\n", 
                     blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
             }
             break;
@@ -1779,16 +1819,16 @@ void process_colors() {
                 ix = (ix & 0x0F) + 9;
             else
                 ix &= 0x0F;
-            printf("##vr %d %d %d %d %d %d %d\n\r",
+            printf("##vr %d %d %d %d %d %d %d\r\n",
                ix, ymin[ix], ymax[ix], umin[ix], umax[ix], vmin[ix], vmax[ix]);
             break;
         case 'h':  //    vh = histogram
             grab_frame();
             vhist((unsigned char *)FRAME_BUF);
-            printf("##vhist\n\r");
+            printf("##vhist\r\n");
             iy = 0;
             itot = imgWidth * imgHeight / 2;
-            printf("      0  16  32  48  64  80  96 112 128 144 160 176 192 208 224 240 (V-axis)\n\r");
+            printf("      0  16  32  48  64  80  96 112 128 144 160 176 192 208 224 240 (V-axis)\r\n");
             for (i1=0; i1<16; i1++) {
                 printf("%d", i1*16);
                 for (i2=0; i2<16; i2++) {
@@ -1807,14 +1847,14 @@ void process_colors() {
                         iy--;
                     }
                 }
-                printf("\n\r");
+                printf("\r\n");
             }
-            printf("(U-axis)             %d regions\n\r", iy);
+            printf("(U-axis)             %d regions\r\n", iy);
             break;
         case 'm':  //    vm = mean colors
             grab_frame();
             vmean((unsigned char *)FRAME_BUF);
-            printf("##vmean %d %d %d\n\r", mean[0], mean[1], mean[2]);
+            printf("##vmean %d %d %d\r\n", mean[0], mean[1], mean[2]);
             break;
         case 's':  //    vs = scan for edges, 
             x1 = (unsigned int)getch() & 0x0F;  // get number of columns to use
@@ -1823,7 +1863,7 @@ void process_colors() {
             printf("##vscan = %d ", ix);
             for (i1=0; i1<x1; i1++)
                 printf("%4d ", vect[i1]);
-            printf("\n\r");
+            printf("\r\n");
             break;
         case 't':  //    vt = set edge detect threshold (0000-9999, default is 3200)
             ch1 = getch() & 0x0F;
@@ -1831,7 +1871,7 @@ void process_colors() {
             ch3 = getch() & 0x0F;
             ch4 = getch() & 0x0F;
             edge_thresh = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            printf("##vthresh %d\n\r", edge_thresh);
+            printf("##vthresh %d\r\n", edge_thresh);
             break;
         case 'u':  //    vu = scan for horizon, 
             x1 = (unsigned int)getch() & 0x0F;  // get number of columns to use
@@ -1841,11 +1881,11 @@ void process_colors() {
             printf("##vhorizon = %d ", ix);
             for (i1=0; i1<x1; i1++)
                 printf("%4d ", vect[i1]);
-            printf("\n\r");
+            printf("\r\n");
             break;
         case 'z':  //    vz = clear or segment colors
             ix = (unsigned int)getch() & 0x0F;
-            printf("##vzero\n\r");
+            printf("##vzero\r\n");
             switch (ix) {
                 case 0:
                     for(ix = 0; ix<MAX_COLORS; ix++) 
@@ -1900,11 +1940,11 @@ void process_colors() {
            }
             break;
         case 'd':  //    vd = dump camera registers
-            printf("##vdump\n\r");
+            printf("##vdump\r\n");
             for(ix=0; ix<256; ix++) {
                 i2c_data[0] = ix;
                 i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
-                printf("%x %x\n\r", ix, i2c_data[0]);
+                printf("%x %x\r\n", ix, i2c_data[0]);
             }
             break;
     }
@@ -1926,35 +1966,35 @@ void process_neuralnet() {
         case 'p':  //    np = set pattern
             ix = ctoi(getch());
             if (ix > NUM_NPATTERNS) {
-                printf("##np - invalid index\n\r");
+                printf("##np - invalid index\r\n");
                 break;
             }
             for (i1=0; i1<8; i1++)
                 npattern[ix*8 + i1] = (ctoi(getch()) << 4) + ctoi(getch());
-            printf("##np %d\n\r", ix);
+            printf("##np %d\r\n", ix);
             break;
         case 'd':  //    nd = display pattern
             ix = ctoi(getch());
             if (ix > NUM_NPATTERNS) {
-                printf("##np - invalid index\n\r");
+                printf("##np - invalid index\r\n");
                 break;
             }
-            printf("##nd %d\n\r", ix);
+            printf("##nd %d\r\n", ix);
             nndisplay(ix);
             break;
         case 'i':  //    ni = init network
             nninit_network();
-            printf("##ni - init neural net\n\r");
+            printf("##ni - init neural net\r\n");
             break;
         case 't':  //    nt = train network
             nntrain_network(10000);
-            printf("##nt - train 10000 iterations\n\r");
+            printf("##nt - train 10000 iterations\r\n");
             for (ix=0; ix<NUM_NPATTERNS; ix++) {
                 nnset_pattern(ix);
                 nncalculate_network();
                 for (i1=0; i1<NUM_OUTPUT; i1++) 
                     printf(" %3d", N_OUT(i1)/10);
-                printf("\n\r");
+                printf("\r\n");
             }
             break;
         case 'x':  //    nx = test example pattern
@@ -1969,15 +2009,15 @@ void process_neuralnet() {
                 }
             }
             nncalculate_network();
-            printf("##nx\n\r");
+            printf("##nx\r\n");
             for (i1=0; i1<NUM_OUTPUT; i1++) 
                 printf(" %3d", N_OUT(i1)/10);
-            printf("\n\r");
+            printf("\r\n");
             break;            
         case 'b':  //    nb = match blob to patterns
             ix = ctoi(getch());    // grab the blob #
             if (!blobcnt[ix]) { 
-                printf("##nb - not a valid blob\n\r");
+                printf("##nb - not a valid blob\r\n");
                 break;
             }
             /* use data still in blob_buf[] (FRAME_BUF3)
@@ -1987,15 +2027,15 @@ void process_neuralnet() {
             nnscale8x8((unsigned char *)FRAME_BUF3, blobix[ix], blobx1[ix], blobx2[ix], 
                     bloby1[ix], bloby2[ix], imgWidth, imgHeight);
             nncalculate_network();
-            printf("##nb\n\r");
+            printf("##nb\r\n");
             for (i1=0; i1<NUM_OUTPUT; i1++) 
                 printf(" %3d", N_OUT(i1)/10);
-            printf("\n\r");
+            printf("\r\n");
             break;
         case 'g':  //     ng = create pattern from blob
             ix = ctoi(getch());    // grab the new pattern #
             if (!blobcnt[0]) { 
-                printf("##ng - no blob to grab\n\r");
+                printf("##ng - no blob to grab\r\n");
                 break;
             }
             nnscale8x8((unsigned char *)FRAME_BUF3, blobix[0], blobx1[0], blobx2[0], 
@@ -2020,7 +2060,7 @@ void init_encoders() {
 void read_encoders()
 {
     encoders();
-    printf("##$encoders:  left = %d  right = %d\n\r", lcount, rcount);
+    printf("##$encoders:  left = %d  right = %d\r\n", lcount, rcount);
 }
 
 /* read encoder pulses from GPIO-H14 and H15.  compute pulses per second, and
@@ -2083,9 +2123,9 @@ void testSD() {
     unsigned int numsec;
     
     InitSD();
-    printf("CardInit() returns %d\n\r", CardInit());
+    printf("CardInit() returns %d\r\n", CardInit());
     printf("GetCardParams() returns %d     ", GetCardParams(&numsec));
-    printf("%d sectors found\n\r", numsec);
+    printf("%d sectors found\r\n", numsec);
     CloseSD();
 }
 

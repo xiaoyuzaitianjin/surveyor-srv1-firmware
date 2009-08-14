@@ -63,6 +63,9 @@ int main() {
                 case 'G':
                     httpd();
                     break;
+                case 'y':
+                    invert_video();
+                    break;
                 case 'Y':
                     restore_video();
                     break;
@@ -118,14 +121,14 @@ int main() {
                             svs_master((unsigned short *)FLASH_BUFFER, 
                                 (unsigned short *)(FLASH_BUFFER+131072), 131072);
                             ix = (unsigned int)crc16_ccitt(FLASH_BUFFER, 131064);
-                            printf("     CRC-sent: 0x%x\n", ix);
+                            printf("     CRC-sent: 0x%x\r\n", ix);
                             break;
                         case 'R':
                             svs_slave((unsigned short *)FLASH_BUFFER,
                                 (unsigned short *)(FLASH_BUFFER+131072), 131072);
-                            printf("##$R SPI Slave\n\r");
+                            printf("##$R SPI Slave\r\n");
                             ix = (unsigned int)crc16_ccitt(FLASH_BUFFER, 131064);
-                            printf("     CRC-received: 0x%x\n", ix);
+                            printf("     CRC-received: 0x%x\r\n", ix);
                             break;
                         case '1':
                             /* left camera */
@@ -139,7 +142,7 @@ int main() {
                         case '3':
                             /* left camera */
                             if (svs_receive_features() > -1) {
-                                svs_match(200, 40, 5, 18, 7, 3, 4, 0, 1);
+                                svs_match(200, 40, 5, 18, 7, 3, 4, 200, 0);
                             }
                             break;
                         case '4':
@@ -264,7 +267,7 @@ int main() {
                 case '2':   // back
                 case '3':   // back right
                 case '0':   // counter clockwise turn
-                case '.':   // clockwise turn
+                case '.':   // clockwise turn                    
                     motor_action(ch);
                     break;
                 case 'l':   // lasers on
@@ -332,7 +335,7 @@ int main() {
                 continue;
             }
             if ((stereo_sync_flag == 0) && (check_stereo_sync() == 0x0100)) {
-                //printf("SVS slave:  stereo sync toggle\n\r");
+                //printf("SVS slave:  stereo sync toggle\r\n");
                 stereo_sync_flag = 0x0100;
                 svs_grab(svs_calibration_offset_x, svs_calibration_offset_y, 0, 0);
                 svs_send_features();

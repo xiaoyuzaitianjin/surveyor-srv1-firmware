@@ -58,17 +58,17 @@ static int locosys = 0;
 
 void gps_show() {
     if (!gps_parse())
-        printf("no response from gps\n\r");
+        printf("no response from gps\r\n");
     if (ublox)
         printf("##gps: ublox\r\n");
     else
         printf("##gps: locosys\r\n");
-    printf("gps lat: %d\n\r", gps_gga.lat);
-    printf("gps lon: %d\n\r", gps_gga.lon);
-    printf("gps alt: %d\n\r", gps_gga.alt);
-    printf("gps fix: %d\n\r", gps_gga.fix);
-    printf("gps sat: %d\n\r", gps_gga.sat);
-    printf("gps utc: %d\n\r", gps_gga.utc);
+    printf("gps lat: %d\r\n", gps_gga.lat);
+    printf("gps lon: %d\r\n", gps_gga.lon);
+    printf("gps alt: %d\r\n", gps_gga.alt);
+    printf("gps fix: %d\r\n", gps_gga.fix);
+    printf("gps sat: %d\r\n", gps_gga.sat);
+    printf("gps utc: %d\r\n", gps_gga.utc);
 }
 
 unsigned char read_ublox() {
@@ -147,7 +147,7 @@ int gps_parse() {
                 break;
             }
         }
-        printf("$GPGGA,%s\n\r", buf);
+        printf("$GPGGA,%s\r\n", buf);
 
         // i1 = start of search, i2 = end of search (comma), ilast = end of buffer
 

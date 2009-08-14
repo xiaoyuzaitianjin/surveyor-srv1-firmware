@@ -42,7 +42,7 @@ void httpd()
     printf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
     printf("%s", index_head);
     printf("%s", index_body1);
-    printf("time = %d\n<br>", readRTC());
+    printf("time = %d\r\n<br>", readRTC());
     printf("%s", index_jpeg1);
     grab_frame();
     output_start = (unsigned char *)JPEG_BUF;

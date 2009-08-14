@@ -602,7 +602,7 @@ void Cnntrain(struct ParseState *Parser, struct Value *ReturnValue, struct Value
         nncalculate_network();
         for (i1=0; i1<NUM_OUTPUT; i1++) 
             printf(" %3d", N_OUT(i1)/10);
-        printf("\n\r");
+        printf("\r\n");
     }
 }
 
@@ -688,7 +688,7 @@ void Cautorun (struct ParseState *Parser, struct Value *ReturnValue, struct Valu
     while (readRTC() < (t0 + ix*1000)) { // watch for ESC in 'ix' seconds
         if (getchar(&ch)) {
             if (ch == 0x1B) {  // if ESC found, exit picoC
-                printf("found ESC\n");
+                printf("found ESC\r\n");
                 ExitBuf[40] = 1;
                 longjmp(ExitBuf, 1);
             }

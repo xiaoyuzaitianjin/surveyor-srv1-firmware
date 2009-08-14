@@ -7,7 +7,7 @@ void myfunc() {
     ch = getch();
     switch (ch) {
         case 'h':   // test myfunc - string is "%h"
-            printf("myfunc:  hello ! \n\r");
+            printf("myfunc:  hello ! \r\n");
             break;
     }
     return;

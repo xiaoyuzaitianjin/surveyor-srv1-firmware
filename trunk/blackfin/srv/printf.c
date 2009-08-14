@@ -37,26 +37,26 @@ int main(void)
 	char buf[80];
 
 	mi = (1 << (bs-1)) + 1;
-	printf("%s\n", ptr);
-	printf("printf test\n");
-	printf("%s is null pointer\n", np);
-	printf("%d = 5\n", i);
-	printf("%d = - max int\n", mi);
-	printf("char %c = 'a'\n", 'a');
-	printf("hex %x = ff\n", 0xff);
-	printf("hex %02x = 00\n", 0);
-	printf("signed %d = unsigned %u = hex %x\n", -3, -3, -3);
+	printf("%s\r\n", ptr);
+	printf("printf test\r\n");
+	printf("%s is null pointer\r\n", np);
+	printf("%d = 5\r\n", i);
+	printf("%d = - max int\r\n", mi);
+	printf("char %c = 'a'\r\n", 'a');
+	printf("hex %x = ff\r\n", 0xff);
+	printf("hex %02x = 00\r\n", 0);
+	printf("signed %d = unsigned %u = hex %x\r\n", -3, -3, -3);
 	printf("%d %s(s)%", 0, "message");
-	printf("\n");
-	printf("%d %s(s) with %%\n", 0, "message");
-	sprintf(buf, "justif: \"%-10s\"\n", "left"); printf("%s", buf);
-	sprintf(buf, "justif: \"%10s\"\n", "right"); printf("%s", buf);
-	sprintf(buf, " 3: %04d zero padded\n", 3); printf("%s", buf);
-	sprintf(buf, " 3: %-4d left justif.\n", 3); printf("%s", buf);
-	sprintf(buf, " 3: %4d right justif.\n", 3); printf("%s", buf);
-	sprintf(buf, "-3: %04d zero padded\n", -3); printf("%s", buf);
-	sprintf(buf, "-3: %-4d left justif.\n", -3); printf("%s", buf);
-	sprintf(buf, "-3: %4d right justif.\n", -3); printf("%s", buf);
+	printf("\r\n");
+	printf("%d %s(s) with %%\r\n", 0, "message");
+	sprintf(buf, "justif: \"%-10s\"\r\n", "left"); printf("%s", buf);
+	sprintf(buf, "justif: \"%10s\"\r\n", "right"); printf("%s", buf);
+	sprintf(buf, " 3: %04d zero padded\r\n", 3); printf("%s", buf);
+	sprintf(buf, " 3: %-4d left justif.\r\n", 3); printf("%s", buf);
+	sprintf(buf, " 3: %4d right justif.\r\n", 3); printf("%s", buf);
+	sprintf(buf, "-3: %04d zero padded\r\n", -3); printf("%s", buf);
+	sprintf(buf, "-3: %-4d left justif.\r\n", -3); printf("%s", buf);
+	sprintf(buf, "-3: %4d right justif.\r\n", -3); printf("%s", buf);
 
 	return 0;
 }
