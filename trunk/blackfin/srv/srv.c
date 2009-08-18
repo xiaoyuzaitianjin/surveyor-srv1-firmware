@@ -69,7 +69,7 @@ int move_start_time, move_stop_time, move_time_mS;
 int robot_moving;
 
 /* Version */
-unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.92 "  __TIME__ " - " __DATE__ ;
+unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.91 "  __TIME__ " - " __DATE__ ;
 
 /* Frame count output string */
 unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
@@ -1703,15 +1703,17 @@ void process_colors() {
     unsigned char i2c_data[2];
               // vision processing commands
                     //    va = enable/disable AGC / AWB / AEC camera controls
-                    //    vc = set color bin ranges
-                    //    vp = sample individual pixel
                     //    vb = find blobs matching color bin 
-                    //    vr = recall color bin ranges
+                    //    vc = set color bin ranges
+                    //    vd = dump camera registers
                     //    vf = find pixels matching color bin
                     //    vh = histogram
                     //    vm = mean colors
+                    //    vp = sample individual pixel
+                    //    vr = recall color bin ranges
+                    //    vs = scan for edges
+                    //    vt = set edge detect threshold (0000-9999, default is 3200)
                     //    vz = zero all color settings
-                    //    vd = dump camera registers
     ch = getch();
     switch (ch) {
         case 'a':  //    va = enable/disable AGC(4) / AWB(2) / AEC(1) camera controls
@@ -1755,24 +1757,6 @@ void process_colors() {
             vmax[ix] = ch1 * 100 + ch2 * 10  + ch3;
             printf("##vc %d\r\n", ix);
             break;
-        case 'p':  //    vp = sample individual pixel, print YUV value
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            i1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            i2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            grab_frame();
-            ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
-            printf("##vp %d %d %d\r\n",
-                ((ix>>16) & 0x000000FF),  // Y1
-                ((ix>>24) & 0x000000FF),  // U
-                ((ix>>8) & 0x000000FF));   // V
-            break;
         case 'f':  //    vf = find number of pixels in x1, x2, y1, y2 range matching color bin
             clr = getch() & 0x0F;
             ch1 = getch() & 0x0F;
@@ -1813,14 +1797,13 @@ void process_colors() {
                     blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
             }
             break;
-        case 'r':  //    vr = recall colors
-            ix = (unsigned int)getch();
-            if (ix > '9')
-                ix = (ix & 0x0F) + 9;
-            else
-                ix &= 0x0F;
-            printf("##vr %d %d %d %d %d %d %d\r\n",
-               ix, ymin[ix], ymax[ix], umin[ix], umax[ix], vmin[ix], vmax[ix]);
+        case 'd':  //    vd = dump camera registers
+            printf("##vdump\r\n");
+            for(ix=0; ix<256; ix++) {
+                i2c_data[0] = ix;
+                i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
+                printf("%x %x\r\n", ix, i2c_data[0]);
+            }
             break;
         case 'h':  //    vh = histogram
             grab_frame();
@@ -1856,7 +1839,34 @@ void process_colors() {
             vmean((unsigned char *)FRAME_BUF);
             printf("##vmean %d %d %d\r\n", mean[0], mean[1], mean[2]);
             break;
-        case 's':  //    vs = scan for edges, 
+        case 'p':  //    vp = sample individual pixel, print YUV value
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            i1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            ch1 = getch() & 0x0F;
+            ch2 = getch() & 0x0F;
+            ch3 = getch() & 0x0F;
+            ch4 = getch() & 0x0F;
+            i2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            grab_frame();
+            ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
+            printf("##vp %d %d %d\r\n",
+                ((ix>>16) & 0x000000FF),  // Y1
+                ((ix>>24) & 0x000000FF),  // U
+                ((ix>>8) & 0x000000FF));   // V
+            break;
+        case 'r':  //    vr = recall colors
+            ix = (unsigned int)getch();
+            if (ix > '9')
+                ix = (ix & 0x0F) + 9;
+            else
+                ix &= 0x0F;
+            printf("##vr %d %d %d %d %d %d %d\r\n",
+               ix, ymin[ix], ymax[ix], umin[ix], umax[ix], vmin[ix], vmax[ix]);
+            break;
+        case 's':  //    vs = scan for edges 
             x1 = (unsigned int)getch() & 0x0F;  // get number of columns to use
             grab_frame();
             ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, (unsigned int)x1, (unsigned int *)&vect[0]);
@@ -1938,14 +1948,6 @@ void process_colors() {
                     }
                     break;
            }
-            break;
-        case 'd':  //    vd = dump camera registers
-            printf("##vdump\r\n");
-            for(ix=0; ix<256; ix++) {
-                i2c_data[0] = ix;
-                i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
-                printf("%x %x\r\n", ix, i2c_data[0]);
-            }
             break;
     }
 }

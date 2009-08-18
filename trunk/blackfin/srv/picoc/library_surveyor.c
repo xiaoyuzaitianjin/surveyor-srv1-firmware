@@ -751,7 +751,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Cnntest,      "int nntest(int, int, int, int, int, int, int, int)" },
     { Cnnmatchblob, "int nnmatchblob(int)" },
     { Cnnlearnblob, "void nnlearnblob(int)" },
-//   { Cexit,        "void exit()" },
+    { Cexit,        "void exit()" },
     { Cautorun,     "void autorun(int)" },
     { NULL,         NULL }
 };
