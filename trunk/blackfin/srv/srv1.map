@@ -138,7 +138,7 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x7a88
+.l1code         0xffa00000     0x7a90
  main.o(.text)
  .text          0xffa00000      0x2bc main.o
                 0xffa00000                main
@@ -155,182 +155,183 @@ Linker script and memory map
                 0xffa004fc                sbrk
                 0xffa005dc                malloc
  srv.o(.text)
- .text          0xffa00660     0x3fc4 srv.o
-                0xffa01d7c                motor_command
-                0xffa02874                process_i2c
-                0xffa02250                restore_video
-                0xffa02e3c                xmodem_receive
+ .text          0xffa00660     0x3fc8 srv.o
+                0xffa01d80                motor_command
+                0xffa02878                process_i2c
+                0xffa02254                restore_video
+                0xffa02e40                xmodem_receive
                 0xffa01254                clearRTC
                 0xffa013e8                delayUS
-                0xffa037bc                motion_vect80x64
-                0xffa02278                invert_video
+                0xffa037c0                motion_vect80x64
+                0xffa0227c                invert_video
                 0xffa008c4                grab_reference_frame
                 0xffa01264                delayMS
-                0xffa01e80                set_edge_thresh
+                0xffa01e84                set_edge_thresh
                 0xffa01458                delayNS
                 0xffa00dbc                setPPM1
-                0xffa016f4                rand
-                0xffa01b68                testSD
-                0xffa027d4                tilt
-                0xffa02d78                read_user_sector
+                0xffa016f8                rand
+                0xffa01b6c                testSD
+                0xffa027d8                tilt
+                0xffa02d7c                read_user_sector
                 0xffa00ff0                initRTC
-                0xffa03154                serial_out_flashbuffer
+                0xffa03158                serial_out_flashbuffer
                 0xffa00914                move_yuv422_to_planar
-                0xffa02ea8                camera_reset
-                0xffa045ac                check_for_autorun
-                0xffa022a0                init_tilt
-                0xffa02c88                write_boot_flash
-                0xffa02848                read_tilt
+                0xffa02eac                camera_reset
+                0xffa045b0                check_for_autorun
+                0xffa022a4                init_tilt
+                0xffa02c8c                write_boot_flash
+                0xffa0284c                read_tilt
                 0xffa00a70                initPWM
                 0xffa00b58                init_sonar
                 0xffa014e4                check_failsafe
-                0xffa01b58                show_stack_ptr
-                0xffa02750                read_compass
-                0xffa03b70                process_colors
-                0xffa022d0                laser_range
-                0xffa01b40                show_heap_ptr
-                0xffa01958                overlay_on
+                0xffa01b5c                show_stack_ptr
+                0xffa02754                read_compass
+                0xffa03b74                process_colors
+                0xffa022d4                laser_range
+                0xffa01b44                show_heap_ptr
+                0xffa0195c                overlay_on
                 0xffa00d1c                setPWM2
-                0xffa01abc                lasers_off
+                0xffa01ac0                lasers_off
                 0xffa00750                clear_sdram
                 0xffa00794                led1_on
-                0xffa01e34                change_image_quality
+                0xffa01e38                change_image_quality
                 0xffa00778                stack_remaining
                 0xffa00f34                check_bounds_0_100
                 0xffa0089c                move_image
-                0xffa02cec                write_user_sector
-                0xffa01eb0                process_neuralnet
-                0xffa01cc4                motor2_command
-                0xffa01c04                ppm2_command
+                0xffa02cf0                write_user_sector
+                0xffa01eb4                process_neuralnet
+                0xffa01cc8                motor2_command
+                0xffa01c08                ppm2_command
                 0xffa00c30                setPWM
                 0xffa00ad4                initPWM2
-                0xffa017a0                read_encoders
-                0xffa02b70                init_analog
-                0xffa02734                show_laser_range
-                0xffa02e10                crc_flash_buffer
-                0xffa03240                send_frame
-                0xffa01a94                check_battery
-                0xffa01898                motor_increase_base_speed
-                0xffa01a64                ping_sonar
+                0xffa017a4                read_encoders
+                0xffa02b74                init_analog
+                0xffa02738                show_laser_range
+                0xffa02e14                crc_flash_buffer
+                0xffa03244                send_frame
+                0xffa01a98                check_battery
+                0xffa0189c                motor_increase_base_speed
+                0xffa01a68                ping_sonar
                 0xffa008f8                copy_image
-                0xffa019d8                enable_horizon_detect
+                0xffa019dc                enable_horizon_detect
                 0xffa015a0                encoders
-                0xffa0190c                clear_flash_buffer
-                0xffa01bb0                enable_failsafe
-                0xffa01adc                lasers_on
-                0xffa01c64                ppm1_command
-                0xffa017e4                motor_action
+                0xffa01910                clear_flash_buffer
+                0xffa01bb4                enable_failsafe
+                0xffa01ae0                lasers_on
+                0xffa01c68                ppm1_command
+                0xffa017e8                motor_action
                 0xffa01010                readRTC
                 0xffa00f50                motor_trim_right
                 0xffa00784                led0_on
                 0xffa00fa0                motor_trim_left
                 0xffa00660                init_io
-                0xffa01b18                serial_out_version
+                0xffa01b1c                serial_out_version
                 0xffa01084                sonar
                 0xffa01568                init_encoders
                 0xffa007a4                compute_frame_diff
-                0xffa02e34                launch_editor
-                0xffa03940                motion_vect_test
-                0xffa01a00                enable_edge_detect
-                0xffa03a1c                grab_frame
-                0xffa01a28                enable_segmentation
-                0xffa02d4c                write_user_flash
-                0xffa031bc                send_80x64planar
+                0xffa02e38                launch_editor
+                0xffa03944                motion_vect_test
+                0xffa01a04                enable_edge_detect
+                0xffa03a20                grab_frame
+                0xffa01a2c                enable_segmentation
+                0xffa02d50                write_user_flash
+                0xffa031c0                send_80x64planar
                 0xffa01294                motor_set
                 0xffa00b24                initTMR4
                 0xffa00b88                initPPM1
                 0xffa00e78                setPPM2
-                0xffa01824                motor_decrease_base_speed
+                0xffa01828                motor_decrease_base_speed
                 0xffa00bdc                initPPM2
-                0xffa019b0                enable_obstacle_detect
-                0xffa01afc                serial_out_time
+                0xffa019b4                enable_obstacle_detect
+                0xffa01b00                serial_out_time
                 0xffa007fc                set_caption
-                0xffa01970                disable_frame_diff
+                0xffa01974                disable_frame_diff
                 0xffa00958                scale_image_to_80x64_planar
                 0xffa00724                reset_cpu
-                0xffa02dd0                read_user_flash
-                0xffa029f4                analog
+                0xffa02dd4                read_user_flash
+                0xffa029f8                analog
                 0xffa014cc                reset_failsafe_clock
-                0xffa017cc                disable_failsafe
-                0xffa02b34                read_analog
-                0xffa01940                overlay_off
-                0xffa01a40                enable_frame_diff
-                0xffa03080                camera_setup
+                0xffa017d0                disable_failsafe
+                0xffa02b38                read_analog
+                0xffa01944                overlay_off
+                0xffa01a44                enable_frame_diff
+                0xffa03084                camera_setup
  uart.o(.text)
- .text          0xffa04624      0x318 uart.o
-                0xffa04790                uart1SendChar
-                0xffa04804                uart1GetCh
-                0xffa0475c                uart0GetChar
-                0xffa0471c                uart0SendChars
-                0xffa04740                uart0GetCh
-                0xffa046f0                uart0SendString
-                0xffa046c0                uart0SendChar
-                0xffa047e0                uart1SendChars
-                0xffa04624                init_uart0
-                0xffa04780                uart0Signal
-                0xffa04854                printNumber
-                0xffa047b4                uart1SendString
-                0xffa04820                uart1GetChar
-                0xffa04844                uart1Signal
-                0xffa04670                init_uart1
+ .text          0xffa04628      0x318 uart.o
+                0xffa04794                uart1SendChar
+                0xffa04808                uart1GetCh
+                0xffa04760                uart0GetChar
+                0xffa04720                uart0SendChars
+                0xffa04744                uart0GetCh
+                0xffa046f4                uart0SendString
+                0xffa046c4                uart0SendChar
+                0xffa047e4                uart1SendChars
+                0xffa04628                init_uart0
+                0xffa04784                uart0Signal
+                0xffa04858                printNumber
+                0xffa047b8                uart1SendString
+                0xffa04824                uart1GetChar
+                0xffa04848                uart1Signal
+                0xffa04674                init_uart1
  colors.o(.text)
- .text          0xffa0493c     0x1228 colors.o
-                0xffa04ae8                vmean
-                0xffa04e5c                edge_detect
-                0xffa04d5c                vfind
-                0xffa04ff4                svs_segcode
-                0xffa053d0                vhorizon
-                0xffa04bac                color_segment
-                0xffa05294                addvect
-                0xffa05650                vblob
-                0xffa049c0                blob_merge
-                0xffa051fc                svs_segview
-                0xffa0493c                init_colors
-                0xffa05144                vscan
-                0xffa04a1c                vhist
-                0xffa05320                addline
-                0xffa0498c                vpix
+ .text          0xffa04940     0x1228 colors.o
+                0xffa04aec                vmean
+                0xffa04e60                edge_detect
+                0xffa04d60                vfind
+                0xffa04ff8                svs_segcode
+                0xffa053d4                vhorizon
+                0xffa04bb0                color_segment
+                0xffa05298                addvect
+                0xffa05654                vblob
+                0xffa049c4                blob_merge
+                0xffa05200                svs_segview
+                0xffa04940                init_colors
+                0xffa05148                vscan
+                0xffa04a20                vhist
+                0xffa05324                addline
+                0xffa04990                vpix
  jpeg.o(.text)
- .text          0xffa05b64      0xd9c jpeg.o
-                0xffa06710                DCT
-                0xffa06108                close_bitstream
-                0xffa06724                encodeMCU
-                0xffa05c50                huffman
-                0xffa0617c                write_markers
-                0xffa06820                encode_image
-                0xffa0639c                initialize_quantization_tables
-                0xffa0655c                read_422_format
-                0xffa05b64                initialization
-                0xffa05c30                levelshift
-                0xffa0648c                quantization
-                0xffa064dc                read_400_format
+ .text          0xffa05b68      0xd9c jpeg.o
+                0xffa06714                DCT
+                0xffa0610c                close_bitstream
+                0xffa06728                encodeMCU
+                0xffa05c54                huffman
+                0xffa06180                write_markers
+                0xffa06824                encode_image
+                0xffa063a0                initialize_quantization_tables
+                0xffa06560                read_422_format
+                0xffa05b68                initialization
+                0xffa05c34                levelshift
+                0xffa06490                quantization
+                0xffa064e0                read_400_format
  r8x8dct.o(.text)
- .text          0xffa06900       0xf0 r8x8dct.o
-                0xffa06900                _r8x8dct
+ *fill*         0xffa06904        0x4 00
+ .text          0xffa06908       0xf0 r8x8dct.o
+                0xffa06908                _r8x8dct
  motionvect.o(.text)
- .text          0xffa069f0      0x950 motionvect.o
-                0xffa06e58                hpel
-                0xffa071b8                _mve_core
-                0xffa07068                _hpel_core2
-                0xffa06f48                _hpel_core1
-                0xffa069f0                _motionvect
+ .text          0xffa069f8      0x950 motionvect.o
+                0xffa06e60                hpel
+                0xffa071c0                _mve_core
+                0xffa07070                _hpel_core2
+                0xffa06f50                _hpel_core1
+                0xffa069f8                _motionvect
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa07340      0x184 setjmp.o
-                0xffa07340                longjmp
-                0xffa07408                setjmp
+ .text          0xffa07348      0x184 setjmp.o
+                0xffa07348                longjmp
+                0xffa07410                setjmp
  neural.o(.text)
- .text          0xffa074c4      0x5c4 neural.o
-                0xffa07864                nnpack8x8
-                0xffa07a50                nninit_network
-                0xffa078e0                nndisplay
-                0xffa0755c                f_logic
-                0xffa075bc                nncalculate_network
-                0xffa076a4                nncalculate_errors
-                0xffa07974                nntrain_network
-                0xffa07960                nninit_pattern
-                0xffa074c4                nnset_pattern
-                0xffa07758                nnscale8x8
+ .text          0xffa074cc      0x5c4 neural.o
+                0xffa0786c                nnpack8x8
+                0xffa07a58                nninit_network
+                0xffa078e8                nndisplay
+                0xffa07564                f_logic
+                0xffa075c4                nncalculate_network
+                0xffa076ac                nncalculate_errors
+                0xffa0797c                nntrain_network
+                0xffa07968                nninit_pattern
+                0xffa074cc                nnset_pattern
+                0xffa07760                nnscale8x8
 
 .text           0x00000000     0x9510
  .text          0x00000000       0xf0 camera.o
@@ -1103,7 +1104,7 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x0000e94d      0x2fb picoc/platform.o
  .debug_info    0x0000ec48      0x23f picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x3a55
+.debug_line     0x00000000     0x3a52
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143       0x86 httpd.o
@@ -1116,26 +1117,26 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_line    0x00000c02       0x3c myfunc.o
  .debug_line    0x00000c3e      0x10e main.o
  .debug_line    0x00000d4c       0xa6 malloc.o
- .debug_line    0x00000df2      0xac0 srv.o
- .debug_line    0x000018b2       0xd5 uart.o
- .debug_line    0x00001987      0x380 colors.o
- .debug_line    0x00001d07      0x315 jpeg.o
- .debug_line    0x0000201c      0x11e neural.o
- .debug_line    0x0000213a       0x53 init.o
- .debug_line    0x0000218d      0x119 string.o
- .debug_line    0x000022a6      0x10b sdcard.o
- .debug_line    0x000023b1       0x94 picoc/picoc.o
- .debug_line    0x00002445       0xe3 picoc/table.o
- .debug_line    0x00002528      0x36e picoc/lex.o
- .debug_line    0x00002896      0x26b picoc/parse.o
- .debug_line    0x00002b01      0x46f picoc/expression.o
- .debug_line    0x00002f70       0xe9 picoc/heap.o
- .debug_line    0x00003059      0x1e4 picoc/type.o
- .debug_line    0x0000323d      0x1a2 picoc/variable.o
- .debug_line    0x000033df      0x176 picoc/clibrary.o
- .debug_line    0x00003555      0x3a9 picoc/library_surveyor.o
- .debug_line    0x000038fe       0xc7 picoc/platform.o
- .debug_line    0x000039c5       0x90 picoc/platform_surveyor.o
+ .debug_line    0x00000df2      0xabd srv.o
+ .debug_line    0x000018af       0xd5 uart.o
+ .debug_line    0x00001984      0x380 colors.o
+ .debug_line    0x00001d04      0x315 jpeg.o
+ .debug_line    0x00002019      0x11e neural.o
+ .debug_line    0x00002137       0x53 init.o
+ .debug_line    0x0000218a      0x119 string.o
+ .debug_line    0x000022a3      0x10b sdcard.o
+ .debug_line    0x000023ae       0x94 picoc/picoc.o
+ .debug_line    0x00002442       0xe3 picoc/table.o
+ .debug_line    0x00002525      0x36e picoc/lex.o
+ .debug_line    0x00002893      0x26b picoc/parse.o
+ .debug_line    0x00002afe      0x46f picoc/expression.o
+ .debug_line    0x00002f6d       0xe9 picoc/heap.o
+ .debug_line    0x00003056      0x1e4 picoc/type.o
+ .debug_line    0x0000323a      0x1a2 picoc/variable.o
+ .debug_line    0x000033dc      0x176 picoc/clibrary.o
+ .debug_line    0x00003552      0x3a9 picoc/library_surveyor.o
+ .debug_line    0x000038fb       0xc7 picoc/platform.o
+ .debug_line    0x000039c2       0x90 picoc/platform_surveyor.o
 
 .debug_frame    0x00000000     0x3780
  .debug_frame   0x00000000       0x4c camera.o
@@ -1171,7 +1172,7 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_frame   0x00003678       0x7c picoc/platform.o
  .debug_frame   0x000036f4       0x8c picoc/platform_surveyor.o
 
-.debug_loc      0x00000000    0x12606
+.debug_loc      0x00000000    0x12611
  .debug_loc     0x00000000       0x5b camera.o
  .debug_loc     0x0000005b      0x2eb edit.o
  .debug_loc     0x00000346       0xa3 httpd.o
@@ -1184,26 +1185,26 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_loc     0x00003cae       0x3e myfunc.o
  .debug_loc     0x00003cec       0x2b main.o
  .debug_loc     0x00003d17      0x1e1 malloc.o
- .debug_loc     0x00003ef8     0x226f srv.o
- .debug_loc     0x00006167      0x4aa uart.o
- .debug_loc     0x00006611     0x1417 colors.o
- .debug_loc     0x00007a28     0x14f7 jpeg.o
- .debug_loc     0x00008f1f      0x460 neural.o
- .debug_loc     0x0000937f      0x122 init.o
- .debug_loc     0x000094a1      0x782 string.o
- .debug_loc     0x00009c23      0x6cb sdcard.o
+ .debug_loc     0x00003ef8     0x2285 srv.o
+ .debug_loc     0x0000617d      0x4aa uart.o
+ .debug_loc     0x00006627     0x1417 colors.o
+ .debug_loc     0x00007a3e     0x14f7 jpeg.o
+ .debug_loc     0x00008f35      0x460 neural.o
+ .debug_loc     0x00009395      0x122 init.o
+ .debug_loc     0x000094b7      0x782 string.o
+ .debug_loc     0x00009c39      0x6b5 sdcard.o
  .debug_loc     0x0000a2ee       0xfa picoc/picoc.o
  .debug_loc     0x0000a3e8      0x614 picoc/table.o
  .debug_loc     0x0000a9fc      0xfb2 picoc/lex.o
  .debug_loc     0x0000b9ae      0xb79 picoc/parse.o
- .debug_loc     0x0000c527     0x1d84 picoc/expression.o
- .debug_loc     0x0000e2ab      0x2e2 picoc/heap.o
- .debug_loc     0x0000e58d      0x951 picoc/type.o
- .debug_loc     0x0000eede      0xd45 picoc/variable.o
- .debug_loc     0x0000fc23      0x8db picoc/clibrary.o
- .debug_loc     0x000104fe     0x1d5e picoc/library_surveyor.o
- .debug_loc     0x0001225c      0x20f picoc/platform.o
- .debug_loc     0x0001246b      0x19b picoc/platform_surveyor.o
+ .debug_loc     0x0000c527     0x1d8f picoc/expression.o
+ .debug_loc     0x0000e2b6      0x2e2 picoc/heap.o
+ .debug_loc     0x0000e598      0x951 picoc/type.o
+ .debug_loc     0x0000eee9      0xd45 picoc/variable.o
+ .debug_loc     0x0000fc2e      0x8db picoc/clibrary.o
+ .debug_loc     0x00010509     0x1d5e picoc/library_surveyor.o
+ .debug_loc     0x00012267      0x20f picoc/platform.o
+ .debug_loc     0x00012476      0x19b picoc/platform_surveyor.o
 
 .debug_pubnames
                 0x00000000     0x26e0

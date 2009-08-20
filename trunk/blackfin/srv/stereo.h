@@ -1,3 +1,6 @@
+/* stereo correspondence */
+
+//#define SVS_MAPPING_BY_DEFAULT
 #define SVS_MAX_FEATURES         2000
 #define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280
@@ -14,16 +17,6 @@
 #define SVS_BASELINE_MM          107
 #define SVS_FOCAL_LENGTH_MMx100  360
 #define SVS_FOV_DEGREES          90
-
-#define SVS_MAP_RDIM             75
-#define SVS_MAP_HYPRDIM          75   
-#define SVS_MAP_TDIM             400
-#define SVS_MAP_WIDTH_CELLS      40
-#define SVS_MAP_CELL_SIZE_MM     100
-#define SVS_EMPTY_CELL           999999
-
-#define SVS_MAX_REGIONS          200
-#define SVS_REGION_HISTORY       2
 
 //#define SVS_VERBOSE
 //#define SVS_PROFILE
@@ -93,8 +86,19 @@ extern void svs_ground_plane();
 extern void svs_send_disparities (int no_of_matches);
 extern void svs_stereo(int send_disparities);
 
-extern void svs_map_update(int no_of_matches, int max_disparity_percent);
-extern void svs_map_recenter();
-extern void svs_visual_odometry(int right_turn_pixels, int tollerance);
-extern void svs_show_map(unsigned char* outbuf);
+extern void svs_footline_update(int max_disparity_percent);
+
+/* mapping */
+
+#define MAP_WIDTH_CELLS      200
+#define MAP_CELL_SIZE_MM     40
+#define MAP_MIN_RANGE_MM     200
+#define EMPTY_CELL           999999
+
+extern void init_map();
+extern void map_update(int no_of_matches, int max_disparity_percent, unsigned int* svs_matches, unsigned short int* footline);
+extern void map_recenter();
+extern void visual_odometry(int right_turn_pixels, int tollerance, svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
+extern void show_map(unsigned char* outbuf);
+extern void update_pose(svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
 

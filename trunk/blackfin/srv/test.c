@@ -1,3 +1,4 @@
+autorun(5);
 printf("test 1\n");
 printf("hello\n");
 printf("hello\n"); /* this is a comment */ printf("hello\n");

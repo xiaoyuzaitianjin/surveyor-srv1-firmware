@@ -2,16 +2,17 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 18 August 2009 
+SRV-1 firmware build for Blackfin - 20 August 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed all instances of \n\r to \r\n in printf() to conform to standards
 
 * fixed missing function to invert video on OV9655
 
-* updated SVS code to support new map-building functions
-
 * rolled back to picoC version 0.91 to resolve some issues
+
+* updated SVS code to support new map-building functions.  '$1' console 
+  command enables mapping
 
 ============================================================================
 

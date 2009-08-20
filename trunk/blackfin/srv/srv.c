@@ -62,6 +62,7 @@ int svs_ground_slope_percent;
 int svs_enable_ground_priors;
 int svs_disp_left, svs_disp_right, svs_steer;
 unsigned int enable_stereo_flag;
+int svs_enable_mapping;
 #endif /* STEREO */
 
 /* motor move times */
@@ -1725,6 +1726,21 @@ void process_colors() {
             i2cwrite(0x21, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV7725
             printf("##va%d\r\n", ix);
             break;
+        case 'b':  //    vb = find blobs for a given color
+            ch1 = getch();
+            ch2 = ch1;
+            if (ch1 > '9')
+                ch1 = (ch1 & 0x0F) + 9;
+            else
+                ch1 &= 0x0F;
+            grab_frame();
+            ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
+            printf("##vb%c\r\n", ch2);
+            for (iy=0; iy<ix; iy++) {
+                printf(" %d - %d %d %d %d  \r\n", 
+                    blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
+            }
+            break;
         case 'c':  //    vc = set colors
             ix = (unsigned int)getch();
             if (ix > '9')
@@ -1757,6 +1773,14 @@ void process_colors() {
             vmax[ix] = ch1 * 100 + ch2 * 10  + ch3;
             printf("##vc %d\r\n", ix);
             break;
+        case 'd':  //    vd = dump camera registers
+            printf("##vdump\r\n");
+            for(ix=0; ix<256; ix++) {
+                i2c_data[0] = ix;
+                i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
+                printf("%x %x\r\n", ix, i2c_data[0]);
+            }
+            break;
         case 'f':  //    vf = find number of pixels in x1, x2, y1, y2 range matching color bin
             clr = getch() & 0x0F;
             ch1 = getch() & 0x0F;
@@ -1781,29 +1805,6 @@ void process_colors() {
             y2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
             grab_frame();
             printf("##vf %d\r\n", vfind((unsigned char *)FRAME_BUF, clr, x1, x2, y1, y2));
-            break;
-        case 'b':  //    vb = find blobs for a given color
-            ch1 = getch();
-            ch2 = ch1;
-            if (ch1 > '9')
-                ch1 = (ch1 & 0x0F) + 9;
-            else
-                ch1 &= 0x0F;
-            grab_frame();
-            ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
-            printf("##vb%c\r\n", ch2);
-            for (iy=0; iy<ix; iy++) {
-                printf(" %d - %d %d %d %d  \r\n", 
-                    blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
-            }
-            break;
-        case 'd':  //    vd = dump camera registers
-            printf("##vdump\r\n");
-            for(ix=0; ix<256; ix++) {
-                i2c_data[0] = ix;
-                i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
-                printf("%x %x\r\n", ix, i2c_data[0]);
-            }
             break;
         case 'h':  //    vh = histogram
             grab_frame();

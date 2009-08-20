@@ -204,6 +204,7 @@ extern int svs_enable_horizontal;
 extern int svs_ground_y_percent;
 extern int svs_ground_slope_percent;
 extern int svs_enable_ground_priors;
+extern int svs_enable_mapping;
 extern int svs_disp_left, svs_disp_right, svs_steer;
 
 #endif

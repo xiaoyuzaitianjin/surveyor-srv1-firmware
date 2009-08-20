@@ -131,8 +131,8 @@ int main() {
                             printf("     CRC-received: 0x%x\r\n", ix);
                             break;
                         case '1':
-                            /* left camera */
-                            svs_grab(svs_calibration_offset_x, svs_calibration_offset_y, 1, 0);
+                            /* toggle mapping on or off */
+                            svs_enable_mapping = 1 - svs_enable_mapping;
                             break;
                         case '2':
                             /* right camera */
