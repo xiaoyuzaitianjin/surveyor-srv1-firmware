@@ -1,6 +1,6 @@
 /* stereo correspondence */
 
-//#define SVS_MAPPING_BY_DEFAULT
+#define SVS_MAPPING_BY_DEFAULT
 #define SVS_MAX_FEATURES         2000
 #define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280

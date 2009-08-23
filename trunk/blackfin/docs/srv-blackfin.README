@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 20 August 2009 
+SRV-1 firmware build for Blackfin - 23 August 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed all instances of \n\r to \r\n in printf() to conform to standards
@@ -14,6 +14,9 @@ SRV-1 firmware build for Blackfin - 20 August 2009
 * updated SVS code to support new map-building functions.  '$1' console 
   command enables mapping
 
+* eliminated most startup messages from the slave Blackfin in SVS in order to
+  solve a problem with the Matchport buffer filling and freezing the Blackfin
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 26 July 2009 

@@ -39,16 +39,21 @@ int main() {
     init_analog();
     init_tilt();
     disable_failsafe();
-    serial_out_version();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
     camera_setup(); // Sets up the camera to 320x240
     led1_on();
 
     #ifdef STEREO
+    if (master)
+        serial_out_version();
     init_svs();
+    if (master)
+        check_for_autorun();
+    #else
+    serial_out_version();
+    check_for_autorun();
     #endif /* STEREO */
     
-    check_for_autorun();
         
     while (1) {
         if (getchar(&ch)) {

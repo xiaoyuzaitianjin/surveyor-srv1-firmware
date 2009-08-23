@@ -214,14 +214,14 @@ void check_for_autorun() {
     char *cp;
     int ix;
     
-    printf("##checking for picoC autorun() in flash sect#4 ... ");
+    printf("##checking for autorun() in flash sect#4 ... ");
     spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00010000);  // read flash sector #4
     cp = (char *)FLASH_BUFFER;
     if (strncmp("autorun", cp, 7) == 0) {
-        printf("autorun() found.  launching picoC ...\r\n\r\n");
+        printf("autorun() found - launching picoC\r\n");
         picoc((char *)FLASH_BUFFER);
     } else {
-        printf("no autorun() found.\r\n\r\n");
+        printf("no autorun() found\r\n");
         for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)  // clear FLASH_BUFFER
             *((unsigned char *)ix) = 0;
     }
@@ -244,14 +244,14 @@ void serial_out_flashbuffer () {
 /* Turn lasers on
    Serial protocol char: l */
 void lasers_on () {
-    *pPORTHIO |= 0x0380;
+    *pPORTHIO |= 0x0280;
     printf("#l");
 }
 
 /* Turn lasers off
    Serial protocol char: L */
 void lasers_off () {
-    *pPORTHIO &= 0xFC7F;
+    *pPORTHIO &= 0xFD7F;
     printf("#L");
 }
 
@@ -1735,7 +1735,7 @@ void process_colors() {
                 ch1 &= 0x0F;
             grab_frame();
             ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
-            printf("##vb%c\r\n", ch2);
+            printf("##vb%c %d\r\n", ch2, ix);
             for (iy=0; iy<ix; iy++) {
                 printf(" %d - %d %d %d %d  \r\n", 
                     blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
