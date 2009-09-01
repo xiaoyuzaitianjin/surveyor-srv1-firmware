@@ -90,7 +90,7 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
         u = (unsigned int)frame_buf[ix];
         v = (unsigned int)frame_buf[ix+2];
 
-        if ((y > y1) && (y < y2) && (u > u1) && (u < u2) && (v > v1) && (v < v2))
+        if ((y >= y1) && (y <= y2) && (u >= u1) && (u <= u2) && (v >= v1) && (v <= v2))
             *bbp = 1;
         bbp += 2;
     }
