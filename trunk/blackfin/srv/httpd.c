@@ -76,6 +76,32 @@ void httpd_get()
             case 'L':
                 *pPORTHIO &= 0xFD7F;
                 break;
+            case '4':
+            case '8':
+            case '6':
+            case '0':
+            case '5':
+            case '.':
+            case '1':
+            case '2':
+            case '3':
+                pwm1_mode = PWM_PWM;
+                if (base_speed == 0)
+                    base_speed = 40;
+                motor_set(path[11], base_speed, &lspeed, &rspeed);
+                break;
+            case '+':
+                base_speed += 10;
+                if (base_speed > 90)
+                    base_speed = 90;
+                motor_set(path[11], base_speed, &lspeed, &rspeed);
+                break;
+            case '-':
+                base_speed -= 10;
+                if (base_speed < 20)
+                    base_speed = 20;
+                motor_set(path[11], base_speed, &lspeed, &rspeed);
+                break;
         }
         i = 0;
     } else {

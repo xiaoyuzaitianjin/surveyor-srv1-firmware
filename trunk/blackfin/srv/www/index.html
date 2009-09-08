@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0;"> 
 <script language="JavaScript">
 <!--
 var time = null
@@ -9,13 +10,26 @@ window.location.reload();
 setTimeout('refresh()', 333)
 //-->
 </script>
-<title>Live Camera Feed</title>
+<title>SRV-1 Robot</title>
 </head>
 <body>
-<img src="data:image/jpeg;base64,$$camera$$" />
+<map name="map1">
+<area href="/robot.cgi?l" alt="laser on" shape=rect coords="1, 1, 25, 120">
+<area href="/robot.cgi?L" alt="laser off" shape=rect coords="296, 1, 320, 120">
+<area href="/robot.cgi?+" alt="faster" shape=rect coords="1, 121, 25, 240">
+<area href="/robot.cgi?-" alt="slower" shape=rect coords="296, 121, 320, 240">
+<area href="/robot.cgi?4" alt="left" shape=rect coords="26, 1, 100, 80">
+<area href="/robot.cgi?8" alt="forward" shape=rect coords="101, 1, 220, 80">
+<area href="/robot.cgi?6" alt="right" shape=rect coords="221, 1, 295, 80">
+<area href="/robot.cgi?0" alt="spin left" shape=rect coords="26, 81, 100, 160">
+<area href="/robot.cgi?5" alt="stop" shape=rect coords="101, 81, 220, 160">
+<area href="/robot.cgi?." alt="spin right" shape=rect coords="221, 81, 295, 160">
+<area href="/robot.cgi?1" alt="back left" shape=rect coords="26, 161, 100, 240">
+<area href="/robot.cgi?2" alt="back" shape=rect coords="101, 161, 220, 240">
+<area href="/robot.cgi?3" alt="back right" shape=rect coords="221, 161, 295, 240">
+</map>
+<img src="data:image/jpeg;base64,$$camera$$" width=320 height=240 usemap="#map1" />
 <br>
-<a href="/robot.cgi?l">On </a>
-<a href="/robot.cgi?L">Off </a>
 <a href="/index.html">reload</a>
 <br>
 </body>
