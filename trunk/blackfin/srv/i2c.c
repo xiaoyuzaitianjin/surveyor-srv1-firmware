@@ -8,6 +8,7 @@
 void i2cwrite(unsigned char i2c_device, unsigned char *i2c_data, unsigned int pair_count, int sccb_flag)
 {    
     int i;    
+
     *pTWI_FIFO_CTL |= XMTFLUSH; // Clear the TX FIFO
     *pTWI_MASTER_STAT = BUFWRERR | BUFRDERR | DNAK | ANAK | LOSTARB; // Clear all status error
     SSYNC;
@@ -74,6 +75,7 @@ void i2cwritex(unsigned char i2c_device, unsigned char *i2c_data, unsigned int c
 void i2cread(unsigned char i2c_device, unsigned char *i2c_data, unsigned int data_count, int sccb_flag)
 {
     int i;    
+
     *pTWI_MASTER_STAT = BUFWRERR | BUFRDERR | DNAK | ANAK | LOSTARB; // Clear all status error
     SSYNC;
     *pTWI_FIFO_CTL = XMTFLUSH | RCVFLUSH;          // Flush FIFO

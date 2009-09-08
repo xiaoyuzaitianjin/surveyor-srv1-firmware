@@ -12,22 +12,35 @@ static unsigned char base64[64] = {
    'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
 };
 
+extern void httpd_get();
+extern void httpd_post();
+extern void clean_buffer(char *);
+extern void base64_camera_frame();
 
-char index_head[] = "<html>\n<head>\n<script language=\"JavaScript\">\n<!--\nvar time = null\nfunction refresh() {\nwindow.location.reload();\n}\nsetTimeout(\'refresh()\', 500)\n//-->\n</script>\n<title>SRV-1 Blackfin</title>\n</head>\n";
-char index_body1[] = "<body>\n<h3>SRV-1 Blackfin</h3>\n<br>\n";
-char index_jpeg1[] = "<img src=\"data:image/jpeg;base64,";
-char index_jpeg2[] = "\" alt=\"SRV-1 Blackfin\" />\n<br>\n";
-char index_body2[] = "<a href=\"/index.html\">reload</a>\n<br>\n</body>\n</html>\n";
 #define BUFSIZE 256
 
-void httpd()
+char *names[] = {  // index from file name to flash sector:  
+    "/00.html",  // sector 10-11
+    "/01.html",  // sector 12-13
+    "/02.html",  // sector 14-15
+    "/03.html",  // sector 16-17
+    "/04.html",  // sector 18-19
+    "/05.html",  // sector 20-21
+    "/06.html",  // sector 22-23
+    "/07.html",  // sector 24-25
+    "/08.html",  // sector 26-27
+    "/09.html"   // sector 28-29
+};
+
+void httpd_get()
 {
-    int i, ret, t0;
+    int i, j, ret, t0;
     char ch;
-    unsigned char *cp, b0, b1, b2, b3;
-    unsigned int image_size;
-    unsigned char *output_start, *output_end; 
+    char *cp;
     static char buffer[BUFSIZE+1]; 
+    char *method;
+    char *path;
+    char *protocol;
 
     buffer[0] = 'G';
     ret = 1;
@@ -39,11 +52,65 @@ void httpd()
             break;
     }
 
+    method = strtok(buffer, " ");
+    path = strtok(0, " ");
+    protocol = strtok(0, "\r");
+    if (!method || !path || !protocol) 
+        return;
+    //printf("method: %s   path: %s   protocol: %s\r\n", method, path, protocol);
+
+    if (strcmp(method, "GET") != 0) {
+        printf("HTTP/1.1 501 Not supported\r\nMethod is not supported.\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
+        return;
+    }
+    
+    j = sizeof(names) / 4;  // compute number of entries in names[] table
+    
+    if ((strcmp(path, "/") == 0) || (strcmp(path, "/index.html") == 0)) {
+        i = 0;
+    } else if (strncmp(path, "/robot.cgi?", 11) == 0) {
+        switch(path[11]) {
+            case 'l':
+                *pPORTHIO |= 0x0280;
+                break;
+            case 'L':
+                *pPORTHIO &= 0xFD7F;
+                break;
+        }
+        i = 0;
+    } else {
+        for (i=0; i<j; i++) 
+            if (strcmp(path, names[i]) == 0)
+                break;
+    }
+    
+    if (i == j) {
+        printf("HTTP/1.1 404 Not found\r\nFile not found.\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
+        return;
+    }
+
+    read_double_sector((i*2) + 10, 1);  // set quiet flag
+    cp = FLASH_BUFFER;
+    clean_buffer(cp);  // last character of html file should be '<'.  clean out anything else
+
     printf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
-    printf("%s", index_head);
-    printf("%s", index_body1);
-    printf("time = %d\r\n<br>", readRTC());
-    printf("%s", index_jpeg1);
+    while ((*cp != 0) && (cp < (unsigned char *)(FLASH_BUFFER+0x00020000))) {
+        if ((*cp == '$') && (*(cp+1) == '$')) {
+            if (strncmp(cp, "$$camera$$", 10) == 0) {
+                base64_camera_frame();
+                cp+=10;
+            }
+        }
+        putchar(*cp++);
+    }
+}
+
+void base64_camera_frame() {
+    int i;
+    unsigned char *cp, b0, b1, b2, b3;
+    unsigned int image_size;
+    unsigned char *output_start, *output_end; 
+
     grab_frame();
     output_start = (unsigned char *)JPEG_BUF;
     output_end = encode_image((unsigned char *)FRAME_BUF, output_start, quality, 
@@ -76,8 +143,20 @@ void httpd()
         putchar(base64[b3]);
         cp += 3;
     }
-    printf("%s", index_jpeg2);
-    printf("%s", index_body2);
-    printf("\r\n\r\n");
 }
+
+void httpd_post() {
+}
+
+void clean_buffer(char *buf) {
+    char *cp;
+    
+    for (cp = (buf+0x1FFFF); cp > buf; cp--) {  // sweep buffer from end clearing out garbage characters
+        if (*cp == '>')  // final html character
+            return;
+        else
+            *cp = 0;
+    }
+}
+
 

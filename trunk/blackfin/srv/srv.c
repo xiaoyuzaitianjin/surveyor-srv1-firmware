@@ -1119,6 +1119,8 @@ void read_user_flash () {
 
 void read_user_sector (int isec) {
     int ix;
+    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)
+      *((unsigned char *)ix) = 0;   // clear the read buffer
     printf("##zRead ");
     if ((isec < 2) || (isec > 63)) {
         printf(" - sector %d not accessible\r\n", isec);
@@ -1126,6 +1128,22 @@ void read_user_sector (int isec) {
     }
     ix = spi_read((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 0x00010000);
     printf (" - loaded %d bytes from flash sector %d\r\n", ix, isec);   
+}
+
+void read_double_sector (int isec, int quiet) {
+    int ix;
+    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00020000); ix++)
+      *((unsigned char *)ix) = 0;   // clear the read buffer
+    if (!quiet)
+        printf("##zA ");
+    if ((isec < 2) || (isec > 63)) {
+        if (!quiet)
+            printf(" - sector %d not accessible\r\n", isec);
+        return;
+    }
+    ix = spi_read((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 0x00020000);
+    if (!quiet)
+        printf (" - loaded %d bytes from flash sector %d->%d\r\n", ix, isec, isec+1);   
 }
 
 /* Write user flash sector from flash buffer
@@ -1147,6 +1165,21 @@ void write_user_sector (int isec) {
     ix = spi_write((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 
         (unsigned char *)(FLASH_BUFFER + 0x00010000), 0x00010000);
     printf (" - saved %d bytes to flash sector %d\r\n", ix, isec);   
+}
+
+void write_double_sector (int isec, int quiet) {  // save 128kB to consecutive sectors
+    int ix;
+    if (!quiet)
+        printf("##zB ");
+    if ((isec < 2) || (isec > 63)) {
+        if (!quiet)
+            printf(" - sector %d not accessible\r\n", isec);
+        return;
+    }
+    ix = spi_write((isec * 0x00010000), (unsigned char *)FLASH_BUFFER, 
+        (unsigned char *)(FLASH_BUFFER + 0x00020000), 0x00020000);
+    if (!quiet)
+        printf (" - saved %d bytes to flash sectors %d->%d\r\n", ix, isec, isec+1);   
 }
 
 /* Write boot flash sectors (1-2) from flash buffer

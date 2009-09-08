@@ -203,40 +203,52 @@ char *strpbrk(const char *str, const char *set) {
 	return 0;
 }
 
-int strspn(const char *s, const char *accept) {
-	const char *p;
-	const char *a;
-	int count = 0;
-	for (p = s; *p != '\0'; ++p) {
-		for (a = accept; *a != '\0'; ++a)
-			if (*p == *a)
-				break;
-		if (*a == '\0')
-			return count;
-		else
-			++count;
+char *strtok(char *s, const char *delim)
+{
+	char *spanp;
+	int c, sc;
+	char *tok;
+	static char *last;
+
+
+	if (s == 0 && (s = last) == 0)
+		return (0);
+
+	/*
+	 * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
+	 */
+cont:
+	c = *s++;
+	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
+		if (c == sc)
+			goto cont;
 	}
-	return count;
+
+	if (c == 0) {		/* no non-delimiter characters */
+		last = 0;
+		return (0);
+	}
+	tok = s - 1;
+
+	/*
+	 * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
+	 * Note that delim must have one NUL; we stop if we see that, too.
+	 */
+	for (;;) {
+		c = *s++;
+		spanp = (char *)delim;
+		do {
+			if ((sc = *spanp++) == c) {
+				if (c == 0)
+					s = 0;
+				else
+					s[-1] = 0;
+				last = s;
+				return (tok);
+			}
+		} while (sc != 0);
+	}
+	/* NOTREACHED */
 }
 
-char *strtok_r(char *s, const char *delim, char **save_ptr) {
-	char *token;
-	token = 0;					/* Initialize to no token. */
-	if (s == 0) {				/* If not first time called... */
-		s = *save_ptr;		/* restart from where we left off. */
-	}
-	if (s != 0) {				/* If not finished... */
-		*save_ptr = 0;
-		s += strspn(s, delim);	/* Skip past any leading delimiters. */
-		if (*s != '\0') {		/* We have a token. */
-			token = s;
-			*save_ptr = strpbrk(token, delim); /* Find token's end. */
-			if (*save_ptr != 0) {
-				/* Terminate the token and make SAVE_PTR point past it.  */
-				*(*save_ptr)++ = '\0';
-			}
-		}
-	}
-	return token;
-}
 

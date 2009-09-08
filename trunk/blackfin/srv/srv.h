@@ -137,8 +137,10 @@ void xmodem_receive ();
 /* Flash */
 void read_user_flash ();
 void read_user_sector (int);
+void read_double_sector (int, int);
 void write_user_flash ();
 void write_user_sector (int);
+void write_double_sector (int, int);
 void write_boot_flash ();
 void clear_flash_buffer ();
 void crc_flash_buffer ();

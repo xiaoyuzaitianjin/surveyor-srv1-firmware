@@ -24,7 +24,8 @@
 #endif
 
 extern int picoc(char *);
-extern void httpd();
+extern void httpd_get();
+extern void httpd_post();
 
 int main() {
     unsigned char ch;
@@ -66,7 +67,10 @@ int main() {
                     send_80x64planar();
                     break;
                 case 'G':
-                    httpd();
+                    httpd_get();
+                    break;
+                case 'P':
+                    httpd_post();
                     break;
                 case 'y':
                     invert_video();
@@ -197,8 +201,28 @@ int main() {
                 case 'T':
                     set_edge_thresh();
                     break;
-                case 'z':  // read, write or dump a flash sector
-                    switch (getch()) {
+                case 'z':  // read, write or dump flash sectors
+                    switch (getch()) {  
+                                // zAxx - read double sector xx, xx+1 to buffer
+                                // zBxx - write buffer to double sector xx, xx+1
+                                // zr   - read sector 4 to buffer
+                                // zRxx - read sector xx to buffer
+                                // zw   - write buffer to sector 4
+                                // zWxx - write buffer to sector xx
+                                // zZ   - write buffer to boot flash sectors
+                                // zd   - display contents of buffer
+                                // zc   - clear buffer
+                                // zC   - compute checksum of buffer contents 
+                        case 'A':
+                              // read double user sector 00 - 63  from flash buffer
+                            ix = ((getch() & 0x0F) * 10) + (getch() & 0x0F);
+                            read_double_sector(ix, 0);
+                            break;
+                         case 'B':
+                              // write double user sector 00 - 63  from flash buffer
+                            ix = ((getch() & 0x0F) * 10) + (getch() & 0x0F);
+                            write_double_sector(ix, 0);
+                            break;
                         case 'r':
                               // read user flash sector into flash buffer
                             read_user_flash();
@@ -217,7 +241,7 @@ int main() {
                             ix = ((getch() & 0x0F) * 10) + (getch() & 0x0F);
                             write_user_sector(ix);
                             break;
-                        case 'Z':
+                       case 'Z':
                               // write boot flash sectors (1-2) from flash buffer
                             write_boot_flash();
                             break;

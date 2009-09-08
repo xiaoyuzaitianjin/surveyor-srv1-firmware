@@ -16,6 +16,5 @@ extern unsigned int ctoi(unsigned char);
 #define xmemcpy memcpy
 extern unsigned int atoi_b16(char *s);
 extern char *strpbrk(const char *str, const char *set);
-extern int strspn(const char *s, const char *accept);
-extern char *strtok_r(char *s, const char *delim, char **save_ptr);
+extern char *strtok(char *s, const char *delim);
 
