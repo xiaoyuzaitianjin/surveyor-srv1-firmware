@@ -2,7 +2,7 @@
 
 ============================================================================
 
-SRV-1 firmware build for Blackfin - 7 September 2009 
+SRV-1 firmware build for Blackfin - 12 September 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed all instances of \n\r to \r\n in printf() to conform to standards
@@ -20,9 +20,9 @@ SRV-1 firmware build for Blackfin - 7 September 2009
 * fixed issue with vblob() which wasn't searching the full min-max YUV range
   when looking for color bin matches (replaced '<' with '<=', '>' with '>=')
  
-* extending HTTP GET functionality with simple file system (00.html ... 09.html
-  stored in flash, where 00.html == index.html) and robot.cgi for robot
-  control.  work in progress ...
+* extended HTTP GET functionality with simple file system (00.html ... 09.html
+  stored in flash sectors 10/11 ... 28/29), where /00.html == /index.html and 
+  robot.cgi? is for robot control.  
   
 ============================================================================
 

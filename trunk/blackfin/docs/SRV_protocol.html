@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 19 July 2009</h3>
+<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 12 September 2009</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -10,14 +10,14 @@ comprised of ASCII characters or ASCII followed by 8-binary or ASCII decimal cha
 acknowledgment from the robot to the host, which is either a '#'
 character followed by the command, or '##' for variable length
 responses. Variable length commands which don't specify a return size
-append a newline ('\n') to their response.</td>
+append a CR + newline ('\r\n') to their response.</td>
 </tr><tr><td></td>
 </tr><tr><td>Note that all of these commands can be executed via a
 terminal program with TCP / telnet capability.  For example, you can connect using the 'netcat' command via<br>
 'nc robot-ip 10001'</td>
 </tr><tr><td></td>
 </tr><tr><td>When the robot first powers up, it will dump the 'V'
-Version command results ("##Version ...\n") so you can see what version
+Version command results ("##Version ...\r\n") so you can see what version
 of firmware is running. There is typically a 2 second delay after
 startup before the robot can accept any commands while the camera and
 other sensors are initialized - you should see the yellow LED's flash when the processor reboots.
@@ -82,14 +82,13 @@ returns:<br>
 a = left motor/servo failsafe level, b = right motor/servo failsafe level.<br><br>
 sets motor/servo levels for 'M' and 'S' commands in case no command is received via the radio link within 2 seconds.  
 </th></tr><tr><td>'f'</td><td>'#f'</td><td>disables Failsafe mode
-</th></tr><tr><td>'g0'</td><td>'##g0'</td><td>grab reference frame and enable frame differencing
-</th></tr><tr><td>'g1'</td><td>'##g1'</td><td>enable color segmentation
-</th></tr><tr><td>'g2'</td><td>'##g2'</td><td>enable edge detection (threshold changed with 'T' command)
-</th></tr><tr><td>'g3'</td><td>'##g3'</td><td>enable horizon detection (threshold changed with 'T' command)
-</th></tr><tr><td>'g4'</td><td>'##g4'</td><td>enable obstacle detection (threshold changed with 'T' command)
-</th></tr><tr><td>'g5'</td><td>'##g5'</td><td>enable stereo processing (only works with SVS that has GPIO-H8 connection between processors)
-</th></tr><tr><td>'g_'</td><td>'#g_'</td><td>disable frame differencing / color segmentation / edge detection. 
-the '_' in 'g_' could be any character other than 0, 1, 2, 3, 4
+</td></tr><tr><th></th><th></th><th>
+</th></tr><tr><td>'G'</td><td>HTML stream</td><td>HTTP GET command - parses HTTP request, e.g.<br>
+GET /index.html HTTP/1.1 <br><br>
+- recognizes files /00.html .. /09.html, stored respectively in flash sectors 10/11, 12/13 .. 28/29 <br><br>
+- /index.html == /00.html<br><br>
+- will replace "$$camera$$" with base64 live captured JPEG <br><br>
+- use 'zBxx' to store in sector pair - zb10 stores 128kB from flash buffer to sectors 10/11<br>
 </td></tr><tr><th></th><th></th><th>
 </td></tr><tr><td>'I'</td><td>'##IMJxs0s1s2s3....'</td><td>grab JPEG compressed video frame
 <br><br> x = frame size in pixels:<br>   1 = 80x64, 3 = 160x120, 5 = 320x240, 7 = 640x480, 9 = 1280x1024
@@ -123,8 +122,8 @@ forward, 0xFF through 0x81 is reverse, e.g. the decimal equivalent of the 4-byte
 </td></tr><tr><th></th><th></th><th>
 </th></tr><tr><td>'o'</td><td>'#o'</td><td>enable caption overlay
 </td></tr><tr><td>'O'</td><td>'#O'</td><td>disable caption overlay
-</th></tr><tr><td>'p'</td><td>'##ping xxxx xxxx xxxx xxxx\n'</td><td>ping ultrasonic ranging modules attached to pins 27, 28, 29, 30 with trigger on pin 18 - tested with Maxbotics EZ0 and EZ1 modules.  xxxx return value is range in inches * 100 (2500 = 25 inches)
-</th></tr><tr><td>'qx'</td><td>'##quality x\n'</td><td>sets JPEG quality between 1-8 ('x' is an ASCII decimal character).  1 is highest, 8 is lowest
+</th></tr><tr><td>'p'</td><td>'##ping xxxx xxxx xxxx xxxx\r\n'</td><td>ping ultrasonic ranging modules attached to pins 27, 28, 29, 30 with trigger on pin 18 - tested with Maxbotics EZ0 and EZ1 modules.  xxxx return value is range in inches * 100 (2500 = 25 inches)
+</th></tr><tr><td>'qx'</td><td>'##quality x\r\n'</td><td>sets JPEG quality between 1-8 ('x' is an ASCII decimal character).  1 is highest, 8 is lowest
 </td></tr><tr><td>'R'</td><td>'##Range(cm) = xxx'</td><td>measure range to nearest obstacle using laser pointers
 </td></tr><tr><td>'r'</td><td>'##Range(cm)'</td><td>same as 'R', but with lots of diagnostic output
 </td></tr><tr><th></th><th></th><th>
@@ -139,21 +138,23 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 <br><br> servo settings are 8-bit binary values, representing timing pulse widths ranging from 1ms to 2ms.  0x00 corresponds to a 1ms pulse, 0x64 corresponds to a 2ms pulse, and 0x32 is midrange with a 1.5ms pulse
 </td></tr><tr><th></th><th></th><th>
 </td></tr><tr><th></th><th></th><th>
-</th></tr><tr><td>'t'</td><td>'##time - millisecs: xxxx\n'</td><td>outputs time in milliseconds since reset
+</th></tr><tr><td>'t'</td><td>'##time - millisecs: xxxx\r\n'</td><td>outputs time in milliseconds since reset
 </th></tr><tr><td>'Tx'</td><td>'#T'</td><td>changes threshold in 'g2' edge detection - T4 is default, range is T1 to T9
 </td></tr><tr><th></th><th></th><th>
-</th></tr><tr><td>'V'</td><td>'##Version ...\n'</td><td>read firmware version info<br>response is terminated by newline character
+</th></tr><tr><td>'V'</td><td>'##Version ...\r\n'</td><td>read firmware version info<br>response is terminated by newline character
 </th></tr><tr><td>'X'</td><td>'#Xmodem transfer count: bytes'</td><td>Xmodem-1K file transfer - receive file via xmodem protocol - store in flash buffer
 </th></tr><tr><td>'y'</td><td>'#y'</td><td>flip video capture (for use with upside-down camera)
 </th></tr><tr><td>'Y'</td><td>'#Y'</td><td>restore video capture to normal orientation
-</td></tr><tr><td>'zc'</td><td>'##zclear\n'</td><td>clear contents of flash buffer
-</td></tr><tr><td>'zC'</td><td>'##zCRC xxxx\n'</td><td>compute crc16_ccitt for flash buffer
-</td></tr><tr><td>'zd'</td><td>'##zd...\n'</td><td>flash buffer dump - dump contents of flash memory buffer to console
-</td></tr><tr><td>'zr'</td><td>'##zr\n'</td><td>flash memory read - read 65kb from user flash sector to flash buffer (e.g. read C program from flash sector before running C interpreter)
-</td></tr><tr><td>'zRxx'</td><td>'##zRead\n'</td><td>flash memory read - read 65kb from specified flash sector xx (02 - 63) to flash buffer (e.g. read C program from flash sector before running C interpreter).  Sectors 00 and 01 are off-limits.
-</th></tr><tr><td>'zw'</td><td>'##zw\n'</td><td>flash memory write - write 65kb from flash buffer to user flash sector
-</th></tr><tr><td>'zWxx'</td><td>'##zWxx\n'</td><td>flash memory write - write 65kb from flash buffer to specified flash sector 02-63 (sectors 00 and 01 are off-limits)
-</td></tr><tr><td>'zZ'</td><td>'##zZ\n'</td><td>flash memory boot sector update - writes contents of flash buffer to boot sectors of flash memory - used to replace u-boot.ldr or srv1.ldr - checks first that a valid LDR format image is in the flash buffer
+</td></tr><tr><td>'zAxx'</td><td>'##zA - read 131072 bytes\r\n'</td><td>flash memory large read - read 128kb from specified flash sector pair xx 02/03 ... 62/63 to flash buffer (e.g. read C program from flash sector before running C interpreter).  Sectors 00 and 01 are off-limits.
+</th></tr><tr><td>'zBxx'</td><td>'##zB - wrote 131072 bytes\r\n'</td><td>flash memory large write - write 128kb from flash buffer to specified flash sector buffer pair 02/03 ... 62/63 (sectors 00 and 01 are off-limits)
+</td></tr><tr><td>'zc'</td><td>'##zclear\r\n'</td><td>clear contents of flash buffer
+</td></tr><tr><td>'zC'</td><td>'##zCRC xxxx\r\n'</td><td>compute crc16_ccitt for flash buffer
+</td></tr><tr><td>'zd'</td><td>'##zd...\r\n'</td><td>flash buffer dump - dump contents of flash memory buffer to console
+</td></tr><tr><td>'zr'</td><td>'##zr\r\n'</td><td>flash memory read - read 65kb from user flash sector to flash buffer (e.g. read C program from flash sector before running C interpreter)
+</td></tr><tr><td>'zRxx'</td><td>'##zRead\r\n'</td><td>flash memory read - read 65kb from specified flash sector xx (02 - 63) to flash buffer (e.g. read C program from flash sector before running C interpreter).  Sectors 00 and 01 are off-limits.
+</th></tr><tr><td>'zw'</td><td>'##zw\r\n'</td><td>flash memory write - write 65kb from flash buffer to user flash sector
+</th></tr><tr><td>'zWxx'</td><td>'##zWxx\r\n'</td><td>flash memory write - write 65kb from flash buffer to specified flash sector 02-63 (sectors 00 and 01 are off-limits)
+</td></tr><tr><td>'zZ'</td><td>'##zZ\r\n'</td><td>flash memory boot sector update - writes contents of flash buffer to boot sectors of flash memory - used to replace u-boot.ldr or srv1.ldr - checks first that a valid LDR format image is in the flash buffer
 </td></tr><tr><th></th><th></th><th>
 </td></tr><tr><th></th><th></th><th>
 
@@ -164,9 +165,9 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </th></tr><tr><td>'$g'</td><td></td><td>parse GPS input
 </th></tr><tr><td>'$R'</td><td></td><td>SVS command - configures slave Blackfin to receive SPI transfer to flash buffer
 </th></tr><tr><td>'$X'</td><td></td><td>SVS command - configures master Blackfin to transfer contents of flash buffer via SPI
-</th></tr><tr><td>'$Axx'</td><td>'##$Axx yyyy\n'</td><td>read AD7998 A/D channel xx (01-08, 11-18 or 21-28)
-</th></tr><tr><td>'$C'</td><td>'##$C xxx\n'</td><td>read HMC6352 compass
-</th></tr><tr><td>'$Ta'</td><td>'##$Tx yyyy\n'</td><td>read LIS3LV02DQ tilt sensor channel a (1 = x axis, 2 = y axis, 3 = z axis)
+</th></tr><tr><td>'$Axx'</td><td>'##$Axx yyyy\r\n'</td><td>read AD7998 A/D channel xx (01-08, 11-18 or 21-28)
+</th></tr><tr><td>'$C'</td><td>'##$C xxx\r\n'</td><td>read HMC6352 compass
+</th></tr><tr><td>'$Ta'</td><td>'##$Tx yyyy\r\n'</td><td>read LIS3LV02DQ tilt sensor channel a (1 = x axis, 2 = y axis, 3 = z axis)
 </th></tr><tr><th></th><th></th><th>
 </td></tr><tr><th></th><th></th><th>
 
@@ -174,34 +175,43 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </th></tr><tr><th></th><th></th><th>
 </td></tr><tr><td>all parameters are sent as ASCII decimal characters ('0' - '9')</td><td></td><td>
 </th></tr><tr><th></th><th></th><th>
-<tr><td>'vax'</td><td>'##vax\n'</td><td>the 'va' command enables/disables automatic gain, white balance and exposure camera functions (default x=7)<br>  x=4 -> AGC enable<br> x=2 -> AWB enable<br> x=1 -> AEC enable<br>  x=7 -> AGC+AWB+AEC on<br>  x=0 -> AGC+AWB+AEC off
-</td></tr><tr><td>'vbc'</td><td>'##vbc x1 x2 y1 y2    ssss...\n'</td><td>the
-'vb' command searches for blobs matching the colors in color bin #c,
-and returns coordinates of an x1, x2, y1, y2 rectangular region
-containing the matching pixels, along with a count of matching pixels
-in the blob. up to 16 blobs can be returned, and the blobs are sent in
+</th></tr><tr><td>'g0'</td><td>'##g0'</td><td>grab reference frame and enable frame differencing
+</th></tr><tr><td>'g1'</td><td>'##g1'</td><td>enable color segmentation
+</th></tr><tr><td>'g2'</td><td>'##g2'</td><td>enable edge detection (threshold changed with 'T' command)
+</th></tr><tr><td>'g3'</td><td>'##g3'</td><td>enable horizon detection (threshold changed with 'T' command)
+</th></tr><tr><td>'g4'</td><td>'##g4'</td><td>enable obstacle detection (threshold changed with 'T' command)
+</th></tr><tr><td>'g5'</td><td>'##g5'</td><td>enable stereo processing (only works with SVS that has GPIO-H8 connection between processors)
+</th></tr><tr><td>'g_'</td><td>'#g_'</td><td>disable frame differencing / color segmentation / edge detection. 
+the '_' in 'g_' could be any character other than 0, 1, 2, 3, 4
+</th></tr><tr><th></th><th></th><th>
+<tr><td>'vax'</td><td>'##vax\r\n'</td><td>the 'va' command enables/disables automatic gain, white balance and exposure camera functions (default x=7)<br>  x=4 -> AGC enable<br> x=2 -> AWB enable<br> x=1 -> AEC enable<br>  x=7 -> AGC+AWB+AEC on<br>  x=0 -> AGC+AWB+AEC off
+</td></tr><tr><td>'vbc'</td><td>'##vbc dd\r\n ssss x1 x2 y1 y2\r\n ....'</td><td>the
+'vb' command searches for blobs matching the colors in color bin #c, indicates the number of blobs found as dd,
+and returns a count of matching pixels
+in the blob, along with coordinates of an x1, x2, y1, y2 rectangular region
+containing the matching pixels. up to 16 blobs can be returned, and the blobs are sent in
 order of pixel count, though blobs smaller than MIN_BLOB_SIZE
 (currently set to 5 pixels) aren't shown.
-</td></tr><tr><td>'vccy1y2u1u2v1v2'</td><td>'##vcc\n'</td><td>the 'vc' command directly sets the contents of color bin #c.  <br>
+</td></tr><tr><td>'vccy1y2u1u2v1v2'</td><td>'##vcc\r\n'</td><td>the 'vc' command directly sets the contents of color bin #c.  <br>
 this command will return string with 'vc' followed by the color bin number.  <br>
 for example, we could save a set of colors to color bin #3
 corresponding to measurements taken at another time, such as the above
 mentioned orange golf ball color measurement, using 'vc3127176086111154200'.
 we could then confirm that the colors were properly stored by issuing
 the command 'vr3' to retrieve the contents of color bin #3.
-</td></tr><tr><td>'vfxxx1xxx2yyy1yyy2'</td><td>'##vf xxxx\n'</td><td>the 'vf' counts the number of pixels matching color bin #c in the range of x1, x2, y1, y2<br>
+</td></tr><tr><td>'vfxxx1xxx2yyy1yyy2'</td><td>'##vf xxxx\r\n'</td><td>the 'vf' counts the number of pixels matching color bin #c in the range of x1, x2, y1, y2<br>
 e.g.  'vf10100020001500220'  searches for color bin #1 pixels in the x range from 100-200 and y range from 150-220 <br>
-</td></tr><tr><td>'vh'</td><td>'##vhist y  u  v\n'</td><td>computes and lists the distribution of Y, U and V pixels over the entire range of possible values, divided into bins of 0-3, 4-7, 8-11, ... 248-251, 252-255
-</td></tr><tr><td>'vm'</td><td>'##vmean yy uu vv\n'</td><td>computes mean values for Y, U and V over the entire image.
-</td></tr><tr><td>'vpxxxxyyyy'</td><td>'##vp yyy uuu vvv\n'</td><td>the 'vp' command samples a single pixel defined by coordinates xxxx (column 0000-0159, 0000-0319, 0000-0639, 0000-1279 depending on resolution) and yy (row 0000-0127, 0000-0255, 0000-0511, 0000-1023, where 0000 is top of image). 'vp01600128' will sample a pixel in the middle of the image at 320x256 resolution, 'vp01600000' will sample a pixel in the middle of the top row, etc...
-</td></tr><tr><td>'vrc'</td><td>'##vrc y1 y2 u1 u2 v1 v2\n'</td><td>the 'vr' command retrieves the stored color info from color bin #c.  <br>this command will return string with 'vr' followed by the color bin number,
+</td></tr><tr><td>'vh'</td><td>'##vhist y  u  v\r\n'</td><td>computes and lists the distribution of Y, U and V pixels over the entire range of possible values, divided into bins of 0-3, 4-7, 8-11, ... 248-251, 252-255
+</td></tr><tr><td>'vm'</td><td>'##vmean yy uu vv\r\n'</td><td>computes mean values for Y, U and V over the entire image.
+</td></tr><tr><td>'vpxxxxyyyy'</td><td>'##vp yyy uuu vvv\r\n'</td><td>the 'vp' command samples a single pixel defined by coordinates xxxx (column 0000-0159, 0000-0319, 0000-0639, 0000-1279 depending on resolution) and yy (row 0000-0127, 0000-0255, 0000-0511, 0000-1023, where 0000 is top of image). 'vp01600128' will sample a pixel in the middle of the image at 320x256 resolution, 'vp01600000' will sample a pixel in the middle of the top row, etc...
+</td></tr><tr><td>'vrc'</td><td>'##vrc y1 y2 u1 u2 v1 v2\r\n'</td><td>the 'vr' command retrieves the stored color info from color bin #c.  <br>this command will return string with 'vr' followed by the color bin number,
 followed by y1=Ymin, y2=Ymax, u1=Umin, u2=Umax, v1=Vmin, v2=Vmax. <br>
 in the above example where colors for an orange golf ball were captured
 using the 'vg' command for color bin #0, issuing a 'vr0' command will
-return the colors stored in color bin #0 - e.g. '##vr0 127 176 86 111 154 200\n'. 
-</td></tr><tr><td>'vsx'</td><td>'##vscan = pix xxxx xxxx xxxx xxxx ... xxxx\n'</td><td>vs scans for edge pixels in x (1-9) columns using edge_thresh set by 'T' or 'vt' command.  displays total number of edge pixels found and distance from bottom to first edge pixel in each column
-</td></tr><tr><td>'vtxxx'</td><td>'##vthresh xxxx\n'</td><td>vt sets the edge_thresh global variable from 0000-9999 for edge detection (default is 3200).  equivalent to 'T' console function but with more precision
-</td></tr><tr><td>'vzx'</td><td>'##vzero\n'</td><td>vz0 zeros out all of the color bins, vz1 / vz2 / vz3 / vz4 segments colors into various color spaces which can be used by enabling 'g1' color segmentation function ('G' turns it off)
+return the colors stored in color bin #0 - e.g. '##vr0 127 176 86 111 154 200\r\n'. 
+</td></tr><tr><td>'vsx'</td><td>'##vscan = pix xxxx xxxx xxxx xxxx ... xxxx\r\n'</td><td>vs scans for edge pixels in x (1-9) columns using edge_thresh set by 'T' or 'vt' command.  displays total number of edge pixels found and distance from bottom to first edge pixel in each column
+</td></tr><tr><td>'vtxxx'</td><td>'##vthresh xxxx\r\n'</td><td>vt sets the edge_thresh global variable from 0000-9999 for edge detection (default is 3200).  equivalent to 'T' console function but with more precision
+</td></tr><tr><td>'vzx'</td><td>'##vzero\r\n'</td><td>vz0 zeros out all of the color bins, vz1 / vz2 / vz3 / vz4 segments colors into various color spaces which can be used by enabling 'g1' color segmentation function ('G' turns it off)
 </th></tr><tr><th></th><th></th><th>
 
 </th></tr><tr><th>Neural Network Commands</th><th></th><th>
@@ -234,7 +244,7 @@ See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a>
 for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 19 July 2009 - 23:50 GMT
+last updated 12 September 2009 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

@@ -1,3 +1,18 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ *  httpd.c - HTTP GET and POST functions for the SRV-1 / SVS 
+ *    Copyright (C) 2005-2009  Surveyor Corporation
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details (www.gnu.org/licenses)
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #include <cdefBF537.h>
 #include "srv.h"
 #include "uart.h"
@@ -85,7 +100,13 @@ void httpd_get()
             case '1':
             case '2':
             case '3':
-                pwm1_mode = PWM_PWM;
+                if (!pwm1_init) {
+                    initPWM();
+                    pwm1_init = 1;
+                    pwm1_mode = PWM_PWM;
+                    base_speed = 40;
+                    lspeed = rspeed = 0;
+                }
                 if (base_speed == 0)
                     base_speed = 40;
                 motor_set(path[11], base_speed, &lspeed, &rspeed);
