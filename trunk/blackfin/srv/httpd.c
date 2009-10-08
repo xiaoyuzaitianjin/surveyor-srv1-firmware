@@ -18,7 +18,9 @@
 #include "uart.h"
 #include "string.h"
 #include "print.h"
+#include "malloc.h"
 #include "jpeg.h"
+#include "debug.h"
 
 static unsigned char base64[64] = {
    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
@@ -29,10 +31,12 @@ static unsigned char base64[64] = {
 
 extern void httpd_get();
 extern void httpd_post();
-extern void clean_buffer(char *);
-extern void base64_camera_frame();
+extern int  clean_buffer(char *);
+extern int  base64_camera_frame(char *, int);
+void binary_camera_frame();
 
-#define BUFSIZE 256
+#define REQBUF_SIZE         1024
+#define INLINEIMGBUF_SIZE   (64 * 1024)
 
 char *names[] = {  // index from file name to flash sector:  
     "/00.html",  // sector 10-11
@@ -47,43 +51,77 @@ char *names[] = {  // index from file name to flash sector:
     "/09.html"   // sector 28-29
 };
 
+static char inlineImgTag[] = "$$camera$$";
+static char cgiBody[] = "0\r\n";
+
+#define CONNECTION_HEADER   "Connection: Close\r\n"       // better in IE, Safari
+
 void httpd_get()
 {
-    int i, j, ret, t0;
+    int i, ret, t0;
     char ch;
-    char *cp;
-    static char buffer[BUFSIZE+1]; 
+    static char reqBuf[REQBUF_SIZE+1]; 
+    static char * inlineImgBuf = 0;
+    int inlineImgLength = 0;
     char *method;
     char *path;
     char *protocol;
+    char *body;
+    int bodyLength = 0, contentLength;
+    char * contentType = "text/html";
+    int insertInlineImg = FALSE;
+    char * inlineTagPtr = 0;
 
-    buffer[0] = 'G';
+    // Receive and parse the request
+    reqBuf[0] = 'G';
     ret = 1;
     t0 = readRTC();
-    while (((readRTC()-t0) < 1000) && (ret < BUFSIZE)){
-        ch = getch();
-        buffer[ret++] = ch;
-        if (ch == '\n')
-            break;
+
+    while (((readRTC()-t0) < 1000) && (ret < REQBUF_SIZE)){
+        if (getchar((unsigned char *) &ch)) {
+            char pch = reqBuf[ret - 1];
+            reqBuf[ret++] = ch;
+            //if (ch == '\n')
+            //    break;
+            // Read to the end of the headers: handle any permutation of empty line EOL sequences
+            if ((pch == 0x0a  &&  ch == 0x0d)  ||  (pch == 0x0d  &&  ch == 0x0d)  ||  (pch == 0x0a  &&  ch == 0x0a))
+                break;
+        }
     }
 
-    method = strtok(buffer, " ");
+    method = strtok(reqBuf, " ");
     path = strtok(0, " ");
     protocol = strtok(0, "\r");
-    if (!method || !path || !protocol) 
-        return;
-    //printf("method: %s   path: %s   protocol: %s\r\n", method, path, protocol);
+    DebugStr ("httpd_get enter: method="); DebugStr (method); DebugStr (" path="); DebugStr (path); DebugStr ("\r\n");
 
+    if (!method || !path || !protocol) 
+        goto exit;
+    //printf("method: %s   path: %s   protocol: %s\r\n", method, path, protocol);
     if (strcmp(method, "GET") != 0) {
-        printf("HTTP/1.1 501 Not supported\r\nMethod is not supported.\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
-        return;
+
+    DebugStr ("http_get 501 method=");
+    DebugStr (method);
+    DebugStr ("\r\n");
+
+        static char Body501[] = "Method not supported\r\n";
+        printf ("HTTP/1.1 501 Method not supported\r\n"
+                "Content-Type: text/html\r\n"
+                "Content-Length: %d\r\n"
+                "Connection: close\r\n"
+                "\r\n"
+                "%s",
+                sizeof (Body501) - 1, Body501);
+        goto exit;
     }
-    
-    j = sizeof(names) / 4;  // compute number of entries in names[] table
-    
-    if ((strcmp(path, "/") == 0) || (strcmp(path, "/index.html") == 0)) {
-        i = 0;
-    } else if (strncmp(path, "/robot.cgi?", 11) == 0) {
+
+    // Camera image binary - robot.jpg
+    if (strncmp(path, "/robot.jpg", 10) == 0) {
+         binary_camera_frame();
+         goto exit;
+    }
+
+    // Robot control - robot.cgi
+    else if (strncmp(path, "/robot.cgi?", 11) == 0) {
         switch(path[11]) {
             case 'l':
                 *pPORTHIO |= 0x0280;
@@ -124,39 +162,86 @@ void httpd_get()
                 motor_set(path[11], base_speed, &lspeed, &rspeed);
                 break;
         }
-        i = 0;
-    } else {
-        for (i=0; i<j; i++) 
-            if (strcmp(path, names[i]) == 0)
-                break;
+        body = cgiBody;
+        contentLength = sizeof (cgiBody) - 1;
+        contentType = "text/plain";
     }
-    
-    if (i == j) {
-        printf("HTTP/1.1 404 Not found\r\nFile not found.\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
-        return;
-    }
-
-    read_double_sector((i*2) + 10, 1);  // set quiet flag
-    cp = FLASH_BUFFER;
-    clean_buffer(cp);  // last character of html file should be '<'.  clean out anything else
-
-    printf("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n");
-    while ((*cp != 0) && (cp < (unsigned char *)(FLASH_BUFFER+0x00020000))) {
-        if ((*cp == '$') && (*(cp+1) == '$')) {
-            if (strncmp(cp, "$$camera$$", 10) == 0) {
-                base64_camera_frame();
-                cp+=10;
+    // HTML from flash
+    else {
+        char * cp;
+        if ((strcmp(path, "/") == 0) || (strcmp(path, "/index.html") == 0))
+            i = 0;
+        else {
+            for (i=0; i< sizeof(names) / 4; i++) 
+                if (strcmp(path, names[i]) == 0)
+                    break;
+            if (i == sizeof(names) / 4) {
+                static char Body404[] = "File not found\r\n";
+                printf ("HTTP/1.1 404 File not found\r\n"
+                        "Content-Type: text/html\r\n"
+                        "Content-Length: %d\r\n"
+                        "Connection: close\r\n"
+                        "\r\n"
+                        "%s",
+                        sizeof (Body404) - 1, Body404);
+                goto exit;
             }
         }
-        putchar(*cp++);
+
+        read_double_sector((i*2) + 10, 1);  // set quiet flag
+        body = cp = (char *) FLASH_BUFFER;
+        bodyLength = contentLength = clean_buffer(cp);  // last character of html file should be '>'.  clean out anything else
+    
+        // See if the inline image tag is present and generate the image if needed
+        insertInlineImg = FALSE;
+        while ((*cp != 0) && (cp < (char *)(FLASH_BUFFER+0x00020000))) {
+            if ((*cp == '$') && (*(cp+1) == '$')) {
+                if (strncmp(cp, inlineImgTag, sizeof (inlineImgTag) - 1) == 0) {
+                    insertInlineImg = TRUE;
+                    inlineTagPtr = cp;
+                    if (inlineImgBuf == 0)
+                        inlineImgBuf = malloc (INLINEIMGBUF_SIZE);
+                    inlineImgLength = base64_camera_frame (inlineImgBuf, INLINEIMGBUF_SIZE);
+                    contentLength += inlineImgLength - sizeof (inlineImgTag) + 1;
+                    break;
+                }
+            }
+            ++cp;
+        }
     }
+
+    // Send response headers
+    printf ("HTTP/1.1 200 OK\r\n"
+            "Content-Type: %s\r\n"
+            "Cache-Control: no-cache\r\n"
+            "Pragma: no-cache\r\n"
+            CONNECTION_HEADER
+            "Content-Length: %d\r\n"
+            "\r\n",
+            contentType,
+            contentLength);
+    // Send response body
+    if (insertInlineImg) {
+        putchars ((unsigned char *) body, inlineTagPtr - body);
+        putchars ((unsigned char *) inlineImgBuf, inlineImgLength);
+        putchars ((unsigned char *) inlineTagPtr + sizeof (inlineImgTag) - 1, 
+                    bodyLength - (inlineTagPtr - body - sizeof (inlineImgTag) + 1));
+    }
+    else
+        putchars ((unsigned char *) body, contentLength);
+
+exit:
+    DebugStr ("httpd_get exit\r\n");
 }
 
-void base64_camera_frame() {
+int     base64_camera_frame (
+char *  buf,
+int     bufSize) {
     int i;
     unsigned char *cp, b0, b1, b2, b3;
     unsigned int image_size;
     unsigned char *output_start, *output_end; 
+    int len;
 
     grab_frame();
     output_start = (unsigned char *)JPEG_BUF;
@@ -179,31 +264,75 @@ void base64_camera_frame() {
             break;
     } 
 
+    len = 0;
     for (i=0; i<image_size; i+=3) {
+        if (len >= bufSize - 4)
+            break;
         b0 = ((*cp & 0xFC) >> 2); 
         b1 = ((*cp & 0x03) << 4) | ((*(cp+1) & 0xF0) >> 4); 
         b2 = ((*(cp+1) & 0x0F) << 2) | ((*(cp+2) & 0xC0) >> 6); 
         b3 = *(cp+2) & 0x3F;
-        putchar(base64[b0]);
-        putchar(base64[b1]);
-        putchar(base64[b2]);
-        putchar(base64[b3]);
+        *buf++ = base64[b0];
+        *buf++ = base64[b1];
+        *buf++ = base64[b2];
+        *buf++ = base64[b3];
         cp += 3;
+        len += 4;
     }
+    return len;
 }
+
+
+void binary_camera_frame() {
+    int i;
+    unsigned int image_size;
+    unsigned char *output_start, *output_end;
+    unsigned char *cp;
+    grab_frame();
+    output_start = (unsigned char *)JPEG_BUF;
+    output_end = encode_image((unsigned char *)FRAME_BUF,  output_start, quality,
+                               FOUR_TWO_TWO, imgWidth, imgHeight);
+    image_size = (unsigned int)(output_end - output_start);
+
+    #ifdef _DEBUG
+    char db[128];
+    sprintf (db, "Sending JPG %d bytes\r\n", image_size);
+    DebugStr (db);
+    #endif
+
+    printf("HTTP/1.1 200 OK\r\n"
+            "Content-Type: image/jpeg\r\n"
+            "Content-Length: %d\r\n"
+            "Cache-Control: no-cache\r\n"
+            "Pragma: no-cache\r\n"
+            CONNECTION_HEADER
+            "\r\n",
+            image_size);
+    led1_on();
+
+    cp = (unsigned char *)JPEG_BUF;
+    for (i=0; i<image_size; i++)
+         putchar(*cp++);
+    DebugStr ("Send JPG done\r\n");
+}
+
 
 void httpd_post() {
 }
 
-void clean_buffer(char *buf) {
+
+int clean_buffer(char *buf) {
     char *cp;
-    
+   
     for (cp = (buf+0x1FFFF); cp > buf; cp--) {  // sweep buffer from end clearing out garbage characters
-        if (*cp == '>')  // final html character
-            return;
+        if (*cp == '>') { // final html character
+            cp[1] = '\r';
+            cp[2] = '\n';
+            return cp - buf + 3;
+        }
         else
             *cp = 0;
     }
+    return 0;
 }
-
 

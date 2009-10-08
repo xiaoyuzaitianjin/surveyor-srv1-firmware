@@ -16,8 +16,67 @@
 #include <cdefBF537.h>
 #include "config.h"
 #include "uart.h"
+#include "srv.h"
 
 #define SSYNC    asm("ssync;")
+#define SUART_SEND0 *pPORTHIO |= 0x4000
+#define SUART_SEND1 *pPORTHIO &= 0xBFFF
+#define SUART_RECV  (*pPORTHIO & 0x8000)
+
+static int suart_timebase;
+
+void suartInit(int baud) {  // use GPIO-H14 and H15 for soft uart.  H14 = TX, H15 = RX
+    suart_timebase = 1000000000 / baud;  // define bit period in nanoseconds
+    *pPORTHIO_DIR &= 0x3FFF;   // set H14 as output, H15 as input
+    SSYNC;
+    *pPORTHIO_DIR |= 0x4000;   // enable H14 output
+    SSYNC;
+    *pPORTHIO_INEN |= 0x8000;  // set H15 as input
+    SSYNC;
+    *pPORTHIO &= 0xBFFF;  // set H14 low
+    SSYNC;
+}
+
+void suartPutChar(unsigned char ch)  // soft uart send - transmit on GPIO-H14
+{
+    int ix;
+    
+    SUART_SEND1;  // send start bit
+    delayNS(suart_timebase);
+    for (ix=0; ix<8; ix++) {
+        if (ch & 0x01)
+            SUART_SEND0;  // output is inverted
+        else
+            SUART_SEND1;
+        delayNS(suart_timebase);
+        ch = ch >> 1;
+    }
+    SUART_SEND0;  // send 2 stop bits
+    delayNS(suart_timebase*2);
+}
+
+unsigned short suartGetChar(int timeout)  // check for incoming character, wait for "timeout" milliseconds
+{
+    int t0;
+    unsigned short sx, smask;
+    
+    t0 = readRTC();
+    sx = 0;
+    
+    while ((readRTC()-t0) < timeout) {  // wait for start bit
+        if (SUART_RECV)
+            continue;
+        delayNS((suart_timebase * 4) / 3);  // wait for completion of start bit, then go 30% into next bit
+        for (smask=1; smask<256; smask*=2) {
+            if (SUART_RECV)
+                sx += smask;
+            delayNS(suart_timebase);  // skip to next bit
+        }
+        delayNS((suart_timebase*2)/3);  // wait for stop bit
+        return (sx + 0x8000);  // set high bit to indicate received character
+    }
+    return 0;
+}
 
 void init_uart0(void)
 {
@@ -34,6 +93,14 @@ void init_uart0(void)
     dummy = *pUART0_LSR;
     dummy = *pUART0_IIR;
     SSYNC;
+}
+
+void uart0_CTS(int ix)  // set ~CTS signal.  1 = clear to send   0 = not clear to send
+{
+    if (ix == 0)
+        *pPORTHIO |= 0x0040;  // block incoming data 
+    else
+        *pPORTHIO &= 0xFFBF;  // allow incoming data 
 }
 
 void init_uart1(void)
@@ -211,4 +278,5 @@ printNumber(unsigned char  base,
   // print the string right-justified
   uart0SendString(pBuf);
 }
+
 

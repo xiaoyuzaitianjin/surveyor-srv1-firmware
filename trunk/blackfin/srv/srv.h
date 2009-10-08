@@ -112,6 +112,7 @@ void camera_reset (unsigned int width);
 void change_image_quality ();
 void set_caption (unsigned char *str, unsigned int width);
 void move_image (unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height);
+void move_inverted (unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height);
 void copy_image (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height);
 void move_yuv422_to_planar (unsigned char *src, unsigned char *dst, unsigned int width, unsigned int height);
 void send_80x64planar();
@@ -189,7 +190,7 @@ extern int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
 extern int lspeed, rspeed, lspeed2, rspeed2, base_speed, base_speed2, lcount, rcount;
 extern int move_start_time, move_stop_time, move_time_mS, robot_moving;
 extern int sonar_data[];
-extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag, quality;
+extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag, invert_flag, quality;
 extern unsigned int uart1_flag, thumbnail_flag;
 extern unsigned int master;  // SVS master or slave ?
 extern unsigned int stereo_sync_flag;

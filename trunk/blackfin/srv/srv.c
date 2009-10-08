@@ -81,6 +81,7 @@ unsigned int quality, framecount, ix, overlay_flag;
 unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag;
 unsigned int obstacle_detect_flag;
 unsigned int edge_thresh;
+unsigned int invert_flag;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
 unsigned int image_size; /* JPEG image size */
 char imgHead[11]; /* image frame header for I command */
@@ -142,6 +143,7 @@ void init_io() {
     edge_thresh = 3200;
     obstacle_detect_flag = 0;
     segmentation_flag = 0;
+    invert_flag = 0;
     encoder_flag = 0;
 
     #ifdef STEREO
@@ -660,7 +662,11 @@ void grab_frame () {
     }
     #endif /* STEREO */
 
-    move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
+    if (invert_flag)
+        move_inverted((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab and flip new frame
+            (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
+    else
+        move_image((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2,  // grab new frame
             (unsigned char *)FRAME_BUF, imgWidth, imgHeight); 
     if (frame_diff_flag) {
         compute_frame_diff((unsigned char *)FRAME_BUF, 
@@ -890,12 +896,16 @@ void camera_setup () {
 }
 
 void invert_video() {  // flip video for upside-down camera
-    i2cwrite(0x30, ov9655_invert, sizeof(ov9655_invert)>>1, SCCB_ON);
+    invert_flag = 1;
+    i2cwrite(0x21, ov7725_invert, sizeof(ov7725_invert)>>1, SCCB_ON);  // flip UV on OV7725
+    i2cwrite(0x30, ov9655_invert, sizeof(ov9655_invert)>>1, SCCB_ON);  // flip UV on OV9655
     printf("#y");
 }
 
 void restore_video() {  // restore normal video orientation
-    i2cwrite(0x30, ov9655_restore, sizeof(ov9655_restore)>>1, SCCB_ON);
+    invert_flag = 0;
+    i2cwrite(0x21, ov7725_restore, sizeof(ov7725_restore)>>1, SCCB_ON); // restore UV on OV7725
+    i2cwrite(0x30, ov9655_restore, sizeof(ov9655_restore)>>1, SCCB_ON); // restore UV on OV9655
     printf("#Y");
 }
 
@@ -995,6 +1005,23 @@ void move_image(unsigned char *src1, unsigned char *src2, unsigned char *dst, un
     idst = (unsigned short *)dst;
     for (ix = 0; ix < (width * height); ix++)
         *idst++ = *isrc++;
+}
+
+void move_inverted(unsigned char *src1, unsigned char *src2, unsigned char *dst, unsigned int width, unsigned int height) 
+{
+    unsigned char *src;
+    unsigned short *isrc, *idst;
+    int ix;
+        
+    if (*pDMA0_CURR_ADDR < (void *)src2)
+        src = src2;
+    else
+        src = src1;
+    
+    isrc = (unsigned short *)src;
+    idst = (unsigned short *)(dst + imgWidth*imgHeight*2 - 2);
+    for (ix = 0; ix < (width * height); ix++)
+        *idst-- = *isrc++;
 }
 
 /* copy frame buffer 

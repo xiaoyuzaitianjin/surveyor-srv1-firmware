@@ -193,4 +193,11 @@ static unsigned char ov7725_qqvga[] = {
 0x8d, 0x20,
 };
 
+static unsigned char ov7725_invert[] = {
+0x66, 0x80,
+};
+
+static unsigned char ov7725_restore[] = {
+0x66, 0x00,
+};
 

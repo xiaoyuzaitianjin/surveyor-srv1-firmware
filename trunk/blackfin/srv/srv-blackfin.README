@@ -1,5 +1,18 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 8 October 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* added invert_video() support for OV7725
+
+* added a delay to the post-command input buffer flush at the end of the
+  main() polling loop
+  
+* removed program dump from startup of picoC
+
+* extended HTTPD functionality with motor control overlay and tested 
+  compatibility with iPhone and Google Android
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 12 September 2009 

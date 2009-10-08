@@ -15,4 +15,9 @@ unsigned char uart1GetChar(unsigned char *s);
 unsigned char uart1Signal();
 void printNumber(unsigned char base, unsigned char noDigits, unsigned char sign, unsigned char pad, int number);
 
+void suartInit(int baudrate);
+void suartPutChar(unsigned char ch);
+unsigned short suartGetChar(int timeout);
+
+void uart0_CTS(int);
 

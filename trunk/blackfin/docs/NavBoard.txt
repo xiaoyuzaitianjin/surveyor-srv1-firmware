@@ -19,12 +19,20 @@ SRV-1 firmware provides direct support for access to the gps, a/d and tilt via c
 
 Console and picoC functions for HMC5843 are still in development
 
+
 8-pin header connects to I2C and serial interface -
 
         xx    TP     RX     TX          (TP = timing pulse)
         GND  3.3V    SDA    SCL
   x==================================x  (circuit board edge)
 
+
+On the SRV-1 32-pin header, the GND, 3.3V, SDA and SCL signals correspond to the following:
+
+    Nav board GND  <=> SRV-1 pin 2
+    Nav board 3.3V <=> SRV-1 pin 1
+    Nav board SDA  <=> SRV-1 pin 15
+    Nav board SCL  <=> SRV-1 pin 14 
 
 
 10-pin header connects to analog inputs

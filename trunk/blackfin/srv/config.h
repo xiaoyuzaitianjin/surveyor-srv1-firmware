@@ -32,7 +32,7 @@
 //#define UART0_BAUDRATE 115200
 //#define UART0_BAUDRATE 921600
 #define UART0_BAUDRATE 2304000
-#define UART1_BAUDRATE 57600
+#define UART1_BAUDRATE 115200
 
 // must be power of 2!
 #define FIFO_LENGTH  64

@@ -18,6 +18,7 @@
 #include "string.h"
 #include "gps.h"
 #include "myfunc.h"
+#include "config.h"
 
 #ifdef STEREO
 #include "stereo.h"
@@ -42,6 +43,8 @@ int main() {
     disable_failsafe();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
     camera_setup(); // Sets up the camera to 320x240
+    //init_uart1();
+    //suartInit(115200);  // initialize soft uart to 115.2k baud
     led1_on();
 
     #ifdef STEREO
@@ -274,6 +277,15 @@ int main() {
                 case 'm':   // use 2nd set of timers for PWM
                     motor2_command();
                     break;
+                case 'x':
+                    putchar('x');
+                    //suartPutChar('x');
+                    //suartPutChar(getch());
+                    //suartPutChar(getch());
+                    uart1SendChar('x');
+                    uart1SendChar(getch());
+                    uart1SendChar(getch());
+                    break;
                 case '+':   // increase base motor speed
                     motor_increase_base_speed();
                     break;
@@ -355,7 +367,7 @@ int main() {
             }
             reset_failsafe_clock();
             while (getchar(&ch)) // flush recv buffer
-                continue;
+                delayUS(12000000/UART0_BAUDRATE);  // allow enough time for characters to flow in
         }
         #ifdef STEREO
         if (!master) {  // if slave processor on SVS, check whether stereo_sync_flag has triggered

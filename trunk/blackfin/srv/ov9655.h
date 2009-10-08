@@ -598,10 +598,12 @@ static unsigned char ov9655_qqvga[] = {
 };
 
 static unsigned char ov9655_invert[] = {
-0x1E, 0x30,
+//0x1E, 0x30,
+0x3A, 0x88,
 };
 
 static unsigned char ov9655_restore[] = {
-0x1E, 0x00,
+//0x1E, 0x00,
+0x3A, 0x8C,
 };
 
