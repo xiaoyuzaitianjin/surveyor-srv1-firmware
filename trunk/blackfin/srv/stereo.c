@@ -1969,14 +1969,15 @@ long scale_denom) {          /* scaling denominator */
 }
 
 /* send the disparity data */
-void svs_send_disparities (
+void svs_send_disparities 
+(
     int no_of_matches) {
     unsigned char ch, *cp;
     unsigned short *disp;
     unsigned int i,n;
         
     if (no_of_matches > 0) {
-        int disp_data_size = 3*sizeof(unsigned short);
+        int disp_data_size = 4*sizeof(unsigned short);
         int data_size = disp_data_size * no_of_matches;
         char* dispHead = (char*)DISP_BUF;
         strcpy(dispHead, "##DSP");
@@ -2001,6 +2002,7 @@ void svs_send_disparities (
         disp = (unsigned short *)DISP_BUF;
         n=0;
         for (i=0;i<no_of_matches;i++) {
+            disp[n++] = (unsigned short)svs_matches[i*4];
             disp[n++] = (unsigned short)svs_matches[i*4+1];
             disp[n++] = (unsigned short)svs_matches[i*4+2];
             disp[n++] = (unsigned short)svs_matches[i*4+3];
