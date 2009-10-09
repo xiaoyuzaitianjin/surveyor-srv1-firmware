@@ -1,6 +1,6 @@
 /* stereo correspondence */
 
-#define SVS_MAPPING_BY_DEFAULT
+//#define SVS_MAPPING_BY_DEFAULT
 #define SVS_MAX_FEATURES         2000
 #define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280
@@ -98,7 +98,7 @@ extern void svs_footline_update(int max_disparity_percent);
 extern void init_map();
 extern void map_update(int no_of_matches, int max_disparity_percent, unsigned int* svs_matches, unsigned short int* footline);
 extern void map_recenter();
-extern void visual_odometry(int right_turn_pixels, int tollerance, svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
+extern void scan_match(int right_turn_pixels, int tollerance, svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
 extern void show_map(unsigned char* outbuf);
 extern void update_pose(svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
 

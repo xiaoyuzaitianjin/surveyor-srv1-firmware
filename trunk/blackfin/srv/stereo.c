@@ -2221,8 +2221,8 @@ void init_map() {
     min_occupancy = -max_occupancy;
 }
 
-/* estimates the robots pose */
-void visual_odometry(
+/* visual equivalent of horizontal scan matching */
+void scan_match(
     int right_turn_pixels,
     int tollerance,
     svs_data_struct *svs_data,
@@ -2293,7 +2293,7 @@ void visual_odometry(
     if (robot_orientation_degrees >= 360) robot_orientation_degrees -= 360;
     
 #ifdef SVS_PROFILE
-    printf("visual_odometry %d mS\n", readRTC() - t);
+    printf("scan_match %d mS\n", readRTC() - t);
 #endif
 }
 
@@ -2377,7 +2377,7 @@ svs_data_struct *svs_data,
 svs_data_struct *svs_data_previous) 
 {    
     /* estimate the change in orientation of the robot */
-    visual_odometry(
+    scan_match(
         svs_right_turn_percent * (int)imgWidth / 100, 
         svs_turn_tollerance_percent * (int)imgWidth / 100,
         svs_data, svs_data_previous);    
