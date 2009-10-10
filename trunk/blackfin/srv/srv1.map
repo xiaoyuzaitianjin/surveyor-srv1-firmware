@@ -1297,7 +1297,7 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_info    0x000110a7      0x2fb picoc/platform.o
  .debug_info    0x000113a2      0x23f picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x4908
+.debug_line     0x00000000     0x490e
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143       0xa6 malloc.o
@@ -1316,21 +1316,21 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_line    0x00001c90      0x125 uart.o
  .debug_line    0x00001db5      0x380 colors.o
  .debug_line    0x00002135      0x315 jpeg.o
- .debug_line    0x0000244a      0xcbe stereo.o
- .debug_line    0x00003108       0x53 init.o
- .debug_line    0x0000315b      0x10b sdcard.o
- .debug_line    0x00003266       0x92 picoc/picoc.o
- .debug_line    0x000032f8       0xe3 picoc/table.o
- .debug_line    0x000033db      0x36e picoc/lex.o
- .debug_line    0x00003749      0x26b picoc/parse.o
- .debug_line    0x000039b4      0x46f picoc/expression.o
- .debug_line    0x00003e23       0xe9 picoc/heap.o
- .debug_line    0x00003f0c      0x1e4 picoc/type.o
- .debug_line    0x000040f0      0x1a2 picoc/variable.o
- .debug_line    0x00004292      0x176 picoc/clibrary.o
- .debug_line    0x00004408      0x3a9 picoc/library_surveyor.o
- .debug_line    0x000047b1       0xc7 picoc/platform.o
- .debug_line    0x00004878       0x90 picoc/platform_surveyor.o
+ .debug_line    0x0000244a      0xcc4 stereo.o
+ .debug_line    0x0000310e       0x53 init.o
+ .debug_line    0x00003161      0x10b sdcard.o
+ .debug_line    0x0000326c       0x92 picoc/picoc.o
+ .debug_line    0x000032fe       0xe3 picoc/table.o
+ .debug_line    0x000033e1      0x36e picoc/lex.o
+ .debug_line    0x0000374f      0x26b picoc/parse.o
+ .debug_line    0x000039ba      0x46f picoc/expression.o
+ .debug_line    0x00003e29       0xe9 picoc/heap.o
+ .debug_line    0x00003f12      0x1e4 picoc/type.o
+ .debug_line    0x000040f6      0x1a2 picoc/variable.o
+ .debug_line    0x00004298      0x176 picoc/clibrary.o
+ .debug_line    0x0000440e      0x3a9 picoc/library_surveyor.o
+ .debug_line    0x000047b7       0xc7 picoc/platform.o
+ .debug_line    0x0000487e       0x90 picoc/platform_surveyor.o
 
 .debug_frame    0x00000000     0x3dac
  .debug_frame   0x00000000       0x4c camera.o

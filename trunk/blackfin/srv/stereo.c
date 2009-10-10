@@ -1246,7 +1246,8 @@ int svs_match(
     return(matches);
 }
 
-/* filtering function removes noise by searching for a peak in the disparity histogram */
+/* filtering function removes noise by fitting planes to the disparities
+   and disguarding outliers */
 void svs_filter_plane(
     int no_of_possible_matches, /* the number of stereo matches */
     int max_disparity_pixels) /*maximum disparity in pixels */
@@ -1470,8 +1471,7 @@ void svs_filter_plane(
         dww = ww1 - ww0;
         ddisp = disp1 - disp0;
 
-        /* remove matches too far away from the peak by setting
-         * their probabilities to zero */
+        /* find inliers */
         int plane_tx = imgWidth;
         int plane_ty = 0;
         int plane_bx = imgHeight;
@@ -1503,12 +1503,16 @@ void svs_filter_plane(
                         disp2 = disp0;
                     }
 
+                    /* check how far this is from the plane */
                     if (((int)disp >= disp2-2) &&
                             ((int)disp <= disp2+2) &&
                             ((int)disp < max_disparity_pixels)) {
-                        /* this disparity lies along the plane */
+
+                        /* inlier detected - this disparity lies along the plane */
                         valid_quadrants[i]++;
                         hits++;
+                        
+                        /* keep note of the bounds of the plane */
                         if (x < plane_tx) {
                             plane_tx = x;
                             plane_disp_tx = disp2;
@@ -1530,6 +1534,7 @@ void svs_filter_plane(
             }
         }
         if (hits > 5) {
+            /* add a detected plane */
             plane[no_of_planes*9+0]=plane_tx;
             plane[no_of_planes*9+1]=plane_ty;
             plane[no_of_planes*9+2]=plane_bx;
@@ -1543,15 +1548,19 @@ void svs_filter_plane(
         }
     }
 
+    /* deal with the outliers */
     for (i = 0; i < no_of_possible_matches; i++) {
         if (valid_quadrants[i] == 0) {
-            /* set probability to zero */
+        
+            /* by default set outlier probability to zero,
+               which eliminates it from further enquiries */
             svs_matches[i * 4] = 0;
 
+            /* if the point is within a known plane region then force
+               its disparity onto the plane */
             x = svs_matches[i * 4 + 1];
             y = svs_matches[i * 4 + 2];
             max_hits = 0;
-
             for (j = 0; j < no_of_planes; j++) {
                 if ((x > plane[no_of_planes*9+0]) &&
                         (x < plane[no_of_planes*9+2]) &&
@@ -1560,6 +1569,8 @@ void svs_filter_plane(
 
                     if (max_hits < plane[no_of_planes*9+8]) {
                         max_hits = plane[no_of_planes*9+8];
+                        
+                        /* find the disparity value at this point on the plane */
                         disp = plane[no_of_planes*9+4] +
                                ((x - plane[no_of_planes*9+0]) *
                                 (plane[no_of_planes*9+6] - plane[no_of_planes*9+4]) /
@@ -1569,9 +1580,14 @@ void svs_filter_plane(
                                  (plane[no_of_planes*9+7] - plane[no_of_planes*9+5]) /
                                  (plane[no_of_planes*9+3] - plane[no_of_planes*9+1]));
                         disp = (disp + disp2)/2;
-                        if (disp < 4) {
+                        
+                        /* ignore big disparities, which are likely to be noise */
+                        if (disp < 4) { 
+                            /* update disparity for this stereo match */
                             svs_matches[i * 4 + 3] = disp;
-                            svs_matches[i * 4] = 1;
+                            
+                            /* non zero match probability resurects this stereo match */
+                            svs_matches[i * 4] = 1; 
                         }
                     }
                 }
