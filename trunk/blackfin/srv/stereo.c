@@ -1436,7 +1436,8 @@ void svs_filter_plane(
                     max_ww = ww;
             }
         }
-        hist_mean /= hist_mean_hits;
+        if (hist_mean_hits > 0)
+            hist_mean /= hist_mean_hits;
 
         /* fit a line to the disparity values */
         ww0 = 0;
@@ -1560,29 +1561,29 @@ void svs_filter_plane(
             y = svs_matches[i * 4 + 2];
             max_hits = 0;
             for (j = no_of_planes-1; j >= 0; j--) {
-                if ((x > plane[no_of_planes*9+0]) &&
-                        (x < plane[no_of_planes*9+2]) &&
-                        (y > plane[no_of_planes*9+1]) &&
-                        (y < plane[no_of_planes*9+3])) {
+                if ((x > plane[j*9+0]) &&
+                        (x < plane[j*9+2]) &&
+                        (y > plane[j*9+1]) &&
+                        (y < plane[j*9+3])) {
 
-                    if (max_hits < plane[no_of_planes*9+7]) {
+                    if (max_hits < plane[j*9+7]) {
                                         
-                        max_hits = plane[no_of_planes*9+7];
+                        max_hits = plane[j*9+7];
                         
                         /* find the disparity value at this point on the plane */
-                        if (plane[no_of_planes*9+4] == 1) {
+                        if (plane[j*9+4] == 1) {
                         
-                            disp = plane[no_of_planes*9+5] +
-                                   ((x - plane[no_of_planes*9+0]) *
-                                    (plane[no_of_planes*9+6] - plane[no_of_planes*9+5]) /
-                                    (plane[no_of_planes*9+2] - plane[no_of_planes*9+0]));
+                            disp = plane[j*9+5] +
+                                   ((x - plane[j*9+0]) *
+                                    (plane[j*9+6] - plane[j*9+5]) /
+                                    (plane[j*9+2] - plane[j*9+0]));
                         }
                         else {
 
-                            disp = plane[no_of_planes*9+5] +
-                                    ((y - plane[no_of_planes*9+1]) *
-                                     (plane[no_of_planes*9+6] - plane[no_of_planes*9+5]) /
-                                     (plane[no_of_planes*9+3] - plane[no_of_planes*9+1]));
+                            disp = plane[j*9+5] +
+                                    ((y - plane[j*9+1]) *
+                                     (plane[j*9+6] - plane[j*9+5]) /
+                                     (plane[j*9+3] - plane[j*9+1]));
                         }
                         
                         /* ignore big disparities, which are likely to be noise */
