@@ -816,7 +816,6 @@ int svs_grab(
 int svs_match(
     int ideal_no_of_matches,          /* ideal number of matches to be returned */
     int max_disparity_percent,        /* max disparity as a percent of image width */
-    int descriptor_match_threshold,   /* minimum no of descriptor bits to be matched, in the range 1 - SVS_DESCRIPTOR_PIXELS */
     int learnDesc,                    /* descriptor match weight */
     int learnLuma,                    /* luminance match weight */
     int learnDisp,                    /* disparity weight */
@@ -991,60 +990,57 @@ int svs_match(
                         BitsSetTable256[(desc_match >> 16) & 0xff] +
                         BitsSetTable256[desc_match >> 24];
 
-                    /* were enough bits matched ? */
-                    //if ((int)correlation >= descriptor_match_threshold)
-                    {
-                        /* bitwise descriptor anti-correlation match */
-                        desc_match = descLanti & descR;
+                    /* bitwise descriptor anti-correlation match */
+                    desc_match = descLanti & descR;
 
-                        /* count the number of anti-correlation bits */
-                        anticorrelation =
-                            BitsSetTable256[desc_match & 0xff] +
-                            BitsSetTable256[(desc_match >> 8) & 0xff] +
-                            BitsSetTable256[(desc_match >> 16) & 0xff] +
-                            BitsSetTable256[desc_match >> 24];
+                    /* count the number of anti-correlation bits */
+                    anticorrelation =
+                        BitsSetTable256[desc_match & 0xff] +
+                        BitsSetTable256[(desc_match >> 8) & 0xff] +
+                        BitsSetTable256[(desc_match >> 16) & 0xff] +
+                        BitsSetTable256[desc_match >> 24];
 
-                        if (luma_diff < 0)
-                            luma_diff = -luma_diff;
-                        int score =
-                            10000 +
-                            (max_disp * learnDisp) +
-                            (((int)correlation + (int)(SVS_DESCRIPTOR_PIXELS - anticorrelation)) * learnDesc) -
-                            (luma_diff * learnLuma) -
-                            (disp * learnDisp);
+                    if (luma_diff < 0)
+                        luma_diff = -luma_diff;
+                    int score =
+                        10000 +
+                        (max_disp * learnDisp) +
+                        (((int)correlation + (int)(SVS_DESCRIPTOR_PIXELS - anticorrelation)) * learnDesc) -
+                        (luma_diff * learnLuma) -
+                        (disp * learnDisp);
 
-                        if (use_priors) {
-                            disp_diff = disp - disp_prior;
-                            if (disp_diff < 0)
-                                disp_diff = -disp_diff;
-                            score -= disp_diff * learnPrior;
+                    if (use_priors) {
+                        disp_diff = disp - disp_prior;
+                        if (disp_diff < 0)
+                            disp_diff = -disp_diff;
+                        score -= disp_diff * learnPrior;
 
-                            /* bias for ground_plane */
-                            if (svs_enable_ground_priors) {
-                                if (y > footline_y) {
-                                    /* below the footline - bias towards ground plane */
-                                    disp_diff = disp - ((y - ground_y_sloped) * max_disp_pixels / ground_height_sloped);
+                        /* bias for ground_plane */
+                        if (svs_enable_ground_priors) {
+                            if (y > footline_y) {
+                                /* below the footline - bias towards ground plane */
+                                disp_diff = disp - ((y - ground_y_sloped) * max_disp_pixels / ground_height_sloped);
+                                if (disp_diff < 0) disp_diff = -disp_diff;
+                                score -= disp_diff * groundPrior;
+                            }
+                            else {
+                                if (ground_prior > 0) {
+                                    /* above the footline - bias towards obstacle*/
+                                    disp_diff = disp - ground_prior;
                                     if (disp_diff < 0) disp_diff = -disp_diff;
-                                    score -= disp_diff * groundPrior;
-                                }
-                                else {
-                                    if (ground_prior > 0) {
-                                        /* above the footline - bias towards obstacle*/
-                                        disp_diff = disp - ground_prior;
-                                        if (disp_diff < 0) disp_diff = -disp_diff;
-                                        score -= disp_diff * obstaclePrior;
-                                    }
+                                    score -= disp_diff * obstaclePrior;
                                 }
                             }
                         }
-
-                        if (score < 0)
-                            score = 0;
-
-                        /* store overall matching score */
-                        row_peaks[R] = (unsigned int)score;
-                        total += row_peaks[R];
                     }
+
+                    if (score < 0)
+                        score = 0;
+
+                    /* store overall matching score */
+                    row_peaks[R] = (unsigned int)score;
+                    total += row_peaks[R];
+                    
                 }
                 else
                 {
@@ -2136,8 +2132,6 @@ void svs_stereo(int send_disparities)
         if (svs_receive_features() > -1) {
             int ideal_no_of_matches = 400;
             int max_disparity_percent = 40;
-            /* minimum no of descriptor bits to be matched, in the range 1 - SVS_DESCRIPTOR_PIXELS */
-            int descriptor_match_threshold = 0;
             /* descriptor match weight */
             int learnDesc = 90;
             /* luminance match weight */
@@ -2155,7 +2149,6 @@ void svs_stereo(int send_disparities)
             matches = svs_match(
                           ideal_no_of_matches,
                           max_disparity_percent,
-                          descriptor_match_threshold,
                           learnDesc,
                           learnLuma,
                           learnDisp,
