@@ -176,6 +176,9 @@ unsigned char *valid_quadrants;
 /* array used to store a disparity histogram */
 int* disparity_histogram_plane;
 int* disparity_plane_fit;
+
+/* number of detected planes found during the filtering step */
+int no_of_planes;
 int* plane;
 
 /* maps raw image pixels to rectified pixels */
@@ -989,7 +992,7 @@ int svs_match(
                         BitsSetTable256[desc_match >> 24];
 
                     /* were enough bits matched ? */
-                    if ((int)correlation >= descriptor_match_threshold)
+                    //if ((int)correlation >= descriptor_match_threshold)
                     {
                         /* bitwise descriptor anti-correlation match */
                         desc_match = descLanti & descR;
@@ -1257,7 +1260,8 @@ void svs_filter_plane(
     int hist_thresh, hist_mean, hist_mean_hits, mass, disp2;
     int min_ww, max_ww, m, ww, d;
     int ww0, ww1, disp0, disp1, cww, dww, ddisp;
-    int max_hits, no_of_planes = 0;
+    int max_hits;
+    no_of_planes = 0;
 
     /* clear quadrants */
     memset(valid_quadrants, 0, no_of_possible_matches * sizeof(unsigned char));
@@ -1309,7 +1313,7 @@ void svs_filter_plane(
             break;
         }
 
-        // centre hemifield (vertical)
+        // centre field (vertical)
         case 4: {
             tx = imgWidth / 3;
             bx = imgWidth * 2 / 3;
@@ -1317,7 +1321,7 @@ void svs_filter_plane(
             horizontal = 0;
             break;
         }
-        // centre above hemifield
+        // centre above field
         case 5: {
             tx = imgWidth / 3;
             ty = 0;
@@ -1327,7 +1331,7 @@ void svs_filter_plane(
             horizontal = 0;
             break;
         }
-        // centre below hemifield
+        // centre below field
         case 6: {
             tx = imgWidth / 3;
             ty = imgHeight / 2;
@@ -1381,7 +1385,7 @@ void svs_filter_plane(
 
         /* update the disparity histogram */
         n = 0;
-        for (i = 0; i < no_of_possible_matches; i++) {
+        for (i = no_of_possible_matches-1; i >= 0; i--) {
             x = svs_matches[i * 4 + 1];
             if ((x > tx) && (x < bx)) {
                 y = svs_matches[i * 4 + 2];
@@ -1476,12 +1480,10 @@ void svs_filter_plane(
         int plane_ty = 0;
         int plane_bx = imgHeight;
         int plane_by = 0;
-        int plane_disp_tx = 0;
-        int plane_disp_ty = 0;
-        int plane_disp_bx = 0;
-        int plane_disp_by = 0;
+        int plane_disp0 = 0;
+        int plane_disp1 = 0;
         int hits = 0;
-        for (i = 0; i < no_of_possible_matches; i++) {
+        for (i = no_of_possible_matches-1; i >= 0; i--) {
             x = svs_matches[i * 4 + 1];
             if ((x > tx) && (x < bx)) {
                 y = svs_matches[i * 4 + 2];
@@ -1515,19 +1517,19 @@ void svs_filter_plane(
                         /* keep note of the bounds of the plane */
                         if (x < plane_tx) {
                             plane_tx = x;
-                            plane_disp_tx = disp2;
+                            if (horizontal == 1) plane_disp0 = disp2;
                         }
                         if (y < plane_ty) {
                             plane_ty = y;
-                            plane_disp_ty = disp2;
+                            if (horizontal == 0) plane_disp0 = disp2;
                         }
                         if (x > plane_bx) {
                             plane_bx = x;
-                            plane_disp_bx = disp2;
+                            if (horizontal == 1) plane_disp1 = disp2;
                         }
                         if (y > plane_by) {
                             plane_by = y;
-                            plane_disp_by = disp2;
+                            if (horizontal == 0) plane_disp1 = disp2;
                         }
                     }
                 }
@@ -1539,17 +1541,17 @@ void svs_filter_plane(
             plane[no_of_planes*9+1]=plane_ty;
             plane[no_of_planes*9+2]=plane_bx;
             plane[no_of_planes*9+3]=plane_by;
-            plane[no_of_planes*9+4]=plane_disp_tx;
-            plane[no_of_planes*9+5]=plane_disp_ty;
-            plane[no_of_planes*9+6]=plane_disp_bx;
-            plane[no_of_planes*9+7]=plane_disp_by;
-            plane[no_of_planes*9+8]=hits;
+            plane[no_of_planes*9+4]=horizontal;
+            plane[no_of_planes*9+5]=plane_disp0;
+            plane[no_of_planes*9+6]=plane_disp1;
+            plane[no_of_planes*9+7]=hits;
+            plane[no_of_planes*9+8]=0;
             no_of_planes++;
         }
     }
 
     /* deal with the outliers */
-    for (i = 0; i < no_of_possible_matches; i++) {
+    for (i = no_of_possible_matches-1; i >= 0; i--) {
         if (valid_quadrants[i] == 0) {
         
             /* by default set outlier probability to zero,
@@ -1561,25 +1563,31 @@ void svs_filter_plane(
             x = svs_matches[i * 4 + 1];
             y = svs_matches[i * 4 + 2];
             max_hits = 0;
-            for (j = 0; j < no_of_planes; j++) {
+            for (j = no_of_planes-1; j >= 0; j--) {
                 if ((x > plane[no_of_planes*9+0]) &&
                         (x < plane[no_of_planes*9+2]) &&
                         (y > plane[no_of_planes*9+1]) &&
                         (y < plane[no_of_planes*9+3])) {
 
-                    if (max_hits < plane[no_of_planes*9+8]) {
-                        max_hits = plane[no_of_planes*9+8];
+                    if (max_hits < plane[no_of_planes*9+7]) {
+                                        
+                        max_hits = plane[no_of_planes*9+7];
                         
                         /* find the disparity value at this point on the plane */
-                        disp = plane[no_of_planes*9+4] +
-                               ((x - plane[no_of_planes*9+0]) *
-                                (plane[no_of_planes*9+6] - plane[no_of_planes*9+4]) /
-                                (plane[no_of_planes*9+2] - plane[no_of_planes*9+0]));
-                        disp2 = plane[no_of_planes*9+5] +
-                                ((y - plane[no_of_planes*9+1]) *
-                                 (plane[no_of_planes*9+7] - plane[no_of_planes*9+5]) /
-                                 (plane[no_of_planes*9+3] - plane[no_of_planes*9+1]));
-                        disp = (disp + disp2)/2;
+                        if (plane[no_of_planes*9+4] == 1) {
+                        
+                            disp = plane[no_of_planes*9+5] +
+                                   ((x - plane[no_of_planes*9+0]) *
+                                    (plane[no_of_planes*9+6] - plane[no_of_planes*9+5]) /
+                                    (plane[no_of_planes*9+2] - plane[no_of_planes*9+0]));
+                        }
+                        else {
+
+                            disp = plane[no_of_planes*9+5] +
+                                    ((y - plane[no_of_planes*9+1]) *
+                                     (plane[no_of_planes*9+6] - plane[no_of_planes*9+5]) /
+                                     (plane[no_of_planes*9+3] - plane[no_of_planes*9+1]));
+                        }
                         
                         /* ignore big disparities, which are likely to be noise */
                         if (disp < 4) { 
@@ -2126,7 +2134,7 @@ void svs_stereo(int send_disparities)
         t[1] = readRTC();
 #endif
         if (svs_receive_features() > -1) {
-            int ideal_no_of_matches = 200;
+            int ideal_no_of_matches = 400;
             int max_disparity_percent = 40;
             /* minimum no of descriptor bits to be matched, in the range 1 - SVS_DESCRIPTOR_PIXELS */
             int descriptor_match_threshold = 0;
