@@ -10,13 +10,18 @@
 // Config options
 //
 var debugging = false;
-var frameRate = 30;
+var frameRate = 15;
 
 
 
 var reqPending = false;
+var reqTimeout = false;
+
 var btnPending = null;
+var btnXhr;
+var btnReqTimerId;
 var imgPending = false;
+
 var btnsVisible = true;
 
 
@@ -59,10 +64,9 @@ dbg ("cameraOnLoad");
         btnPending = null;
         btnClick (temp);
     }
-    //if (imgPending)
-    //    nextImage();
+    //if (imgPending)       // If the nextImage timer went off while we were fetching an image, fetch the next one
+    //    nextImage();      // Disabled: This only seems to fetch a second copy of the same frame
 }
-
 
 
 function btnClick (btn)
@@ -71,16 +75,35 @@ dbg ("enterBtnClick");
     if (!reqPending)
     {
         reqPending = true;
-        xhr = new XMLHttpRequest();
-        xhr.open ("GET", "robot.cgi?" + btn + "&b=" + new Date().getTime(), false);
-        xhr.setRequestHeader ("Cache-Control", "no-cache");
-        xhr.setRequestHeader ("Pragma", "no-cache");
-        xhr.send (null);
-        reqPending = false;
-dbg ("exitBtnClick:" + xhr.readyState + "|" + xhr.responseText);
+        btnXhr = new XMLHttpRequest();
+        btnXhr.open ("GET", "robot.cgi?" + btn + "&b=" + new Date().getTime(), true);
+        btnXhr.setRequestHeader ("Cache-Control", "no-cache");
+        btnXhr.setRequestHeader ("Pragma", "no-cache");
+        btnXhr.onreadystatechange = btnClickComplete;
+        btnReqTimerId = setTimeout (btnClickTimeout, 2000);
+        btnXhr.send (null);
     }
     else
         btnPending = btn;
+}
+
+
+function btnClickComplete ()
+{
+    if (btnXhr.readyState == 4)
+    {
+dbg ("btnClickComplete");
+        reqPending = false;
+        clearTimeout (btnReqTimerId);
+    }
+}
+
+
+function btnClickTimeout ()
+{
+dbg ("btnClickTimeout");
+    btnXhr.abort();
+    reqPending = false;
 }
 
 
