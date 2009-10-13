@@ -12,7 +12,12 @@ SRV-1 firmware build for Blackfin - 8 October 2009
 
 * extended HTTPD functionality with motor control overlay and tested 
   compatibility with iPhone and Google Android
-  
+ 
+* fixed an error in the 'vb' blob search function which will dump 2^32
+  blob table entries if too many blobs were found
+
+* changed timing for ublox gps_parse()
+
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 12 September 2009 
