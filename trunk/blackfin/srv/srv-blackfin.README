@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 8 October 2009 
+SRV-1 firmware build for Blackfin - 14 October 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added invert_video() support for OV7725

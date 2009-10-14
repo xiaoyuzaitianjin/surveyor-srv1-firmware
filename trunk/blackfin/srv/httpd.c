@@ -35,8 +35,10 @@ extern int  clean_buffer(char *);
 extern int  base64_camera_frame(char *, int);
 void binary_camera_frame();
 
+
 #define REQBUF_SIZE         1024
 #define INLINEIMGBUF_SIZE   (64 * 1024)
+
 
 char *names[] = {  // index from file name to flash sector:  
     "/00.html",  // sector 10-11
@@ -51,10 +53,14 @@ char *names[] = {  // index from file name to flash sector:
     "/09.html"   // sector 28-29
 };
 
+
 static char inlineImgTag[] = "$$camera$$";
+
 static char cgiBody[] = "0\r\n";
 
 #define CONNECTION_HEADER   "Connection: Close\r\n"       // better in IE, Safari
+
+
 
 void httpd_get()
 {
@@ -72,37 +78,39 @@ void httpd_get()
     int insertInlineImg = FALSE;
     char * inlineTagPtr = 0;
 
+
+    //
     // Receive and parse the request
+    //
     reqBuf[0] = 'G';
     ret = 1;
     t0 = readRTC();
-
     while (((readRTC()-t0) < 1000) && (ret < REQBUF_SIZE)){
-        if (getchar((unsigned char *) &ch)) {
-            char pch = reqBuf[ret - 1];
+        if (getchar((unsigned char *) &ch))
+        {
+            char pch = reqBuf[ret - 1];     // ret always >= 1
             reqBuf[ret++] = ch;
-            //if (ch == '\n')
-            //    break;
-            // Read to the end of the headers: handle any permutation of empty line EOL sequences
-            if ((pch == 0x0a  &&  ch == 0x0d)  ||  (pch == 0x0d  &&  ch == 0x0d)  ||  (pch == 0x0a  &&  ch == 0x0a))
+                            // Read to the end of the headers: handle any permutation of empty line EOL sequences
+                            // Apparently some clients just terminate lines with LF
+            if ((ret >= 4  &&  strncmp (reqBuf + ret - 4, "\r\n\r\n", 4) == 0)  ||
+                (pch == 0x0d  &&  ch == 0x0d)  ||  (pch == 0x0a  &&  ch == 0x0a))
                 break;
         }
     }
+    reqBuf[ret] = 0;
+
 
     method = strtok(reqBuf, " ");
     path = strtok(0, " ");
     protocol = strtok(0, "\r");
-    DebugStr ("httpd_get enter: method="); DebugStr (method); DebugStr (" path="); DebugStr (path); DebugStr ("\r\n");
-
+DebugStr ("httpd_get enter: method="); DebugStr (method); DebugStr (" path="); DebugStr (path); DebugStr ("\r\n");
     if (!method || !path || !protocol) 
         goto exit;
     //printf("method: %s   path: %s   protocol: %s\r\n", method, path, protocol);
     if (strcmp(method, "GET") != 0) {
-
-    DebugStr ("http_get 501 method=");
-    DebugStr (method);
-    DebugStr ("\r\n");
-
+DebugStr ("http_get 501 method=");
+DebugStr (method);
+DebugStr ("\r\n");
         static char Body501[] = "Method not supported\r\n";
         printf ("HTTP/1.1 501 Method not supported\r\n"
                 "Content-Type: text/html\r\n"
@@ -114,13 +122,17 @@ void httpd_get()
         goto exit;
     }
 
+    //
     // Camera image binary - robot.jpg
+    //
     if (strncmp(path, "/robot.jpg", 10) == 0) {
          binary_camera_frame();
          goto exit;
     }
 
+    //
     // Robot control - robot.cgi
+    //
     else if (strncmp(path, "/robot.cgi?", 11) == 0) {
         switch(path[11]) {
             case 'l':
@@ -162,11 +174,15 @@ void httpd_get()
                 motor_set(path[11], base_speed, &lspeed, &rspeed);
                 break;
         }
+
         body = cgiBody;
         contentLength = sizeof (cgiBody) - 1;
         contentType = "text/plain";
     }
+
+    //
     // HTML from flash
+    //
     else {
         char * cp;
         if ((strcmp(path, "/") == 0) || (strcmp(path, "/index.html") == 0))
@@ -187,12 +203,13 @@ void httpd_get()
                 goto exit;
             }
         }
-
         read_double_sector((i*2) + 10, 1);  // set quiet flag
         body = cp = (char *) FLASH_BUFFER;
         bodyLength = contentLength = clean_buffer(cp);  // last character of html file should be '>'.  clean out anything else
     
+        //
         // See if the inline image tag is present and generate the image if needed
+        //
         insertInlineImg = FALSE;
         while ((*cp != 0) && (cp < (char *)(FLASH_BUFFER+0x00020000))) {
             if ((*cp == '$') && (*(cp+1) == '$')) {
@@ -210,7 +227,9 @@ void httpd_get()
         }
     }
 
+    //
     // Send response headers
+    //
     printf ("HTTP/1.1 200 OK\r\n"
             "Content-Type: %s\r\n"
             "Cache-Control: no-cache\r\n"
@@ -220,7 +239,10 @@ void httpd_get()
             "\r\n",
             contentType,
             contentLength);
+
+    //
     // Send response body
+    //
     if (insertInlineImg) {
         putchars ((unsigned char *) body, inlineTagPtr - body);
         putchars ((unsigned char *) inlineImgBuf, inlineImgLength);
@@ -231,8 +253,10 @@ void httpd_get()
         putchars ((unsigned char *) body, contentLength);
 
 exit:
-    DebugStr ("httpd_get exit\r\n");
+DebugStr ("httpd_get exit\r\n");
 }
+
+
 
 int     base64_camera_frame (
 char *  buf,
@@ -284,23 +308,24 @@ int     bufSize) {
 
 
 void binary_camera_frame() {
-    int i;
-    unsigned int image_size;
-    unsigned char *output_start, *output_end;
-    unsigned char *cp;
-    grab_frame();
-    output_start = (unsigned char *)JPEG_BUF;
-    output_end = encode_image((unsigned char *)FRAME_BUF,  output_start, quality,
-                               FOUR_TWO_TWO, imgWidth, imgHeight);
-    image_size = (unsigned int)(output_end - output_start);
+     int i;
+     unsigned int image_size;
+     unsigned char *output_start, *output_end;
+     unsigned char *cp;
 
-    #ifdef _DEBUG
-    char db[128];
-    sprintf (db, "Sending JPG %d bytes\r\n", image_size);
-    DebugStr (db);
-    #endif
+     grab_frame();
+     output_start = (unsigned char *)JPEG_BUF;
+     output_end = encode_image((unsigned char *)FRAME_BUF,  output_start, quality,
+                                FOUR_TWO_TWO, imgWidth, imgHeight);
+     image_size = (unsigned int)(output_end - output_start);
 
-    printf("HTTP/1.1 200 OK\r\n"
+#ifdef _DEBUG
+char db[128];
+sprintf (db, "Sending JPG %d bytes\r\n", image_size);
+DebugStr (db);
+#endif
+
+     printf("HTTP/1.1 200 OK\r\n"
             "Content-Type: image/jpeg\r\n"
             "Content-Length: %d\r\n"
             "Cache-Control: no-cache\r\n"
@@ -308,22 +333,23 @@ void binary_camera_frame() {
             CONNECTION_HEADER
             "\r\n",
             image_size);
-    led1_on();
-
-    cp = (unsigned char *)JPEG_BUF;
-    for (i=0; i<image_size; i++)
+     led1_on();
+     cp = (unsigned char *)JPEG_BUF;
+     for (i=0; i<image_size; i++)
          putchar(*cp++);
-    DebugStr ("Send JPG done\r\n");
+DebugStr ("Send JPG done\r\n");
 }
+
 
 
 void httpd_post() {
 }
 
 
+
 int clean_buffer(char *buf) {
     char *cp;
-   
+    
     for (cp = (buf+0x1FFFF); cp > buf; cp--) {  // sweep buffer from end clearing out garbage characters
         if (*cp == '>') { // final html character
             cp[1] = '\r';
@@ -335,4 +361,5 @@ int clean_buffer(char *buf) {
     }
     return 0;
 }
+
 

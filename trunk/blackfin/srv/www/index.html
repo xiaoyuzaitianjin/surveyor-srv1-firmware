@@ -21,6 +21,7 @@ var btnPending = null;
 var btnXhr;
 var btnReqTimerId;
 var imgPending = false;
+var imgIndex = 0;
 
 var btnsVisible = true;
 
@@ -44,7 +45,8 @@ function nextImage ()
     if (!reqPending)
     {
 dbg ("nextImage");
-        document.getElementById ("camera").src = "robot.jpg?i=" + new Date().getTime();
+        document.getElementById ("camera").src = "robot.jpg?i=" + new Date().getTime() + imgIndex.toString(10);
+        ++imgIndex;
         reqPending = true;
         imgPending = false;
     }
