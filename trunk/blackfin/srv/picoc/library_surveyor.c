@@ -388,10 +388,6 @@ void Cvjpeg (struct ParseState *Parser, struct Value *ReturnValue, struct Value 
             FOUR_TWO_TWO, imgWidth, imgHeight); 
     image_size = (unsigned int)(output_end - output_start);
 
-    cp = (unsigned char *)JPEG_BUF;
-    for (ix=0; ix<image_size; ix++) 
-        putchar(*cp++);
-
     ReturnValue->Val->Integer = image_size;
 }
 

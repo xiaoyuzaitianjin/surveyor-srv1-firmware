@@ -360,7 +360,7 @@ Linker script and memory map
                 0xffa07d0c                nnset_pattern
                 0xffa07fa0                nnscale8x8
 
-.text           0x00000000     0x9640
+.text           0x00000000     0x9624
  .text          0x00000000       0xf0 camera.o
                 0x00000000                camera_init
                 0x000000a8                camera_start
@@ -584,39 +584,39 @@ Linker script and memory map
                 0x00007f10                LibraryInit
                 0x00007e98                CLibraryInit
                 0x00007c34                LibGetc
- .text          0x00007fb0     0x1458 picoc/library_surveyor.o
+ .text          0x00007fb0     0x143c picoc/library_surveyor.o
                 0x000086fc                Ctan
-                0x00008da0                Cvrcap
+                0x00008d84                Cvrcap
                 0x0000875c                Cwritei2c
-                0x00008e08                Csonar
+                0x00008dec                Csonar
                 0x000085d0                Cnninit
                 0x0000873c                Csin
-                0x000090a0                Cencoders
+                0x00009084                Cencoders
                 0x00007fe0                Cioread
                 0x00008364                Cnnmatchblob
                 0x000080a8                Claser
                 0x00008790                Cvcam
-                0x00008ce0                Cvscan
-                0x00008dec                Crange
+                0x00008cc4                Cvscan
+                0x00008dd0                Crange
                 0x00008854                Cgps
                 0x0000810c                Cvcolor
-                0x00008f60                Cmotors2
+                0x00008f44                Cmotors2
                 0x000085d4                Csqrt
                 0x00008334                Cnnshow
-                0x00008ee8                Cservos
+                0x00008ecc                Cservos
                 0x00008adc                Cvsend
                 0x0000871c                Ccos
                 0x00008684                Cacos
-                0x00008e70                Cservos2
+                0x00008e54                Cservos2
                 0x00008a48                Ccompass
                 0x000081b4                Cautorun
-                0x00009000                Cmotors
+                0x00008fe4                Cmotors
                 0x000088b4                Canalog
                 0x000086c0                Casin
                 0x0000806c                Cpoke
-                0x00008da4                Cvcap
+                0x00008d88                Cvcap
                 0x00008628                Cgps_head
-                0x00008d54                Cvpix
+                0x00008d38                Cvpix
                 0x00008224                Cexit
                 0x00008b2c                Cvjpeg
                 0x000080ec                Cbattery
@@ -626,33 +626,33 @@ Linker script and memory map
                 0x0000881c                Creadi2c
                 0x000087dc                Creadi2c2
                 0x00008018                Cpeek
-                0x000090f0                Cinput
-                0x000090c8                Crand
+                0x000090d4                Cinput
+                0x000090ac                Crand
                 0x0000819c                Ctime
-                0x00008da8                Cvfind
+                0x00008d8c                Cvfind
                 0x00008548                Cnntrain
                 0x00008188                Cvdiff
                 0x00007fb0                Ciodir
                 0x00008ac4                Cdelay
-                0x00008bac                Cvblob
-                0x00009138                PlatformLibraryInit
+                0x00008b90                Cvblob
+                0x0000911c                PlatformLibraryInit
                 0x00008478                Cnntest
                 0x00008240                Cnnset
                 0x00007ff8                Ciowrite
                 0x000085f4                Cgps_dist
-                0x0000910c                Csignal
-                0x00008ca0                Cvmean
- .text          0x00009408      0x190 picoc/platform.o
-                0x000094fc                PlatformPrintf
-                0x00009518                LexFail
-                0x00009408                PlatformVPrintf
-                0x00009554                ProgramFail
- .text          0x00009598       0xa8 picoc/platform_surveyor.o
-                0x000095d0                PlatformPutc
-                0x000095d8                PlatformGetLine
-                0x00009598                PlatformCleanup
-                0x000095c0                PlatformGetCharacter
-                0x000095a4                PlatformExit
+                0x000090f0                Csignal
+                0x00008c84                Cvmean
+ .text          0x000093ec      0x190 picoc/platform.o
+                0x000094e0                PlatformPrintf
+                0x000094fc                LexFail
+                0x000093ec                PlatformVPrintf
+                0x00009538                ProgramFail
+ .text          0x0000957c       0xa8 picoc/platform_surveyor.o
+                0x000095b4                PlatformPutc
+                0x000095bc                PlatformGetLine
+                0x0000957c                PlatformCleanup
+                0x000095a4                PlatformGetCharacter
+                0x00009588                PlatformExit
 
 .l1data         0xff800000     0x179c
  *(.data)
@@ -830,11 +830,11 @@ Linker script and memory map
  *(SORT(.dtors.*))
  *(.dtors)
 
-.sdram.bss      0x00009640        0x0
-                0x00009640                __sdram_bss_start = .
+.sdram.bss      0x00009624        0x0
+                0x00009624                __sdram_bss_start = .
  *(.bss.sdram)
-                0x00009640                . = ALIGN (0x4)
-                0x00009640                __sdram_bss_end = .
+                0x00009624                . = ALIGN (0x4)
+                0x00009624                __sdram_bss_end = .
 
 .bss            0xff900000     0x40c8
                 0xff900000                __bss_start = .
@@ -1083,7 +1083,7 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_abbrev  0x00002e24      0x142 picoc/platform.o
  .debug_abbrev  0x00002f66      0x168 picoc/platform_surveyor.o
 
-.debug_info     0x00000000     0xf495
+.debug_info     0x00000000     0xf48d
  .debug_info    0x00000000      0x136 camera.o
  .debug_info    0x00000136      0x1e7 edit.o
  .debug_info    0x0000031d      0x448 httpd.o
@@ -1113,11 +1113,11 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x0000ab78      0xcda picoc/type.o
  .debug_info    0x0000b852      0xb67 picoc/variable.o
  .debug_info    0x0000c3b9      0xaa1 picoc/clibrary.o
- .debug_info    0x0000ce5a     0x2101 picoc/library_surveyor.o
- .debug_info    0x0000ef5b      0x2fb picoc/platform.o
- .debug_info    0x0000f256      0x23f picoc/platform_surveyor.o
+ .debug_info    0x0000ce5a     0x20f9 picoc/library_surveyor.o
+ .debug_info    0x0000ef53      0x2fb picoc/platform.o
+ .debug_info    0x0000f24e      0x23f picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x3c31
+.debug_line     0x00000000     0x3c28
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143      0x168 httpd.o
@@ -1147,11 +1147,11 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_line    0x00003212      0x1e4 picoc/type.o
  .debug_line    0x000033f6      0x1a2 picoc/variable.o
  .debug_line    0x00003598      0x176 picoc/clibrary.o
- .debug_line    0x0000370e      0x3cc picoc/library_surveyor.o
- .debug_line    0x00003ada       0xc7 picoc/platform.o
- .debug_line    0x00003ba1       0x90 picoc/platform_surveyor.o
+ .debug_line    0x0000370e      0x3c3 picoc/library_surveyor.o
+ .debug_line    0x00003ad1       0xc7 picoc/platform.o
+ .debug_line    0x00003b98       0x90 picoc/platform_surveyor.o
 
-.debug_frame    0x00000000     0x3938
+.debug_frame    0x00000000     0x3934
  .debug_frame   0x00000000       0x4c camera.o
  .debug_frame   0x0000004c      0x100 edit.o
  .debug_frame   0x0000014c       0xb8 httpd.o
@@ -1181,11 +1181,11 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_frame   0x00002ae4      0x1dc picoc/type.o
  .debug_frame   0x00002cc0      0x2e0 picoc/variable.o
  .debug_frame   0x00002fa0      0x1b4 picoc/clibrary.o
- .debug_frame   0x00003154      0x6dc picoc/library_surveyor.o
- .debug_frame   0x00003830       0x7c picoc/platform.o
- .debug_frame   0x000038ac       0x8c picoc/platform_surveyor.o
+ .debug_frame   0x00003154      0x6d8 picoc/library_surveyor.o
+ .debug_frame   0x0000382c       0x7c picoc/platform.o
+ .debug_frame   0x000038a8       0x8c picoc/platform_surveyor.o
 
-.debug_loc      0x00000000    0x130c1
+.debug_loc      0x00000000    0x13085
  .debug_loc     0x00000000       0x5b camera.o
  .debug_loc     0x0000005b      0x2eb edit.o
  .debug_loc     0x00000346      0x529 httpd.o
@@ -1215,9 +1215,9 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_loc     0x0000ee7b      0x951 picoc/type.o
  .debug_loc     0x0000f7cc      0xd45 picoc/variable.o
  .debug_loc     0x00010511      0x8db picoc/clibrary.o
- .debug_loc     0x00010dec     0x1f2b picoc/library_surveyor.o
- .debug_loc     0x00012d17      0x20f picoc/platform.o
- .debug_loc     0x00012f26      0x19b picoc/platform_surveyor.o
+ .debug_loc     0x00010dec     0x1eef picoc/library_surveyor.o
+ .debug_loc     0x00012cdb      0x20f picoc/platform.o
+ .debug_loc     0x00012eea      0x19b picoc/platform_surveyor.o
 
 .debug_pubnames
                 0x00000000     0x2794
