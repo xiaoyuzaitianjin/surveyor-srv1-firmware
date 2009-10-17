@@ -5,5 +5,5 @@ lsz -Xkbv --tcp-client 192.168.0.15:10001 srv1.ldr
 sleep 1
 echo
 echo make certain that file transfer successfully completed, then
-echo type zZ [enter] to write srv1-c.ldr to the flash boot sector:
+echo type zZ [enter] to write srv1.ldr to the flash boot sector:
 nc 192.168.0.15 10001

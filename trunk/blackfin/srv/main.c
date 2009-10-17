@@ -36,15 +36,13 @@ int main() {
     init_io(); // Initialise LED, GPIO, serial flow & lasers.
     initRTC();
     initTMR4();
-    init_uart0();
+    init_uart0(UART0_BAUDRATE);
     init_colors();
     init_analog();
     init_tilt();
     disable_failsafe();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
     camera_setup(); // Sets up the camera to 320x240
-    //init_uart1();
-    //suartInit(115200);  // initialize soft uart to 115.2k baud
     led1_on();
 
     #ifdef STEREO
@@ -278,6 +276,11 @@ int main() {
                     motor2_command();
                     break;
                 case 'x':
+                    if (xwd_init == 0) {
+                        xwd_init = 1;
+                        init_uart1(115200);
+                        delayMS(10);
+                    }
                     putchar('x');
                     //suartPutChar('x');
                     //suartPutChar(getch());

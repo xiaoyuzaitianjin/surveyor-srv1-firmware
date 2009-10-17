@@ -36,7 +36,7 @@ extern int  base64_camera_frame(char *, int);
 void binary_camera_frame();
 
 
-#define REQBUF_SIZE         1024
+#define REQBUF_SIZE         2048
 #define INLINEIMGBUF_SIZE   (64 * 1024)
 
 

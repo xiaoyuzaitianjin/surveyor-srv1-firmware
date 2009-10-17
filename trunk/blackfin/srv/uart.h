@@ -1,5 +1,5 @@
-void init_uart0();
-void init_uart1();
+void init_uart0(int);
+void init_uart1(int);
 
 void uart0SendChar(unsigned char s);
 void uart0SendString(unsigned char *s);

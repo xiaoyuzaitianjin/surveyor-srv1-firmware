@@ -88,7 +88,7 @@ char imgHead[11]; /* image frame header for I command */
 
 /* Motor globals */
 int lspeed, rspeed, lcount, rcount, lspeed2, rspeed2, base_speed, base_speed2, err1;
-int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init;
+int pwm1_mode, pwm2_mode, pwm1_init, pwm2_init, xwd_init;
 int encoder_flag;
 
 /* IMU globals */
@@ -137,6 +137,7 @@ void init_io() {
     pwm2_mode = PWM_OFF;
     pwm1_init = 0;
     pwm2_init = 0;
+    xwd_init = 0;
     sonar_flag = 0;
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
@@ -1212,10 +1213,11 @@ void write_double_sector (int isec, int quiet) {  // save 128kB to consecutive s
 /* Write boot flash sectors (1-2) from flash buffer
    Serial protocol char: z-Z */
 void write_boot_flash () {
-    unsigned char *cp;
+    unsigned int *ip;
     int ix;
-    cp = (unsigned char *)FLASH_BUFFER;
-    if (cp[1] != 0x00 && cp[2] != 0x80 && cp[3] != 0xFF) {
+    
+    ip = (unsigned int *)FLASH_BUFFER;  // look at first 4 bytes of LDR file - should be 0xFFA00000 or 0xFF800000
+    if ((*ip != 0xFFA00000) && (*ip != 0xFF800000)) {
         printf("##zZ boot image - invalid header\r\n");
         return;
     }                        

@@ -375,6 +375,43 @@ void Cvblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
     ReturnValue->Val->Integer = numblob;
 }
 
+void Cvjpeg (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    unsigned int ix, image_size, qual;
+    unsigned char *cp, *output_start, *output_end;
+    
+    qual = Param[0]->Val->Integer;
+    if ((qual < 1) || (qual > 8))
+        ProgramFail(NULL, "vjpeg():  quality parameter out of range");
+        
+    output_start = (unsigned char *)JPEG_BUF;
+    output_end = encode_image((unsigned char *)FRAME_BUF, output_start, qual, 
+            FOUR_TWO_TWO, imgWidth, imgHeight); 
+    image_size = (unsigned int)(output_end - output_start);
+
+    cp = (unsigned char *)JPEG_BUF;
+    for (ix=0; ix<image_size; ix++) 
+        putchar(*cp++);
+
+    ReturnValue->Val->Integer = image_size;
+}
+
+void Cvsend (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    unsigned int ix, image_size;
+    unsigned char *cp;
+    
+    image_size = Param[0]->Val->Integer;
+    if ((image_size < 0) || (image_size > 200000))
+        ProgramFail(NULL, "vsend():  image size out of range");
+        
+    led1_on();
+
+    cp = (unsigned char *)JPEG_BUF;
+    for (ix=0; ix<image_size; ix++) 
+        putchar(*cp++);
+
+    led0_on();
+}
+
 void Ccompass(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC6352 I2C compass
 {
     unsigned char i2c_data[2];
@@ -728,6 +765,8 @@ struct LibraryFunction PlatformLibrary[] =
     { Cvscan,       "int vscan(int, int)" },
     { Cvmean,       "void vmean()" },
     { Cvblob,       "int vblob(int, int)" },
+    { Cvjpeg,       "int vjpeg(int)" },
+    { Cvsend,       "void vsend(int)" },
     { Ccompass,     "int compass()" },
     { Canalog,      "int analog(int)" },
     { Ctilt,        "int tilt(int)" },

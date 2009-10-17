@@ -78,14 +78,16 @@ unsigned short suartGetChar(int timeout)  // check for incoming character, wait 
     return 0;
 }
 
-void init_uart0(void)
+void init_uart0(int baudrate)
 {
-    *pPORTF_FER |= 0x0003;  // enable UART0 pins
+    int uart_divider;
 
+    uart_divider = (((MASTER_CLOCK * VCO_MULTIPLIER) / SCLK_DIVIDER) / 16) / baudrate;
+    *pPORTF_FER |= 0x0003;  // enable UART0 pins
     *pUART0_GCTL = UCEN;
     *pUART0_LCR = DLAB;
-    *pUART0_DLL = UART0_DIVIDER;
-    *pUART0_DLH = UART0_DIVIDER >> 8;
+    *pUART0_DLL = uart_divider;
+    *pUART0_DLH = uart_divider >> 8;
     *pUART0_LCR = WLS(8); // 8 bit, no parity, one stop bit
 
     // dummy reads to clear possible pending errors / irqs
@@ -103,13 +105,16 @@ void uart0_CTS(int ix)  // set ~CTS signal.  1 = clear to send   0 = not clear t
         *pPORTHIO &= 0xFFBF;  // allow incoming data 
 }
 
-void init_uart1(void)
+void init_uart1(int baudrate)
 {
+    int uart_divider;
+
+    uart_divider = (((MASTER_CLOCK * VCO_MULTIPLIER) / SCLK_DIVIDER) / 16) / baudrate;
     *pPORTF_FER |= 0x000C;  // enable UART1 pins
     *pUART1_GCTL = UCEN;
     *pUART1_LCR = DLAB;
-    *pUART1_DLL = UART1_DIVIDER;
-    *pUART1_DLH = UART1_DIVIDER >> 8;
+    *pUART1_DLL = uart_divider;
+    *pUART1_DLH = uart_divider >> 8;
     *pUART1_LCR = WLS(8); // 8 bit, no parity, one stop bit
 
     char dummy = *pUART1_RBR;

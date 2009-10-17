@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 14 October 2009 
+SRV-1 firmware build for Blackfin - 17 October 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added invert_video() support for OV7725
@@ -18,6 +18,19 @@ SRV-1 firmware build for Blackfin - 14 October 2009
 
 * changed timing for ublox gps_parse()
 
+* added support for prototype SRV-4WD motor controller ('x' command)
+
+* changed uart0_init() and uart1_init() to pass baudrate as a parameter
+  instead of relying upon #DEFINE's in config.h
+
+* added vjpeg() and vsend() functions to compress and transmit a JPEG frame 
+  from picoC.  used in conjunction with vcap(), the sequence 
+      vcap(); 
+      int size = vjpeg(int quality);
+      vsend(size);
+  will capture and send a JPEG frame via UART0 / matchport without any 
+  additional headers
+ 
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 12 September 2009 

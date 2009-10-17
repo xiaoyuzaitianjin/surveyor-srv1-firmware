@@ -95,7 +95,7 @@ int gps_parse() {
     i1 = i2 = ilast = 0;  // to get rid of compiler warnings
 
     if ((ublox == 0) && (locosys == 0)) {  // check first for ublox on i2c channel 042
-        for (ix=0; ix<200; ix++) {
+        for (ix=0; ix<1000; ix++) {
             ch = read_ublox();
             delayUS(500);
             if (ch != 0xff) {
@@ -104,7 +104,7 @@ int gps_parse() {
             }
         }
         if (!ublox) {
-            init_uart1();
+            init_uart1(57600);
             uart1_flag = 1;
             locosys = 1;
         }
