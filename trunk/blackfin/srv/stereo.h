@@ -83,6 +83,7 @@ extern void svs_show_matches(unsigned char *outbuf, int no_of_matches);
 extern void svs_show_ground_plane(unsigned char *outbuf);
 
 extern void svs_ground_plane();
+extern void svs_footline_slope();
 extern void svs_send_disparities (int no_of_matches);
 extern void svs_stereo(int send_disparities);
 
@@ -96,7 +97,7 @@ extern void svs_footline_update(int max_disparity_percent);
 #define EMPTY_CELL           999999
 
 extern void init_map();
-extern void map_update(int no_of_matches, int max_disparity_percent, unsigned int* svs_matches, unsigned short int* footline);
+extern void map_update(int no_of_matches, int max_disparity_percent, unsigned int* svs_matches, unsigned short int** footline);
 extern void map_recenter();
 extern void scan_match(int right_turn_pixels, int tollerance, svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
 extern void show_map(unsigned char* outbuf);

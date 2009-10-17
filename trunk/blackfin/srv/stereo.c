@@ -209,10 +209,13 @@ extern int svs_width, svs_height;
 int svs_prev_width;
 
 /* array used to estimate footline of objects on the ground plane */
-unsigned short int* footline;
+unsigned short int** footline;
 
 /* distances to the footline in mm */
 unsigned short int* footline_dist_mm;
+
+/* lines fitted to the footline points */
+unsigned short int** footline_slope;
 
 /* whether mapping was previously enabled */
 int prev_svs_enable_mapping;
@@ -477,14 +480,15 @@ int svs_get_features_vertical(
 }
 
 /* returns a set of horizontally oriented features */
-int svs_get_features_horizontal(unsigned char* rectified_frame_buf, /* image data */
-                                int inhibition_radius, /* radius for non-maximal supression */
-                                unsigned int minimum_response, /* minimum threshold */
-                                int calibration_offset_x, int calibration_offset_y,
-                                int segment) /* if non zero update low contrast areas used for segmentation */
+int svs_get_features_horizontal(
+    unsigned char* rectified_frame_buf, /* image data */
+    int inhibition_radius, /* radius for non-maximal supression */
+    unsigned int minimum_response, /* minimum threshold */
+    int calibration_offset_x, int calibration_offset_y,
+    int segment) /* if non zero update low contrast areas used for segmentation */
 {
     unsigned short int no_of_feats;
-    int x, y, row_mean, start_y;
+    int x, y, row_mean, start_y, i, idx;
     int no_of_features = 0;
     int col_idx = 0;
 
@@ -492,14 +496,19 @@ int svs_get_features_horizontal(unsigned char* rectified_frame_buf, /* image dat
     if (features_per_col == 0) {
         features_per_col = (unsigned short int*)malloc(SVS_MAX_IMAGE_WIDTH / SVS_HORIZONTAL_SAMPLING*sizeof(unsigned short int));
         feature_y = (short int*)malloc(SVS_MAX_FEATURES*sizeof(short int));
-        footline = (unsigned short int*)malloc(SVS_MAX_IMAGE_WIDTH / SVS_HORIZONTAL_SAMPLING * sizeof(unsigned short int));
+        footline = (unsigned short int**)malloc(2*sizeof(unsigned short int*));
+        for (i = 0; i < 2; i++) {
+            footline[i] = (unsigned short int*)malloc(SVS_MAX_IMAGE_WIDTH / SVS_HORIZONTAL_SAMPLING * sizeof(unsigned short int));
+        }
     }
 
     int ground_y=(int)imgHeight;
     if (svs_enable_ground_priors) {
         ground_y = (int)imgHeight - 1 - (svs_ground_y_percent*(int)imgHeight/100);
-        memset((void*)footline, '\0', SVS_MAX_IMAGE_WIDTH / SVS_HORIZONTAL_SAMPLING
-               * sizeof(unsigned short));
+        for (i = 0; i < 2; i++) {
+            memset((void*)(footline[i]), '\0', SVS_MAX_IMAGE_WIDTH / SVS_HORIZONTAL_SAMPLING
+                   * sizeof(unsigned short));
+        }
     }
 
     memset((void*)features_per_col, '\0', SVS_MAX_IMAGE_WIDTH / SVS_HORIZONTAL_SAMPLING
@@ -525,7 +534,9 @@ int svs_get_features_horizontal(unsigned char* rectified_frame_buf, /* image dat
 
                     if (svs_enable_ground_priors) {
                         if (y >= ground_y) {
-                            footline[x / SVS_HORIZONTAL_SAMPLING] = y;
+                            idx = x / SVS_HORIZONTAL_SAMPLING;
+                            footline[1][idx] = footline[0][idx];
+                            footline[0][idx] = y;
                         }
                     }
 
@@ -550,6 +561,103 @@ int svs_get_features_horizontal(unsigned char* rectified_frame_buf, /* image dat
 #endif
 
     return (no_of_features);
+}
+
+void svs_footline_slope()
+{
+    unsigned short int x,x2,xx,y,y2,yy;
+    unsigned short int max = (int)imgWidth / SVS_HORIZONTAL_SAMPLING;
+    unsigned short int baseline = max * 20 / 100;
+    if (baseline < 3) baseline = 3;
+    unsigned short int min_slope = 10;
+    const int max_variance = 6;
+    int diff, tot_diff, hits, idx, i;
+    int hits_thresh = max * 30 / 100;
+
+    /* clear the variance values */    
+    for (idx = 0; idx < 3; idx++) {
+        footline_slope[idx][0] = (unsigned short int)9999;
+    }
+    
+    for (i = 0; i < 2; i++) {
+        for (x = 0; x < max-baseline; x++) {
+            if (footline[i][x] > 0) {
+                x2 = x + baseline;
+                if (x2 < max) {
+                    if (footline[i][x2] > 0) {
+                        y = footline[i][x];
+                        y2 = footline[i][x2];
+                        
+                        /* check this line to see how well it fits to the data */
+                        tot_diff = 0;
+                        hits = 0;
+                        for (xx = 0; xx < (unsigned short int)imgWidth; xx++) {
+                            if (footline[i][xx] > 0) {
+                                yy = y + ((xx - x) * (y2 - y) / (x2 - x));
+                                diff = (int)yy - (int)footline[i][xx];
+                                if ((diff > -max_variance) && 
+                                    (diff < max_variance)) {                            
+                                    tot_diff += diff*diff;
+                                    hits++;
+                                }
+                                else {
+                                    if (footline[1 - i][xx] > 0) {
+                                        diff = (int)yy - (int)footline[1 - i][xx];
+                                        if ((diff > -max_variance) && 
+                                            (diff < max_variance)) {                            
+                                            tot_diff += diff*diff;
+                                            hits++;
+                                        }
+                                    }
+                                }
+                            }
+                            else {
+                                if (footline[1 - i][xx] > 0) {
+                                    yy = y + ((xx - x) * (y2 - y) / (x2 - x));
+                                    diff = (int)yy - (int)footline[1 - i][xx];
+                                    if ((diff > -max_variance) && 
+                                        (diff < max_variance)) {                            
+                                        tot_diff += diff*diff;
+                                        hits++;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if (hits > hits_thresh) {
+                            tot_diff /= hits;                        
+                            idx = 0;
+                            if (y2 < y - min_slope) {
+                                /* slope_left */                        
+                                idx = 0;
+                                
+                            }
+                            else {
+                                if (y2 > y + min_slope) {
+                                    /* slope right */
+                                    idx = 1;
+                                }
+                                else {
+                                    /* horizontal */
+                                    idx = 2;
+                                }
+                            }
+                            
+                            if ((footline_slope[idx][0] == (unsigned short int)9999) ||
+                                (tot_diff < (int)footline_slope[idx][0])) {
+                                footline_slope[idx][0] = (unsigned short int)tot_diff;
+                                footline_slope[idx][1] = x*SVS_HORIZONTAL_SAMPLING;
+                                footline_slope[idx][2] = y;
+                                footline_slope[idx][3] = x2*SVS_HORIZONTAL_SAMPLING;
+                                footline_slope[idx][4] = y2;
+                            }
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
 }
 
 /* sends feature data from the right camera board to the left */
@@ -833,6 +941,7 @@ int svs_match(
     int max, curr_idx, search_idx, winner_idx=0;
     int no_of_possible_matches = 0, matches = 0;
     int itt, idx, prev_matches, row_offset, col_offset;
+    int p, pmax=3;
 
     unsigned int meandescL, meandescR;
     short meandesc[SVS_DESCRIPTOR_PIXELS];
@@ -845,6 +954,9 @@ int svs_match(
     max_disp_pixels = max_disparity_percent * imgWidth / 100;
     min_disp = -10;
     max_disp = max_disp_pixels;
+
+    /* fit lines to the footline points */
+    svs_footline_slope();
 
     /* find ground plane */
     int ground_prior=0;
@@ -927,7 +1039,7 @@ int svs_match(
                        of the image, and is expressed as a percentage of the image height */
                     ground_y_sloped = ground_y + ((half_width - xL) * svs_ground_slope_percent / 100);
                     ground_height_sloped = (int)imgHeight - 1 - ground_y_sloped;
-                    footline_y = footline[xL / SVS_HORIZONTAL_SAMPLING];
+                    footline_y = footline[0][xL / SVS_HORIZONTAL_SAMPLING];
                     ground_prior = (footline_y - ground_y_sloped) * max_disp_pixels / ground_height_sloped;
                 }
             }
@@ -1056,43 +1168,53 @@ int svs_match(
             if (total > 0)
             {
 
-                /* convert matching scores to probabilities */
-                best_prob = 0;
-                for (R = 0; R < no_of_feats_right; R++)
-                {
-                    if (row_peaks[R] > 0)
+				/* several candidate disparities per feature
+				   observing the principle of least commitment */
+				for (p = 0; p < pmax; p++) {
+				
+                    /* convert matching scores to probabilities */
+                    best_prob = 0;
+                    for (R = 0; R < no_of_feats_right; R++)
                     {
-                        match_prob = row_peaks[R] * 1000 / total;
-                        if (match_prob > best_prob)
+                        if (row_peaks[R] > 0)
                         {
-                            best_prob = match_prob;
-                            bestR = R;
+                            match_prob = row_peaks[R] * 1000 / total;
+                            if (match_prob > best_prob)
+                            {
+                                best_prob = match_prob;
+                                bestR = R;
+                            }
                         }
                     }
-                }
 
-                if ((best_prob > 0) &&
-                        (best_prob < 1000) &&
-                        (no_of_possible_matches < SVS_MAX_FEATURES))
-                {
-
-                    /* x coordinate of the feature in the right camera */
-                    xR = svs_data_received->feature_x[fR + bestR];
-
-                    /* possible disparity */
-                    disp = xL - xR;
-
-                    if (disp >= min_disp)
+                    if ((best_prob > 0) &&
+                            (best_prob < 1000) &&
+                            (no_of_possible_matches < SVS_MAX_FEATURES))
                     {
-                        if (disp < 0)
-                            disp = 0;
-                        /* add the best result to the list of possible matches */
-                        svs_matches[no_of_possible_matches*4] = best_prob;
-                        svs_matches[no_of_possible_matches*4 + 1] = (unsigned int)xL;
-                        svs_matches[no_of_possible_matches*4 + 2] = (unsigned int)y;
-                        svs_matches[no_of_possible_matches*4 + 3] = (unsigned int)disp;
-                        no_of_possible_matches++;
+
+                        /* x coordinate of the feature in the right camera */
+                        xR = svs_data_received->feature_x[fR + bestR];
+
+                        /* possible disparity */
+                        disp = xL - xR;
+
+                        if (disp >= min_disp)
+                        {
+                            if (disp < 0)
+                                disp = 0;
+                            /* add the best result to the list of possible matches */
+                            svs_matches[no_of_possible_matches*4] = best_prob;
+                            svs_matches[no_of_possible_matches*4 + 1] = (unsigned int)xL;
+                            svs_matches[no_of_possible_matches*4 + 2] = (unsigned int)y;
+                            svs_matches[no_of_possible_matches*4 + 3] = (unsigned int)disp;
+							if (p > 0) {
+								svs_matches[no_of_possible_matches * 4 + 1] += imgWidth;
+							}
+							no_of_possible_matches++;
+							row_peaks[bestR] = 0;
+                        }
                     }
+                
                 }
             }
         }
@@ -1156,16 +1278,21 @@ int svs_match(
                 svs_matches[curr_idx + 3] = disp;
 
                 /* update your priors */
-                if (best_prob > 1) {
-                    row = y / SVS_VERTICAL_SAMPLING;
-                    for (row_offset = -3; row_offset <= 3; row_offset++) {
-                        for (col_offset = -1; col_offset <= 1; col_offset++) {
-                            idx = (((row + row_offset) * (int)imgWidth + xL) / 16) + col_offset;
-                            if ((idx > -1) && (idx < priors_length)) {
-                                if (disparity_priors[idx] == 0)
-                                    disparity_priors[idx] = disp;
-                                else
-                                    disparity_priors[idx] = (disp+disparity_priors[idx])/2;
+				if (svs_matches[winner_idx + 1] >= imgWidth) {
+					svs_matches[winner_idx + 1] -= imgWidth;
+				}
+				else {
+                    if (best_prob > 1) {
+                        row = y / SVS_VERTICAL_SAMPLING;
+                        for (row_offset = -3; row_offset <= 3; row_offset++) {
+                            for (col_offset = -1; col_offset <= 1; col_offset++) {
+                                idx = (((row + row_offset) * (int)imgWidth + xL) / 16) + col_offset;
+                                if ((idx > -1) && (idx < priors_length)) {
+                                    if (disparity_priors[idx] == 0)
+                                        disparity_priors[idx] = disp;
+                                    else
+                                        disparity_priors[idx] = (disp+disparity_priors[idx])/2;
+                                }
                             }
                         }
                     }
@@ -1628,6 +1755,8 @@ void svs_rectify(
 
 /* initialises arrays */
 void init_svs() {
+    int i;
+    
     calibration_map = (int *)malloc(SVS_MAX_IMAGE_WIDTH*SVS_MAX_IMAGE_HEIGHT*4);
     row_peaks = (unsigned int *)malloc(SVS_MAX_IMAGE_WIDTH*4);
     row_sum = (int*)malloc(SVS_MAX_IMAGE_WIDTH*4);
@@ -1641,6 +1770,11 @@ void init_svs() {
     svs_coeff = (long*)malloc(8 * sizeof(long));
     svs_read_calib_params();
     svs_prev_width = svs_width;
+    
+    footline_slope = (unsigned short int**)malloc(3*sizeof(unsigned short int*));
+    for (i = 0; i < 3; i++) {
+        footline_slope[i] = (unsigned short int*)malloc(5*4);
+    }
 }
 
 /* initialises arrays associated with matching
@@ -1755,7 +1889,7 @@ void svs_footline_update(
 
     for (i = 0; i < max; i++) {
         x = i * SVS_HORIZONTAL_SAMPLING;
-        y = footline[i];
+        y = footline[0][i];
         ground_y_sloped = ground_y + ((half_width - x) * svs_ground_slope_percent / 100);
         ground_height_sloped = (int)imgHeight - 1 - ground_y_sloped;
         disp = (y - ground_y_sloped) * max_disp_pixels / ground_height_sloped;
@@ -1796,17 +1930,17 @@ void svs_ground_plane()
         int max_diff = (int)imgHeight / 30;
         for (i = 0; i < (int)imgWidth / SVS_HORIZONTAL_SAMPLING; i++) {
             x = i * SVS_HORIZONTAL_SAMPLING;
-            y = footline[i];
+            y = footline[0][i];
             if (y != 0) {
                 if (prev_y != 0) {
                     diff = y - prev_y;
                     if (diff < 0) diff = -diff;
                     if (diff > max_diff) {
                         if (y < prev_y) {
-                            footline[prev_i] = 0;
+                            footline[0][prev_i] = 0;
                         }
                         else {
-                            footline[i] = 0;
+                            footline[0][i] = 0;
                         }
                     }
                 }
@@ -1821,18 +1955,18 @@ void svs_ground_plane()
         int max = (int)imgWidth / SVS_HORIZONTAL_SAMPLING;
         for (i = 0; i < max; i++) {
             x = i * SVS_HORIZONTAL_SAMPLING;
-            y = footline[i];
+            y = footline[0][i];
             if (y != 0) {
                 if (prev_y == 0) prev_y = y;
                 for (j = prev_i; j < i; j++) {
-                    footline[j] = prev_y + ((j - prev_i) * (y - prev_y) / (i - prev_i));
+                    footline[0][j] = prev_y + ((j - prev_i) * (y - prev_y) / (i - prev_i));
                 }
                 prev_y = y;
                 prev_i = i;
             }
         }
         for (j = prev_i; j < max; j++) {
-            footline[j] = prev_y;
+            footline[0][j] = prev_y;
         }
     }
 #ifdef SVS_PROFILE
@@ -1844,49 +1978,73 @@ void svs_ground_plane()
 void svs_show_footline(
     unsigned char *outbuf)  /* output image.  Note that this is YUVY */
 {
-    int i, x, y, n;
+    int i, j, x, y, xx, yy, x2, y2, n;
 
-    for (i = 0; i < (int)imgWidth / SVS_HORIZONTAL_SAMPLING; i++) {
-        x = i * SVS_HORIZONTAL_SAMPLING;
-        y = footline[i];
-        if (y > 0) {
-            /* draw edge */
-            n = pixindex(x, y);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x, y-1);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x, y-2);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x, y+1);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x, y+2);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x-1, y);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x+1, y);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x-2, y);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
-            n = pixindex(x+2, y);
-            outbuf[n++] = 84;
-            outbuf[n++] = 72;
-            outbuf[n] = 255;
+    for (i = 0; i < 3; i++) {
+        if (footline_slope[i][0] != (unsigned short int)9999) {
+            x = (int)footline_slope[i][1];
+            y = (int)footline_slope[i][2];
+            x2 = (int)footline_slope[i][3];
+            y2 = (int)footline_slope[i][4];
+            
+            //for (xx = x; xx < x2; xx++) {
+            for (xx = 0; xx < (int)imgWidth; xx++) {
+                yy = y + ((xx - x) * (y2 - y) / (x2 - x));
+                n = pixindex(xx, yy);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(xx, yy-1);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+            }
+        }
+    }
+
+    for (j = 0; j < 2; j++) {
+        for (i = 0; i < (int)imgWidth / SVS_HORIZONTAL_SAMPLING; i++) {
+            x = i * SVS_HORIZONTAL_SAMPLING;
+            y = footline[j][i];
+            if (y > 0) {
+                /* draw edge */
+                n = pixindex(x, y);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x, y-1);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x, y-2);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x, y+1);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x, y+2);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x-1, y);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x+1, y);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x-2, y);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+                n = pixindex(x+2, y);
+                outbuf[n++] = 84;
+                outbuf[n++] = 72;
+                outbuf[n] = 255;
+            }
         }
     }
 }
@@ -2524,7 +2682,7 @@ void map_update(
     int no_of_matches,
     int max_disparity_percent,
     unsigned int* svs_matches,
-    unsigned short int* footline)
+    unsigned short int** footline)
 {
 #ifdef SVS_PROFILE
     int t = readRTC();
@@ -2545,7 +2703,7 @@ void map_update(
         if (svs_matches[i] > 0) {  // match probability > 0
             x = svs_matches[i + 1];
             y = svs_matches[i + 2];
-            if (y < footline[x / SVS_HORIZONTAL_SAMPLING])
+            if (y < footline[0][x / SVS_HORIZONTAL_SAMPLING])
                 on_ground_plane = 0;
             else
                 on_ground_plane = 1;
