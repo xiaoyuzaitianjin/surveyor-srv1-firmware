@@ -540,14 +540,12 @@ int svs_get_features_horizontal(
                         }
                     }
 
-                    if (svs_compute_descriptor(x, y, rectified_frame_buf, no_of_features, row_mean) == 0) {
-                        feature_y[no_of_features++] = (short int) (y + calibration_offset_y);
-                        no_of_feats++;
-                        if (no_of_features == SVS_MAX_FEATURES) {
-                            x = (int)imgWidth;
-                            printf("stereo feature buffer full\n");
-                            break;
-                        }
+                    feature_y[no_of_features++] = (short int) (y + calibration_offset_y);
+                    no_of_feats++;
+                    if (no_of_features == SVS_MAX_FEATURES) {
+                        x = (int)imgWidth;
+                        printf("stereo feature buffer full\n");
+                        break;
                     }
                 }
             }
@@ -836,7 +834,7 @@ int svs_grab(
 #endif
     int no_of_feats;
     /* some default values */
-    const int inhibition_radius = 16;
+    const int inhibition_radius = 24;
     const unsigned int minimum_response = 300;
 
 #ifdef SVS_PROFILE
@@ -1188,8 +1186,8 @@ int svs_match(
                     }
 
                     if ((best_prob > 0) &&
-                            (best_prob < 1000) &&
-                            (no_of_possible_matches < SVS_MAX_FEATURES))
+                        (best_prob < 1000) &&
+                        (no_of_possible_matches < SVS_MAX_FEATURES))
                     {
 
                         /* x coordinate of the feature in the right camera */
@@ -1245,7 +1243,10 @@ int svs_match(
         {
 
             match_prob =  svs_matches[curr_idx];
-            winner_idx = -1;
+            if (match_prob > 0) 
+                winner_idx = curr_idx;
+            else
+                winner_idx = -1;
 
             search_idx = curr_idx + 4;
             max = no_of_possible_matches * 4;
@@ -1333,7 +1334,7 @@ int svs_match(
                             if ((disp_prior > 0) &&
                                     (matches < SVS_MAX_MATCHES)) {
                                 curr_idx = matches * 4;
-                                svs_matches[curr_idx] = 1000;
+                                svs_matches[curr_idx] = 500;
                                 svs_matches[curr_idx + 1] = x;
                                 svs_matches[curr_idx + 2] = y;
                                 svs_matches[curr_idx + 3] = disp_prior;
@@ -2289,7 +2290,7 @@ void svs_stereo(int send_disparities)
         t[1] = readRTC();
 #endif
         if (svs_receive_features() > -1) {
-            int ideal_no_of_matches = 400;
+            int ideal_no_of_matches = 200;
             int max_disparity_percent = 40;
             /* descriptor match weight */
             int learnDesc = 90;

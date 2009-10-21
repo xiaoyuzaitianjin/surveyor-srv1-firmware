@@ -216,7 +216,7 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0xbfc0
+.l1code         0xffa00000     0xbfa4
  main.o(.text)
  .text          0xffa00000      0x4c4 main.o
                 0xffa00000                main
@@ -414,33 +414,33 @@ Linker script and memory map
                 0xffa07850                _hpel_core1
                 0xffa072f8                _motionvect
  stereo.o(.text)
- .text          0xffa07c48     0x41f4 stereo.o
-                0xffa0b32c                svs_rectify
+ .text          0xffa07c48     0x41d8 stereo.o
+                0xffa0b334                svs_rectify
                 0xffa07eb8                svs_compute_descriptor
-                0xffa0b9fc                svs_grab
+                0xffa0b9e4                svs_grab
                 0xffa0a75c                init_svs_matching_data
                 0xffa098fc                update_pose
-                0xffa0bb44                svs_master
+                0xffa0bb2c                svs_master
                 0xffa07fe4                svs_footline_slope
-                0xffa0b770                svs_read_calib_params
-                0xffa0baf0                svs_send_features
+                0xffa0b758                svs_read_calib_params
+                0xffa0bad8                svs_send_features
                 0xffa08908                svs_show_matches
-                0xffa0b3c4                svs_get_features_horizontal
+                0xffa0b3cc                svs_get_features_horizontal
                 0xffa09b68                svs_filter_plane
-                0xffa0b618                svs_get_features_vertical
-                0xffa0b918                init_svs
-                0xffa0b254                svs_send_disparities
+                0xffa0b600                svs_get_features_vertical
+                0xffa0b900                init_svs
+                0xffa0b25c                svs_send_disparities
                 0xffa08a34                svs_make_map
                 0xffa08420                svs_footline_update
                 0xffa0a85c                svs_match
                 0xffa08564                svs_ground_plane
                 0xffa08bfc                scan_match
-                0xffa0bcd4                svs_stereo
+                0xffa0bcbc                svs_stereo
                 0xffa08d58                map_update
                 0xffa0a670                init_map
                 0xffa07cf0                svs_update_sums
                 0xffa086b8                svs_show_footline
-                0xffa0bc58                svs_receive_features
+                0xffa0bc40                svs_receive_features
                 0xffa07c48                svs_slave
                 0xffa0a460                map_recenter
                 0xffa09628                show_map
@@ -448,9 +448,9 @@ Linker script and memory map
                 0xffa07dd8                svs_non_max
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa0be3c      0x184 setjmp.o
-                0xffa0be3c                longjmp
-                0xffa0bf04                setjmp
+ .text          0xffa0be20      0x184 setjmp.o
+                0xffa0be20                longjmp
+                0xffa0bee8                setjmp
 
 .text           0x00000000     0x9d8c
  .text          0x00000000       0xf0 camera.o
@@ -1270,7 +1270,7 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_abbrev  0x00003065      0x142 picoc/platform.o
  .debug_abbrev  0x000031a7      0x168 picoc/platform_surveyor.o
 
-.debug_info     0x00000000    0x118d5
+.debug_info     0x00000000    0x118d1
  .debug_info    0x00000000      0x136 camera.o
  .debug_info    0x00000136      0x1e7 edit.o
  .debug_info    0x0000031d      0x23a malloc.o
@@ -1289,23 +1289,23 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_info    0x00004fa4      0x465 uart.o
  .debug_info    0x00005409      0xbfe colors.o
  .debug_info    0x00006007      0xb0b jpeg.o
- .debug_info    0x00006b12     0x21f6 stereo.o
- .debug_info    0x00008d08       0x64 init.o
- .debug_info    0x00008d6c      0x391 sdcard.o
- .debug_info    0x000090fd      0x54f picoc/picoc.o
- .debug_info    0x0000964c      0x8db picoc/table.o
- .debug_info    0x00009f27      0xf3c picoc/lex.o
- .debug_info    0x0000ae63      0xc1e picoc/parse.o
- .debug_info    0x0000ba81     0x12a0 picoc/expression.o
- .debug_info    0x0000cd21      0x29f picoc/heap.o
- .debug_info    0x0000cfc0      0xcda picoc/type.o
- .debug_info    0x0000dc9a      0xb67 picoc/variable.o
- .debug_info    0x0000e801      0xaa1 picoc/clibrary.o
- .debug_info    0x0000f2a2     0x20f9 picoc/library_surveyor.o
- .debug_info    0x0001139b      0x2fb picoc/platform.o
- .debug_info    0x00011696      0x23f picoc/platform_surveyor.o
+ .debug_info    0x00006b12     0x21f2 stereo.o
+ .debug_info    0x00008d04       0x64 init.o
+ .debug_info    0x00008d68      0x391 sdcard.o
+ .debug_info    0x000090f9      0x54f picoc/picoc.o
+ .debug_info    0x00009648      0x8db picoc/table.o
+ .debug_info    0x00009f23      0xf3c picoc/lex.o
+ .debug_info    0x0000ae5f      0xc1e picoc/parse.o
+ .debug_info    0x0000ba7d     0x12a0 picoc/expression.o
+ .debug_info    0x0000cd1d      0x29f picoc/heap.o
+ .debug_info    0x0000cfbc      0xcda picoc/type.o
+ .debug_info    0x0000dc96      0xb67 picoc/variable.o
+ .debug_info    0x0000e7fd      0xaa1 picoc/clibrary.o
+ .debug_info    0x0000f29e     0x20f9 picoc/library_surveyor.o
+ .debug_info    0x00011397      0x2fb picoc/platform.o
+ .debug_info    0x00011692      0x23f picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x49da
+.debug_line     0x00000000     0x49e6
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143       0xa6 malloc.o
@@ -1324,21 +1324,21 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_line    0x00001ca5      0x12f uart.o
  .debug_line    0x00001dd4      0x380 colors.o
  .debug_line    0x00002154      0x315 jpeg.o
- .debug_line    0x00002469      0xd57 stereo.o
- .debug_line    0x000031c0       0x53 init.o
- .debug_line    0x00003213      0x10b sdcard.o
- .debug_line    0x0000331e       0x92 picoc/picoc.o
- .debug_line    0x000033b0       0xe3 picoc/table.o
- .debug_line    0x00003493      0x36e picoc/lex.o
- .debug_line    0x00003801      0x26b picoc/parse.o
- .debug_line    0x00003a6c      0x46f picoc/expression.o
- .debug_line    0x00003edb       0xe9 picoc/heap.o
- .debug_line    0x00003fc4      0x1e4 picoc/type.o
- .debug_line    0x000041a8      0x1a2 picoc/variable.o
- .debug_line    0x0000434a      0x176 picoc/clibrary.o
- .debug_line    0x000044c0      0x3c3 picoc/library_surveyor.o
- .debug_line    0x00004883       0xc7 picoc/platform.o
- .debug_line    0x0000494a       0x90 picoc/platform_surveyor.o
+ .debug_line    0x00002469      0xd63 stereo.o
+ .debug_line    0x000031cc       0x53 init.o
+ .debug_line    0x0000321f      0x10b sdcard.o
+ .debug_line    0x0000332a       0x92 picoc/picoc.o
+ .debug_line    0x000033bc       0xe3 picoc/table.o
+ .debug_line    0x0000349f      0x36e picoc/lex.o
+ .debug_line    0x0000380d      0x26b picoc/parse.o
+ .debug_line    0x00003a78      0x46f picoc/expression.o
+ .debug_line    0x00003ee7       0xe9 picoc/heap.o
+ .debug_line    0x00003fd0      0x1e4 picoc/type.o
+ .debug_line    0x000041b4      0x1a2 picoc/variable.o
+ .debug_line    0x00004356      0x176 picoc/clibrary.o
+ .debug_line    0x000044cc      0x3c3 picoc/library_surveyor.o
+ .debug_line    0x0000488f       0xc7 picoc/platform.o
+ .debug_line    0x00004956       0x90 picoc/platform_surveyor.o
 
 .debug_frame    0x00000000     0x3e48
  .debug_frame   0x00000000       0x4c camera.o
@@ -1375,7 +1375,7 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_frame   0x00003d40       0x7c picoc/platform.o
  .debug_frame   0x00003dbc       0x8c picoc/platform_surveyor.o
 
-.debug_loc      0x00000000    0x16a64
+.debug_loc      0x00000000    0x16a45
  .debug_loc     0x00000000       0x5b camera.o
  .debug_loc     0x0000005b      0x2eb edit.o
  .debug_loc     0x00000346      0x1e1 malloc.o
@@ -1394,21 +1394,21 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_loc     0x00007495      0x6d3 uart.o
  .debug_loc     0x00007b68     0x1422 colors.o
  .debug_loc     0x00008f8a     0x14f7 jpeg.o
- .debug_loc     0x0000a481     0x396e stereo.o
- .debug_loc     0x0000ddef      0x122 init.o
- .debug_loc     0x0000df11      0x6cb sdcard.o
- .debug_loc     0x0000e5dc       0xfa picoc/picoc.o
- .debug_loc     0x0000e6d6      0x614 picoc/table.o
- .debug_loc     0x0000ecea      0xfb2 picoc/lex.o
- .debug_loc     0x0000fc9c      0xb63 picoc/parse.o
- .debug_loc     0x000107ff     0x1d79 picoc/expression.o
- .debug_loc     0x00012578      0x2e2 picoc/heap.o
- .debug_loc     0x0001285a      0x951 picoc/type.o
- .debug_loc     0x000131ab      0xd45 picoc/variable.o
- .debug_loc     0x00013ef0      0x8db picoc/clibrary.o
- .debug_loc     0x000147cb     0x1eef picoc/library_surveyor.o
- .debug_loc     0x000166ba      0x20f picoc/platform.o
- .debug_loc     0x000168c9      0x19b picoc/platform_surveyor.o
+ .debug_loc     0x0000a481     0x394f stereo.o
+ .debug_loc     0x0000ddd0      0x122 init.o
+ .debug_loc     0x0000def2      0x6cb sdcard.o
+ .debug_loc     0x0000e5bd       0xfa picoc/picoc.o
+ .debug_loc     0x0000e6b7      0x614 picoc/table.o
+ .debug_loc     0x0000eccb      0xfb2 picoc/lex.o
+ .debug_loc     0x0000fc7d      0xb63 picoc/parse.o
+ .debug_loc     0x000107e0     0x1d79 picoc/expression.o
+ .debug_loc     0x00012559      0x2e2 picoc/heap.o
+ .debug_loc     0x0001283b      0x951 picoc/type.o
+ .debug_loc     0x0001318c      0xd45 picoc/variable.o
+ .debug_loc     0x00013ed1      0x8db picoc/clibrary.o
+ .debug_loc     0x000147ac     0x1eef picoc/library_surveyor.o
+ .debug_loc     0x0001669b      0x20f picoc/platform.o
+ .debug_loc     0x000168aa      0x19b picoc/platform_surveyor.o
 
 .debug_pubnames
                 0x00000000     0x2f46
