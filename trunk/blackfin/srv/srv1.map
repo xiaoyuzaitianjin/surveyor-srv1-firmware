@@ -68,7 +68,6 @@ svs_matches         0x4               stereo.o
 svs_data_received   0x4               stereo.o
 hist1               0x400             colors.o
 lcount              0x4               srv.o
-footline_slope      0x4               stereo.o
 pwm1_init           0x4               srv.o
 image_size          0x4               srv.o
 disparity_histogram_plane
@@ -216,241 +215,240 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0xbfa4
+.l1code         0xffa00000     0xba94
  main.o(.text)
- .text          0xffa00000      0x4c4 main.o
+ .text          0xffa00000      0x4c8 main.o
                 0xffa00000                main
  math.o(.text)
- .text          0xffa004c4      0x200 math.o
-                0xffa00590                __umodsi3
-                0xffa005c2                __divsi3
-                0xffa004c4                __udivsi3
+ .text          0xffa004c8      0x200 math.o
+                0xffa00594                __umodsi3
+                0xffa005c6                __divsi3
+                0xffa004c8                __udivsi3
  string.o(.text)
- .text          0xffa006c4      0x3a4 string.o
-                0xffa006c4                strcmp
-                0xffa00740                strncpy
-                0xffa00778                atoi
-                0xffa008f4                memcpy
-                0xffa0093c                memset
-                0xffa00950                ctoi
-                0xffa0085c                itoa
-                0xffa00a40                strdup
-                0xffa00824                reverse
-                0xffa00998                strpbrk
-                0xffa00718                strchr
-                0xffa00730                strcpy
-                0xffa009d0                strtok
-                0xffa006e4                strncmp
-                0xffa008e8                isdigit
-                0xffa00804                strlen
-                0xffa00968                atoi_b16
+ .text          0xffa006c8      0x3a4 string.o
+                0xffa006c8                strcmp
+                0xffa00744                strncpy
+                0xffa0077c                atoi
+                0xffa008f8                memcpy
+                0xffa00940                memset
+                0xffa00954                ctoi
+                0xffa00860                itoa
+                0xffa00a44                strdup
+                0xffa00828                reverse
+                0xffa0099c                strpbrk
+                0xffa0071c                strchr
+                0xffa00734                strcpy
+                0xffa009d4                strtok
+                0xffa006e8                strncmp
+                0xffa008ec                isdigit
+                0xffa00808                strlen
+                0xffa0096c                atoi_b16
  srv.o(.text)
- .text          0xffa00a68     0x42e0 srv.o
-                0xffa022e8                motor_command
-                0xffa02e24                process_i2c
-                0xffa027bc                restore_video
-                0xffa03504                xmodem_receive
-                0xffa01720                clearRTC
-                0xffa018b4                delayUS
-                0xffa03e84                motion_vect80x64
-                0xffa02808                invert_video
-                0xffa00d40                grab_reference_frame
-                0xffa01730                delayMS
-                0xffa023ec                set_edge_thresh
-                0xffa01924                delayNS
-                0xffa01288                setPPM1
-                0xffa01bc8                rand
-                0xffa020d4                testSD
-                0xffa02d84                tilt
-                0xffa03428                read_user_sector
-                0xffa014bc                initRTC
-                0xffa0381c                serial_out_flashbuffer
-                0xffa00de0                move_yuv422_to_planar
-                0xffa04cd0                check_for_autorun
-                0xffa03570                camera_reset
-                0xffa02850                init_tilt
-                0xffa03238                write_boot_flash
-                0xffa02df8                read_tilt
-                0xffa00f3c                initPWM
-                0xffa01024                init_sonar
-                0xffa019b0                check_failsafe
-                0xffa020c4                show_stack_ptr
-                0xffa02d00                read_compass
-                0xffa0428c                process_colors
-                0xffa02880                laser_range
-                0xffa020ac                show_heap_ptr
-                0xffa01e58                overlay_on
-                0xffa011e8                setPWM2
-                0xffa01ff0                lasers_off
-                0xffa00c0c                check_stereo_sync
-                0xffa00bb8                clear_sdram
-                0xffa00bfc                led1_on
-                0xffa023a0                change_image_quality
-                0xffa00be0                stack_remaining
-                0xffa01400                check_bounds_0_100
-                0xffa00d18                move_image
-                0xffa0330c                write_user_sector
-                0xffa0241c                process_neuralnet
-                0xffa02230                motor2_command
-                0xffa02170                ppm2_command
-                0xffa010fc                setPWM
-                0xffa00fa0                initPWM2
-                0xffa01c74                read_encoders
-                0xffa03120                init_analog
-                0xffa02ce4                show_laser_range
-                0xffa034d8                crc_flash_buffer
-                0xffa03908                send_frame
-                0xffa01fc8                check_battery
-                0xffa01d98                motor_increase_base_speed
-                0xffa01f98                ping_sonar
-                0xffa00dc4                copy_image
-                0xffa01f0c                enable_horizon_detect
-                0xffa01a6c                encoders
-                0xffa01e0c                clear_flash_buffer
-                0xffa0211c                enable_failsafe
-                0xffa02010                lasers_on
-                0xffa021d0                ppm1_command
-                0xffa01cb8                motor_action
-                0xffa014dc                readRTC
-                0xffa0141c                motor_trim_right
-                0xffa00bec                led0_on
-                0xffa0146c                motor_trim_left
-                0xffa00a68                init_io
-                0xffa0204c                serial_out_version
-                0xffa01550                sonar
-                0xffa01a34                init_encoders
-                0xffa00c20                compute_frame_diff
-                0xffa034fc                launch_editor
-                0xffa04008                motion_vect_test
-                0xffa01f34                enable_edge_detect
-                0xffa040e4                grab_frame
-                0xffa01f5c                enable_segmentation
-                0xffa0336c                write_user_flash
-                0xffa03884                send_80x64planar
-                0xffa01760                motor_set
-                0xffa00ff0                initTMR4
-                0xffa01054                initPPM1
-                0xffa01344                setPPM2
-                0xffa01d24                motor_decrease_base_speed
-                0xffa010a8                initPPM2
-                0xffa01ee4                enable_obstacle_detect
-                0xffa03398                read_double_sector
-                0xffa02030                serial_out_time
-                0xffa01ebc                enable_stereo_processing
-                0xffa00c78                set_caption
-                0xffa01e70                disable_frame_diff
-                0xffa00e24                scale_image_to_80x64_planar
-                0xffa00b8c                reset_cpu
-                0xffa03498                read_user_flash
-                0xffa0328c                write_double_sector
-                0xffa02fa4                analog
-                0xffa01998                reset_failsafe_clock
-                0xffa01ca0                disable_failsafe
-                0xffa030e4                read_analog
-                0xffa01e40                overlay_off
-                0xffa01f74                enable_frame_diff
-                0xffa03748                camera_setup
-                0xffa00d74                move_inverted
+ .text          0xffa00a6c     0x42e0 srv.o
+                0xffa022ec                motor_command
+                0xffa02e28                process_i2c
+                0xffa027c0                restore_video
+                0xffa03508                xmodem_receive
+                0xffa01724                clearRTC
+                0xffa018b8                delayUS
+                0xffa03e88                motion_vect80x64
+                0xffa0280c                invert_video
+                0xffa00d44                grab_reference_frame
+                0xffa01734                delayMS
+                0xffa023f0                set_edge_thresh
+                0xffa01928                delayNS
+                0xffa0128c                setPPM1
+                0xffa01bcc                rand
+                0xffa020d8                testSD
+                0xffa02d88                tilt
+                0xffa0342c                read_user_sector
+                0xffa014c0                initRTC
+                0xffa03820                serial_out_flashbuffer
+                0xffa00de4                move_yuv422_to_planar
+                0xffa04cd4                check_for_autorun
+                0xffa03574                camera_reset
+                0xffa02854                init_tilt
+                0xffa0323c                write_boot_flash
+                0xffa02dfc                read_tilt
+                0xffa00f40                initPWM
+                0xffa01028                init_sonar
+                0xffa019b4                check_failsafe
+                0xffa020c8                show_stack_ptr
+                0xffa02d04                read_compass
+                0xffa04290                process_colors
+                0xffa02884                laser_range
+                0xffa020b0                show_heap_ptr
+                0xffa01e5c                overlay_on
+                0xffa011ec                setPWM2
+                0xffa01ff4                lasers_off
+                0xffa00c10                check_stereo_sync
+                0xffa00bbc                clear_sdram
+                0xffa00c00                led1_on
+                0xffa023a4                change_image_quality
+                0xffa00be4                stack_remaining
+                0xffa01404                check_bounds_0_100
+                0xffa00d1c                move_image
+                0xffa03310                write_user_sector
+                0xffa02420                process_neuralnet
+                0xffa02234                motor2_command
+                0xffa02174                ppm2_command
+                0xffa01100                setPWM
+                0xffa00fa4                initPWM2
+                0xffa01c78                read_encoders
+                0xffa03124                init_analog
+                0xffa02ce8                show_laser_range
+                0xffa034dc                crc_flash_buffer
+                0xffa0390c                send_frame
+                0xffa01fcc                check_battery
+                0xffa01d9c                motor_increase_base_speed
+                0xffa01f9c                ping_sonar
+                0xffa00dc8                copy_image
+                0xffa01f10                enable_horizon_detect
+                0xffa01a70                encoders
+                0xffa01e10                clear_flash_buffer
+                0xffa02120                enable_failsafe
+                0xffa02014                lasers_on
+                0xffa021d4                ppm1_command
+                0xffa01cbc                motor_action
+                0xffa014e0                readRTC
+                0xffa01420                motor_trim_right
+                0xffa00bf0                led0_on
+                0xffa01470                motor_trim_left
+                0xffa00a6c                init_io
+                0xffa02050                serial_out_version
+                0xffa01554                sonar
+                0xffa01a38                init_encoders
+                0xffa00c24                compute_frame_diff
+                0xffa03500                launch_editor
+                0xffa0400c                motion_vect_test
+                0xffa01f38                enable_edge_detect
+                0xffa040e8                grab_frame
+                0xffa01f60                enable_segmentation
+                0xffa03370                write_user_flash
+                0xffa03888                send_80x64planar
+                0xffa01764                motor_set
+                0xffa00ff4                initTMR4
+                0xffa01058                initPPM1
+                0xffa01348                setPPM2
+                0xffa01d28                motor_decrease_base_speed
+                0xffa010ac                initPPM2
+                0xffa01ee8                enable_obstacle_detect
+                0xffa0339c                read_double_sector
+                0xffa02034                serial_out_time
+                0xffa01ec0                enable_stereo_processing
+                0xffa00c7c                set_caption
+                0xffa01e74                disable_frame_diff
+                0xffa00e28                scale_image_to_80x64_planar
+                0xffa00b90                reset_cpu
+                0xffa0349c                read_user_flash
+                0xffa03290                write_double_sector
+                0xffa02fa8                analog
+                0xffa0199c                reset_failsafe_clock
+                0xffa01ca4                disable_failsafe
+                0xffa030e8                read_analog
+                0xffa01e44                overlay_off
+                0xffa01f78                enable_frame_diff
+                0xffa0374c                camera_setup
+                0xffa00d78                move_inverted
  uart.o(.text)
- .text          0xffa04d48      0x4fc uart.o
-                0xffa04f5c                uart1SendChar
-                0xffa04fd0                uart1GetCh
-                0xffa04f28                uart0GetChar
-                0xffa04ee8                uart0SendChars
-                0xffa051c8                suartPutChar
-                0xffa04f0c                uart0GetCh
-                0xffa04ebc                uart0SendString
-                0xffa04e8c                uart0SendChar
-                0xffa04e04                uart0_CTS
-                0xffa04fac                uart1SendChars
-                0xffa04da0                init_uart0
-                0xffa04f4c                uart0Signal
-                0xffa04d48                suartInit
-                0xffa05020                printNumber
-                0xffa05108                suartGetChar
-                0xffa04f80                uart1SendString
-                0xffa04fec                uart1GetChar
-                0xffa05010                uart1Signal
-                0xffa04e28                init_uart1
+ .text          0xffa04d4c      0x4fc uart.o
+                0xffa04f60                uart1SendChar
+                0xffa04fd4                uart1GetCh
+                0xffa04f2c                uart0GetChar
+                0xffa04eec                uart0SendChars
+                0xffa051cc                suartPutChar
+                0xffa04f10                uart0GetCh
+                0xffa04ec0                uart0SendString
+                0xffa04e90                uart0SendChar
+                0xffa04e08                uart0_CTS
+                0xffa04fb0                uart1SendChars
+                0xffa04da4                init_uart0
+                0xffa04f50                uart0Signal
+                0xffa04d4c                suartInit
+                0xffa05024                printNumber
+                0xffa0510c                suartGetChar
+                0xffa04f84                uart1SendString
+                0xffa04ff0                uart1GetChar
+                0xffa05014                uart1Signal
+                0xffa04e2c                init_uart1
  colors.o(.text)
- .text          0xffa05244     0x1228 colors.o
-                0xffa053f0                vmean
-                0xffa05764                edge_detect
-                0xffa05664                vfind
-                0xffa058fc                svs_segcode
-                0xffa05cd8                vhorizon
-                0xffa054b4                color_segment
-                0xffa05b9c                addvect
-                0xffa05f58                vblob
-                0xffa052c8                blob_merge
-                0xffa05b04                svs_segview
-                0xffa05244                init_colors
-                0xffa05a4c                vscan
-                0xffa05324                vhist
-                0xffa05c28                addline
-                0xffa05294                vpix
+ .text          0xffa05248     0x1228 colors.o
+                0xffa053f4                vmean
+                0xffa05768                edge_detect
+                0xffa05668                vfind
+                0xffa05900                svs_segcode
+                0xffa05cdc                vhorizon
+                0xffa054b8                color_segment
+                0xffa05ba0                addvect
+                0xffa05f5c                vblob
+                0xffa052cc                blob_merge
+                0xffa05b08                svs_segview
+                0xffa05248                init_colors
+                0xffa05a50                vscan
+                0xffa05328                vhist
+                0xffa05c2c                addline
+                0xffa05298                vpix
  jpeg.o(.text)
- .text          0xffa0646c      0xd9c jpeg.o
-                0xffa07018                DCT
-                0xffa06a10                close_bitstream
-                0xffa0702c                encodeMCU
-                0xffa06558                huffman
-                0xffa06a84                write_markers
-                0xffa07128                encode_image
-                0xffa06ca4                initialize_quantization_tables
-                0xffa06e64                read_422_format
-                0xffa0646c                initialization
-                0xffa06538                levelshift
-                0xffa06d94                quantization
-                0xffa06de4                read_400_format
+ .text          0xffa06470      0xd9c jpeg.o
+                0xffa0701c                DCT
+                0xffa06a14                close_bitstream
+                0xffa07030                encodeMCU
+                0xffa0655c                huffman
+                0xffa06a88                write_markers
+                0xffa0712c                encode_image
+                0xffa06ca8                initialize_quantization_tables
+                0xffa06e68                read_422_format
+                0xffa06470                initialization
+                0xffa0653c                levelshift
+                0xffa06d98                quantization
+                0xffa06de8                read_400_format
  r8x8dct.o(.text)
- .text          0xffa07208       0xf0 r8x8dct.o
-                0xffa07208                _r8x8dct
+ *fill*         0xffa0720c        0x4 00
+ .text          0xffa07210       0xf0 r8x8dct.o
+                0xffa07210                _r8x8dct
  motionvect.o(.text)
- .text          0xffa072f8      0x950 motionvect.o
-                0xffa07760                hpel
-                0xffa07ac0                _mve_core
-                0xffa07970                _hpel_core2
-                0xffa07850                _hpel_core1
-                0xffa072f8                _motionvect
+ .text          0xffa07300      0x950 motionvect.o
+                0xffa07768                hpel
+                0xffa07ac8                _mve_core
+                0xffa07978                _hpel_core2
+                0xffa07858                _hpel_core1
+                0xffa07300                _motionvect
  stereo.o(.text)
- .text          0xffa07c48     0x41d8 stereo.o
-                0xffa0b334                svs_rectify
-                0xffa07eb8                svs_compute_descriptor
-                0xffa0b9e4                svs_grab
-                0xffa0a75c                init_svs_matching_data
-                0xffa098fc                update_pose
-                0xffa0bb2c                svs_master
-                0xffa07fe4                svs_footline_slope
-                0xffa0b758                svs_read_calib_params
-                0xffa0bad8                svs_send_features
-                0xffa08908                svs_show_matches
-                0xffa0b3cc                svs_get_features_horizontal
-                0xffa09b68                svs_filter_plane
-                0xffa0b600                svs_get_features_vertical
-                0xffa0b900                init_svs
-                0xffa0b25c                svs_send_disparities
-                0xffa08a34                svs_make_map
-                0xffa08420                svs_footline_update
-                0xffa0a85c                svs_match
-                0xffa08564                svs_ground_plane
-                0xffa08bfc                scan_match
-                0xffa0bcbc                svs_stereo
-                0xffa08d58                map_update
-                0xffa0a670                init_map
-                0xffa07cf0                svs_update_sums
-                0xffa086b8                svs_show_footline
-                0xffa0bc40                svs_receive_features
-                0xffa07c48                svs_slave
-                0xffa0a460                map_recenter
-                0xffa09628                show_map
-                0xffa08278                svs_show_features
-                0xffa07dd8                svs_non_max
+ .text          0xffa07c50     0x3cc0 stereo.o
+                0xffa0adc4                svs_rectify
+                0xffa07ec0                svs_compute_descriptor
+                0xffa0b4d0                svs_grab
+                0xffa0a158                init_svs_matching_data
+                0xffa09400                update_pose
+                0xffa0b618                svs_master
+                0xffa0b270                svs_read_calib_params
+                0xffa0b5c4                svs_send_features
+                0xffa0840c                svs_show_matches
+                0xffa0ae5c                svs_get_features_horizontal
+                0xffa0966c                svs_filter_plane
+                0xffa0b0a4                svs_get_features_vertical
+                0xffa0b418                init_svs
+                0xffa0acec                svs_send_disparities
+                0xffa08538                svs_make_map
+                0xffa08174                svs_footline_update
+                0xffa0a258                svs_match
+                0xffa082b8                svs_ground_plane
+                0xffa08700                scan_match
+                0xffa0b7a8                svs_stereo
+                0xffa0885c                map_update
+                0xffa0a06c                init_map
+                0xffa07cf8                svs_update_sums
+                0xffa0b72c                svs_receive_features
+                0xffa07c50                svs_slave
+                0xffa09e5c                map_recenter
+                0xffa0912c                show_map
+                0xffa07fcc                svs_show_features
+                0xffa07de0                svs_non_max
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa0be20      0x184 setjmp.o
-                0xffa0be20                longjmp
-                0xffa0bee8                setjmp
+ .text          0xffa0b910      0x184 setjmp.o
+                0xffa0b910                longjmp
+                0xffa0b9d8                setjmp
 
 .text           0x00000000     0x9d8c
  .text          0x00000000       0xf0 camera.o
@@ -961,7 +959,7 @@ Linker script and memory map
                 0x00009d8c                . = ALIGN (0x4)
                 0x00009d8c                __sdram_bss_end = .
 
-.bss            0xff900000     0x41b0
+.bss            0xff900000     0x41ac
                 0xff900000                __bss_start = .
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
@@ -1134,7 +1132,7 @@ Linker script and memory map
                 0xff9039a4                fdct_temp
                 0xff903a24                read_format
                 0xff903a28                Y1
- COMMON         0xff903aa8       0x88 stereo.o
+ COMMON         0xff903aa8       0x84 stereo.o
                 0xff903aa8                disparity_plane_fit
                 0xff903aac                footline_dist_mm
                 0xff903ab0                robot_x_mm
@@ -1152,48 +1150,47 @@ Linker script and memory map
                 0xff903ae0                robot_speed_mmsec
                 0xff903ae4                svs_matches
                 0xff903ae8                svs_data_received
-                0xff903aec                footline_slope
-                0xff903af0                disparity_histogram_plane
-                0xff903af4                row_sum
-                0xff903af8                no_of_planes
-                0xff903afc                features_per_col
-                0xff903b00                svs_data
-                0xff903b04                map_occupancy
-                0xff903b08                curr_ID
-                0xff903b0c                plane
-                0xff903b10                min_occupancy
-                0xff903b14                svs_data_previous
-                0xff903b18                dist_moved_mm
-                0xff903b1c                prev_svs_enable_mapping
-                0xff903b20                curr_ID_hits
-                0xff903b24                valid_quadrants
-                0xff903b28                max_occupancy
-                0xff903b2c                disparity_priors
- COMMON         0xff903b30      0x18c picoc/table.o
-                0xff903b30                StringHashTable
-                0xff903cb4                StringTable
- COMMON         0xff903cbc      0x128 picoc/type.o
-                0xff903cbc                CharArrayType
-                0xff903cc0                FunctionType
-                0xff903ce4                EnumType
-                0xff903d08                VoidType
-                0xff903d2c                MacroType
-                0xff903d50                CharType
-                0xff903d74                CharPtrType
-                0xff903d78                WordType
-                0xff903d9c                IntType
-                0xff903dc0                UberType
- COMMON         0xff903de4      0x318 picoc/variable.o
-                0xff903de4                StringLiteralHashTable
-                0xff903f68                GlobalHashTable
-                0xff9040ec                GlobalTable
-                0xff9040f4                StringLiteralTable
- COMMON         0xff9040fc       0x10 picoc/clibrary.o
-                0xff9040fc                CStdOut
- COMMON         0xff90410c       0xa4 picoc/platform_surveyor.o
-                0xff90410c                ExitBuf
-                0xff9041b0                . = ALIGN (0x4)
-                0xff9041b0                __bss_end = .
+                0xff903aec                disparity_histogram_plane
+                0xff903af0                row_sum
+                0xff903af4                no_of_planes
+                0xff903af8                features_per_col
+                0xff903afc                svs_data
+                0xff903b00                map_occupancy
+                0xff903b04                curr_ID
+                0xff903b08                plane
+                0xff903b0c                min_occupancy
+                0xff903b10                svs_data_previous
+                0xff903b14                dist_moved_mm
+                0xff903b18                prev_svs_enable_mapping
+                0xff903b1c                curr_ID_hits
+                0xff903b20                valid_quadrants
+                0xff903b24                max_occupancy
+                0xff903b28                disparity_priors
+ COMMON         0xff903b2c      0x18c picoc/table.o
+                0xff903b2c                StringHashTable
+                0xff903cb0                StringTable
+ COMMON         0xff903cb8      0x128 picoc/type.o
+                0xff903cb8                CharArrayType
+                0xff903cbc                FunctionType
+                0xff903ce0                EnumType
+                0xff903d04                VoidType
+                0xff903d28                MacroType
+                0xff903d4c                CharType
+                0xff903d70                CharPtrType
+                0xff903d74                WordType
+                0xff903d98                IntType
+                0xff903dbc                UberType
+ COMMON         0xff903de0      0x318 picoc/variable.o
+                0xff903de0                StringLiteralHashTable
+                0xff903f64                GlobalHashTable
+                0xff9040e8                GlobalTable
+                0xff9040f0                StringLiteralTable
+ COMMON         0xff9040f8       0x10 picoc/clibrary.o
+                0xff9040f8                CStdOut
+ COMMON         0xff904108       0xa4 picoc/platform_surveyor.o
+                0xff904108                ExitBuf
+                0xff9041ac                . = ALIGN (0x4)
+                0xff9041ac                __bss_end = .
                 0xffb00ffc                . = 0xffb00ffc
                 0xffb00ffc                PROVIDE (_supervisor_stack, .)
 LOAD init.o
@@ -1270,7 +1267,7 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_abbrev  0x00003065      0x142 picoc/platform.o
  .debug_abbrev  0x000031a7      0x168 picoc/platform_surveyor.o
 
-.debug_info     0x00000000    0x118d1
+.debug_info     0x00000000    0x1178a
  .debug_info    0x00000000      0x136 camera.o
  .debug_info    0x00000136      0x1e7 edit.o
  .debug_info    0x0000031d      0x23a malloc.o
@@ -1289,23 +1286,23 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_info    0x00004fa4      0x465 uart.o
  .debug_info    0x00005409      0xbfe colors.o
  .debug_info    0x00006007      0xb0b jpeg.o
- .debug_info    0x00006b12     0x21f2 stereo.o
- .debug_info    0x00008d04       0x64 init.o
- .debug_info    0x00008d68      0x391 sdcard.o
- .debug_info    0x000090f9      0x54f picoc/picoc.o
- .debug_info    0x00009648      0x8db picoc/table.o
- .debug_info    0x00009f23      0xf3c picoc/lex.o
- .debug_info    0x0000ae5f      0xc1e picoc/parse.o
- .debug_info    0x0000ba7d     0x12a0 picoc/expression.o
- .debug_info    0x0000cd1d      0x29f picoc/heap.o
- .debug_info    0x0000cfbc      0xcda picoc/type.o
- .debug_info    0x0000dc96      0xb67 picoc/variable.o
- .debug_info    0x0000e7fd      0xaa1 picoc/clibrary.o
- .debug_info    0x0000f29e     0x20f9 picoc/library_surveyor.o
- .debug_info    0x00011397      0x2fb picoc/platform.o
- .debug_info    0x00011692      0x23f picoc/platform_surveyor.o
+ .debug_info    0x00006b12     0x20ab stereo.o
+ .debug_info    0x00008bbd       0x64 init.o
+ .debug_info    0x00008c21      0x391 sdcard.o
+ .debug_info    0x00008fb2      0x54f picoc/picoc.o
+ .debug_info    0x00009501      0x8db picoc/table.o
+ .debug_info    0x00009ddc      0xf3c picoc/lex.o
+ .debug_info    0x0000ad18      0xc1e picoc/parse.o
+ .debug_info    0x0000b936     0x12a0 picoc/expression.o
+ .debug_info    0x0000cbd6      0x29f picoc/heap.o
+ .debug_info    0x0000ce75      0xcda picoc/type.o
+ .debug_info    0x0000db4f      0xb67 picoc/variable.o
+ .debug_info    0x0000e6b6      0xaa1 picoc/clibrary.o
+ .debug_info    0x0000f157     0x20f9 picoc/library_surveyor.o
+ .debug_info    0x00011250      0x2fb picoc/platform.o
+ .debug_info    0x0001154b      0x23f picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x49e6
+.debug_line     0x00000000     0x48af
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143       0xa6 malloc.o
@@ -1324,23 +1321,23 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_line    0x00001ca5      0x12f uart.o
  .debug_line    0x00001dd4      0x380 colors.o
  .debug_line    0x00002154      0x315 jpeg.o
- .debug_line    0x00002469      0xd63 stereo.o
- .debug_line    0x000031cc       0x53 init.o
- .debug_line    0x0000321f      0x10b sdcard.o
- .debug_line    0x0000332a       0x92 picoc/picoc.o
- .debug_line    0x000033bc       0xe3 picoc/table.o
- .debug_line    0x0000349f      0x36e picoc/lex.o
- .debug_line    0x0000380d      0x26b picoc/parse.o
- .debug_line    0x00003a78      0x46f picoc/expression.o
- .debug_line    0x00003ee7       0xe9 picoc/heap.o
- .debug_line    0x00003fd0      0x1e4 picoc/type.o
- .debug_line    0x000041b4      0x1a2 picoc/variable.o
- .debug_line    0x00004356      0x176 picoc/clibrary.o
- .debug_line    0x000044cc      0x3c3 picoc/library_surveyor.o
- .debug_line    0x0000488f       0xc7 picoc/platform.o
- .debug_line    0x00004956       0x90 picoc/platform_surveyor.o
+ .debug_line    0x00002469      0xc2c stereo.o
+ .debug_line    0x00003095       0x53 init.o
+ .debug_line    0x000030e8      0x10b sdcard.o
+ .debug_line    0x000031f3       0x92 picoc/picoc.o
+ .debug_line    0x00003285       0xe3 picoc/table.o
+ .debug_line    0x00003368      0x36e picoc/lex.o
+ .debug_line    0x000036d6      0x26b picoc/parse.o
+ .debug_line    0x00003941      0x46f picoc/expression.o
+ .debug_line    0x00003db0       0xe9 picoc/heap.o
+ .debug_line    0x00003e99      0x1e4 picoc/type.o
+ .debug_line    0x0000407d      0x1a2 picoc/variable.o
+ .debug_line    0x0000421f      0x176 picoc/clibrary.o
+ .debug_line    0x00004395      0x3c3 picoc/library_surveyor.o
+ .debug_line    0x00004758       0xc7 picoc/platform.o
+ .debug_line    0x0000481f       0x90 picoc/platform_surveyor.o
 
-.debug_frame    0x00000000     0x3e48
+.debug_frame    0x00000000     0x3ddc
  .debug_frame   0x00000000       0x4c camera.o
  .debug_frame   0x0000004c      0x100 edit.o
  .debug_frame   0x0000014c       0x94 malloc.o
@@ -1359,23 +1356,23 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_frame   0x000018f0      0x1f4 uart.o
  .debug_frame   0x00001ae4      0x274 colors.o
  .debug_frame   0x00001d58      0x1b0 jpeg.o
- .debug_frame   0x00001f08      0x4f4 stereo.o
- .debug_frame   0x000023fc       0xa4 init.o
- .debug_frame   0x000024a0      0x1a8 sdcard.o
- .debug_frame   0x00002648       0x74 picoc/picoc.o
- .debug_frame   0x000026bc      0x14c picoc/table.o
- .debug_frame   0x00002808      0x29c picoc/lex.o
- .debug_frame   0x00002aa4      0x1b8 picoc/parse.o
- .debug_frame   0x00002c5c      0x2e0 picoc/expression.o
- .debug_frame   0x00002f3c       0xbc picoc/heap.o
- .debug_frame   0x00002ff8      0x1dc picoc/type.o
- .debug_frame   0x000031d4      0x2e0 picoc/variable.o
- .debug_frame   0x000034b4      0x1b4 picoc/clibrary.o
- .debug_frame   0x00003668      0x6d8 picoc/library_surveyor.o
- .debug_frame   0x00003d40       0x7c picoc/platform.o
- .debug_frame   0x00003dbc       0x8c picoc/platform_surveyor.o
+ .debug_frame   0x00001f08      0x488 stereo.o
+ .debug_frame   0x00002390       0xa4 init.o
+ .debug_frame   0x00002434      0x1a8 sdcard.o
+ .debug_frame   0x000025dc       0x74 picoc/picoc.o
+ .debug_frame   0x00002650      0x14c picoc/table.o
+ .debug_frame   0x0000279c      0x29c picoc/lex.o
+ .debug_frame   0x00002a38      0x1b8 picoc/parse.o
+ .debug_frame   0x00002bf0      0x2e0 picoc/expression.o
+ .debug_frame   0x00002ed0       0xbc picoc/heap.o
+ .debug_frame   0x00002f8c      0x1dc picoc/type.o
+ .debug_frame   0x00003168      0x2e0 picoc/variable.o
+ .debug_frame   0x00003448      0x1b4 picoc/clibrary.o
+ .debug_frame   0x000035fc      0x6d8 picoc/library_surveyor.o
+ .debug_frame   0x00003cd4       0x7c picoc/platform.o
+ .debug_frame   0x00003d50       0x8c picoc/platform_surveyor.o
 
-.debug_loc      0x00000000    0x16a45
+.debug_loc      0x00000000    0x166e4
  .debug_loc     0x00000000       0x5b camera.o
  .debug_loc     0x0000005b      0x2eb edit.o
  .debug_loc     0x00000346      0x1e1 malloc.o
@@ -1394,24 +1391,24 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_loc     0x00007495      0x6d3 uart.o
  .debug_loc     0x00007b68     0x1422 colors.o
  .debug_loc     0x00008f8a     0x14f7 jpeg.o
- .debug_loc     0x0000a481     0x394f stereo.o
- .debug_loc     0x0000ddd0      0x122 init.o
- .debug_loc     0x0000def2      0x6cb sdcard.o
- .debug_loc     0x0000e5bd       0xfa picoc/picoc.o
- .debug_loc     0x0000e6b7      0x614 picoc/table.o
- .debug_loc     0x0000eccb      0xfb2 picoc/lex.o
- .debug_loc     0x0000fc7d      0xb63 picoc/parse.o
- .debug_loc     0x000107e0     0x1d79 picoc/expression.o
- .debug_loc     0x00012559      0x2e2 picoc/heap.o
- .debug_loc     0x0001283b      0x951 picoc/type.o
- .debug_loc     0x0001318c      0xd45 picoc/variable.o
- .debug_loc     0x00013ed1      0x8db picoc/clibrary.o
- .debug_loc     0x000147ac     0x1eef picoc/library_surveyor.o
- .debug_loc     0x0001669b      0x20f picoc/platform.o
- .debug_loc     0x000168aa      0x19b picoc/platform_surveyor.o
+ .debug_loc     0x0000a481     0x35ee stereo.o
+ .debug_loc     0x0000da6f      0x122 init.o
+ .debug_loc     0x0000db91      0x6cb sdcard.o
+ .debug_loc     0x0000e25c       0xfa picoc/picoc.o
+ .debug_loc     0x0000e356      0x614 picoc/table.o
+ .debug_loc     0x0000e96a      0xfb2 picoc/lex.o
+ .debug_loc     0x0000f91c      0xb63 picoc/parse.o
+ .debug_loc     0x0001047f     0x1d79 picoc/expression.o
+ .debug_loc     0x000121f8      0x2e2 picoc/heap.o
+ .debug_loc     0x000124da      0x951 picoc/type.o
+ .debug_loc     0x00012e2b      0xd45 picoc/variable.o
+ .debug_loc     0x00013b70      0x8db picoc/clibrary.o
+ .debug_loc     0x0001444b     0x1eef picoc/library_surveyor.o
+ .debug_loc     0x0001633a      0x20f picoc/platform.o
+ .debug_loc     0x00016549      0x19b picoc/platform_surveyor.o
 
 .debug_pubnames
-                0x00000000     0x2f46
+                0x00000000     0x2f06
  .debug_pubnames
                 0x00000000       0x59 camera.o
  .debug_pubnames
@@ -1449,35 +1446,35 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_pubnames
                 0x00001739      0x2cc jpeg.o
  .debug_pubnames
-                0x00001a05      0x54e stereo.o
+                0x00001a05      0x50e stereo.o
  .debug_pubnames
-                0x00001f53       0x1f init.o
+                0x00001f13       0x1f init.o
  .debug_pubnames
-                0x00001f72       0xd1 sdcard.o
+                0x00001f32       0xd1 sdcard.o
  .debug_pubnames
-                0x00002043       0x37 picoc/picoc.o
+                0x00002003       0x37 picoc/picoc.o
  .debug_pubnames
-                0x0000207a       0xe1 picoc/table.o
+                0x0000203a       0xe1 picoc/table.o
  .debug_pubnames
-                0x0000215b      0x1b8 picoc/lex.o
+                0x0000211b      0x1b8 picoc/lex.o
  .debug_pubnames
-                0x00002313       0xe8 picoc/parse.o
+                0x000022d3       0xe8 picoc/parse.o
  .debug_pubnames
-                0x000023fb      0x208 picoc/expression.o
+                0x000023bb      0x208 picoc/expression.o
  .debug_pubnames
-                0x00002603       0xad picoc/heap.o
+                0x000025c3       0xad picoc/heap.o
  .debug_pubnames
-                0x000026b0      0x1b6 picoc/type.o
+                0x00002670      0x1b6 picoc/type.o
  .debug_pubnames
-                0x00002866      0x274 picoc/variable.o
+                0x00002826      0x274 picoc/variable.o
  .debug_pubnames
-                0x00002ada       0xd1 picoc/clibrary.o
+                0x00002a9a       0xd1 picoc/clibrary.o
  .debug_pubnames
-                0x00002bab      0x2c5 picoc/library_surveyor.o
+                0x00002b6b      0x2c5 picoc/library_surveyor.o
  .debug_pubnames
-                0x00002e70       0x55 picoc/platform.o
+                0x00002e30       0x55 picoc/platform.o
  .debug_pubnames
-                0x00002ec5       0x81 picoc/platform_surveyor.o
+                0x00002e85       0x81 picoc/platform_surveyor.o
 
 .debug_aranges  0x00000000      0x420
  .debug_aranges
@@ -1547,7 +1544,7 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .debug_aranges
                 0x00000400       0x20 picoc/platform_surveyor.o
 
-.debug_str      0x00000000     0x44bf
+.debug_str      0x00000000     0x44b5
  .debug_str     0x00000000       0xe7 camera.o
                                  0xf4 (size before relaxing)
  .debug_str     0x000000e7       0x94 edit.o
@@ -1576,43 +1573,43 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
                                 0x10c (size before relaxing)
  .debug_str     0x00000a82       0xb0 string.o
                                 0x141 (size before relaxing)
- .debug_str     0x00000b32      0xa9a srv.o
+ .debug_str     0x00000b32      0xaa0 srv.o
                                 0xcf1 (size before relaxing)
- .debug_str     0x000015cc      0x145 uart.o
+ .debug_str     0x000015d2      0x145 uart.o
                                 0x209 (size before relaxing)
- .debug_str     0x00001711       0xc1 colors.o
+ .debug_str     0x00001717       0xc1 colors.o
                                 0x214 (size before relaxing)
- .debug_str     0x000017d2      0x43f jpeg.o
+ .debug_str     0x000017d8      0x43f jpeg.o
                                 0x51c (size before relaxing)
- .debug_str     0x00001c11      0xbf2 stereo.o
-                                0xfa2 (size before relaxing)
- .debug_str     0x00002803       0x43 init.o
+ .debug_str     0x00001c17      0xbe2 stereo.o
+                                0xf7a (size before relaxing)
+ .debug_str     0x000027f9       0x43 init.o
                                  0x93 (size before relaxing)
- .debug_str     0x00002846       0xce sdcard.o
+ .debug_str     0x0000283c       0xce sdcard.o
                                 0x14e (size before relaxing)
- .debug_str     0x00002914      0x232 picoc/picoc.o
+ .debug_str     0x0000290a      0x232 picoc/picoc.o
                                 0x372 (size before relaxing)
- .debug_str     0x00002b46      0x11f picoc/table.o
+ .debug_str     0x00002b3c      0x11f picoc/table.o
                                 0x425 (size before relaxing)
- .debug_str     0x00002c65      0x84b picoc/lex.o
+ .debug_str     0x00002c5b      0x84b picoc/lex.o
                                 0xb9b (size before relaxing)
- .debug_str     0x000034b0      0x248 picoc/parse.o
+ .debug_str     0x000034a6      0x248 picoc/parse.o
                                 0xaaa (size before relaxing)
- .debug_str     0x000036f8      0x459 picoc/expression.o
+ .debug_str     0x000036ee      0x459 picoc/expression.o
                                 0xd66 (size before relaxing)
- .debug_str     0x00003b51       0xf8 picoc/heap.o
+ .debug_str     0x00003b47       0xf8 picoc/heap.o
                                 0x1a6 (size before relaxing)
- .debug_str     0x00003c49      0x18a picoc/type.o
+ .debug_str     0x00003c3f      0x18a picoc/type.o
                                 0xa8c (size before relaxing)
- .debug_str     0x00003dd3      0x25c picoc/variable.o
+ .debug_str     0x00003dc9      0x25c picoc/variable.o
                                 0x63e (size before relaxing)
- .debug_str     0x0000402f      0x16f picoc/clibrary.o
+ .debug_str     0x00004025      0x16f picoc/clibrary.o
                                 0x533 (size before relaxing)
- .debug_str     0x0000419e      0x25d picoc/library_surveyor.o
+ .debug_str     0x00004194      0x25d picoc/library_surveyor.o
                                 0x739 (size before relaxing)
- .debug_str     0x000043fb       0x54 picoc/platform.o
+ .debug_str     0x000043f1       0x54 picoc/platform.o
                                 0x1e7 (size before relaxing)
- .debug_str     0x0000444f       0x70 picoc/platform_surveyor.o
+ .debug_str     0x00004445       0x70 picoc/platform_surveyor.o
                                 0x1d2 (size before relaxing)
 
 .comment        0x00000000      0x39c
@@ -1650,16 +1647,16 @@ OUTPUT(srv1.bin.stereo elf32-bfin)
  .comment       0x00000364       0x1c picoc/platform.o
  .comment       0x00000380       0x1c picoc/platform_surveyor.o
 
-.debug_ranges   0x00000000      0x658
+.debug_ranges   0x00000000      0x648
  .debug_ranges  0x00000000       0x40 httpd.o
  .debug_ranges  0x00000040       0x28 printf.o
  .debug_ranges  0x00000068       0x70 xmodem.o
  .debug_ranges  0x000000d8       0x30 string.o
- .debug_ranges  0x00000108      0x180 stereo.o
- .debug_ranges  0x00000288       0x38 init.o
- .debug_ranges  0x000002c0       0xb8 picoc/table.o
- .debug_ranges  0x00000378       0x80 picoc/lex.o
- .debug_ranges  0x000003f8       0x60 picoc/parse.o
- .debug_ranges  0x00000458      0x1d0 picoc/expression.o
- .debug_ranges  0x00000628       0x18 picoc/type.o
- .debug_ranges  0x00000640       0x18 picoc/clibrary.o
+ .debug_ranges  0x00000108      0x170 stereo.o
+ .debug_ranges  0x00000278       0x38 init.o
+ .debug_ranges  0x000002b0       0xb8 picoc/table.o
+ .debug_ranges  0x00000368       0x80 picoc/lex.o
+ .debug_ranges  0x000003e8       0x60 picoc/parse.o
+ .debug_ranges  0x00000448      0x1d0 picoc/expression.o
+ .debug_ranges  0x00000618       0x18 picoc/type.o
+ .debug_ranges  0x00000630       0x18 picoc/clibrary.o

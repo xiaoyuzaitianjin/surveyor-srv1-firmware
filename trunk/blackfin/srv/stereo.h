@@ -1,6 +1,7 @@
 /* stereo correspondence */
 
 //#define SVS_MAPPING_BY_DEFAULT
+//#define SVS_FOOTLINE
 #define SVS_MAX_FEATURES         2000
 #define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280
@@ -39,7 +40,7 @@ typedef struct {
 
         /* array storing x coordinates of detected features */
         short int feature_x[SVS_MAX_FEATURES];
-
+        
         /* array storing the number of features detected on each row */
         unsigned short int features_per_row[SVS_MAX_IMAGE_HEIGHT/SVS_VERTICAL_SAMPLING];
     
@@ -65,7 +66,7 @@ extern int svs_get_features_vertical(unsigned char* rectified_frame_buf, int inh
 extern int svs_get_features_horizontal(unsigned char* rectified_frame_buf, int inhibition_radius, unsigned int minimum_response, int calibration_offset_x, int calibration_offset_y, int segment);
 void svs_send_features();
 int svs_receive_features();
-extern int svs_match(int ideal_no_of_matches, int max_disparity_percent, int learnDesc, int learnLuma, int learnDisp, int learnPrior, int groundPrior, int use_priors);
+extern int svs_match(int ideal_no_of_matches, int max_disparity_percent, int learnDesc, int learnLuma, int learnDisp, int learnPrior, int learnGrad, int groundPrior, int use_priors);
 
 extern void svs_filter_plane(int no_of_possible_matches, int max_disparity_pixels);
 extern void svs_rectify(unsigned char* raw_image, unsigned char* rectified_frame_buf);
@@ -83,7 +84,10 @@ extern void svs_show_matches(unsigned char *outbuf, int no_of_matches);
 extern void svs_show_ground_plane(unsigned char *outbuf);
 
 extern void svs_ground_plane();
+#ifdef SVS_FOOTLINE
 extern void svs_footline_slope();
+extern void svs_show_footline(unsigned char *outbuf);
+#endif
 extern void svs_send_disparities (int no_of_matches);
 extern void svs_stereo(int send_disparities);
 

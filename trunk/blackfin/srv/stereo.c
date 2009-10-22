@@ -214,8 +214,10 @@ unsigned short int** footline;
 /* distances to the footline in mm */
 unsigned short int* footline_dist_mm;
 
+#ifdef SVS_FOOTLINE
 /* lines fitted to the footline points */
 unsigned short int** footline_slope;
+#endif
 
 /* whether mapping was previously enabled */
 int prev_svs_enable_mapping;
@@ -399,8 +401,10 @@ int svs_compute_descriptor(
             meanval = 0;
         if (meanval > 255)
             meanval = 255;
-
-        svs_data->mean[no_of_features] = (unsigned char)(meanval/3);
+            
+		meanval /= 16;
+		if (meanval > 15) meanval = 15;
+		svs_data->mean[no_of_features] = (unsigned char)meanval;
         svs_data->descriptor[no_of_features] = desc;
         return(0);
     }
@@ -422,7 +426,8 @@ int svs_get_features_vertical(
 {
 
     unsigned short int no_of_feats;
-    int x, y, row_mean, start_x;
+	int x, y, row_mean, start_x;
+	int prev_x, mid_x, grad;    
     int no_of_features = 0;
     int row_idx = 0;
 
@@ -445,6 +450,7 @@ int svs_get_features_vertical(
             svs_non_max(0, inhibition_radius, minimum_response);
 
             /* store the features */
+            prev_x = start_x;
             for (x = start_x; x > 15; x--)
             {
                 if (row_peaks[x] > 0)
@@ -454,6 +460,20 @@ int svs_get_features_vertical(
                                 x, y, rectified_frame_buf, no_of_features, row_mean) == 0)
                     {
 
+						mid_x = prev_x + ((x - prev_x)/2);
+						if (x != prev_x) {
+							grad =
+								((row_sum[mid_x] - row_sum[x]) -
+								(row_sum[prev_x] - row_sum[mid_x])) /
+								((prev_x - x)*4);
+							/* limit gradient into a 4 bit range */
+							if (grad < -7) grad = -7;
+							if (grad > 7) grad = 7;
+							/* pack the value into the upper 4 bits */
+							svs_data->mean[no_of_features] |= 
+							    ((unsigned char)(grad + 8) << 4);						    
+						}
+							
                         svs_data->feature_x[no_of_features++] = (short int)(x + calibration_offset_x);
                         no_of_feats++;
                         if (no_of_features == SVS_MAX_FEATURES)
@@ -561,6 +581,7 @@ int svs_get_features_horizontal(
     return (no_of_features);
 }
 
+#ifdef SVS_FOOTLINE
 void svs_footline_slope()
 {
     unsigned short int x,x2,xx,y,y2,yy;
@@ -657,6 +678,7 @@ void svs_footline_slope()
         }
     }
 }
+#endif
 
 /* sends feature data from the right camera board to the left */
 void svs_send_features()
@@ -834,7 +856,7 @@ int svs_grab(
 #endif
     int no_of_feats;
     /* some default values */
-    const int inhibition_radius = 24;
+    const int inhibition_radius = 16;
     const unsigned int minimum_response = 300;
 
 #ifdef SVS_PROFILE
@@ -926,6 +948,7 @@ int svs_match(
     int learnLuma,                    /* luminance match weight */
     int learnDisp,                    /* disparity weight */
     int learnPrior,                   /* prior weight */
+    int learnGrad,                    /* horizontal gradient weight */
     int groundPrior,                  /* prior weight for ground plane */
     int use_priors)                   /* if non-zero then use priors, assuming time between frames is small */
 {
@@ -939,6 +962,7 @@ int svs_match(
     int max, curr_idx, search_idx, winner_idx=0;
     int no_of_possible_matches = 0, matches = 0;
     int itt, idx, prev_matches, row_offset, col_offset;
+	int grad_diff0, gradL0, grad_diff1=0, gradL1=0, grad_anti;
     int p, pmax=3;
 
     unsigned int meandescL, meandescR;
@@ -953,8 +977,10 @@ int svs_match(
     min_disp = -10;
     max_disp = max_disp_pixels;
 
+#ifdef SVS_FOOTLINE
     /* fit lines to the footline points */
     svs_footline_slope();
+#endif
 
     /* find ground plane */
     int ground_prior=0;
@@ -1043,7 +1069,7 @@ int svs_match(
             }
 
             /* mean luminance and eigendescriptor for the left camera feature */
-            meanL = svs_data->mean[fL + L];
+            meanL = svs_data->mean[fL + L] & 15;
             descL = svs_data->descriptor[fL + L] & meandescL;
 
             /* invert bits of the descriptor for anti-correlation matching */
@@ -1060,6 +1086,11 @@ int svs_match(
             }
 
             total = 0;
+
+			gradL0 = svs_data->mean[fL + L] >> 4;
+			if (L < no_of_feats_left - 1) {
+			    gradL1 = svs_data->mean[fL + L + 1] >> 4;
+			}			
 
             /* features along the row in the right camera */
             for (R = 0; R < no_of_feats_right; R++)
@@ -1082,7 +1113,7 @@ int svs_match(
 
 
                     /* mean luminance for the right camera feature */
-                    meanR = svs_data_received->mean[fR + R];
+                    meanR = svs_data_received->mean[fR + R] & 15;
 
                     /* is the mean luminance similar? */
                     luma_diff = meanR - meanL;
@@ -1110,11 +1141,29 @@ int svs_match(
                         BitsSetTable256[(desc_match >> 16) & 0xff] +
                         BitsSetTable256[desc_match >> 24];
 
+					grad_anti = (15 - gradL0) - (int)(svs_data_received->mean[fR + R] >> 4);
+					if (grad_anti < 0) grad_anti = -grad_anti;
+
+					grad_diff0 = gradL0 - (int)(svs_data_received->mean[fR + R] >> 4);
+					if (grad_diff0 < 0) grad_diff0 = -grad_diff0;
+					grad_diff0 = (15 - grad_diff0) - (15 - grad_anti);
+
+					if (R < no_of_feats_right - 1) {
+						grad_anti = (15 - gradL1) - (int)(svs_data_received->mean[fR + R + 1] >> 4);
+						if (grad_anti < 0) grad_anti = -grad_anti;
+
+						grad_diff1 = gradL1 - (int)(svs_data_received->mean[fR + R + 1] >> 4);
+					    if (grad_diff1 < 0) grad_diff1 = -grad_diff1;
+					    grad_diff1 = (15 - grad_diff1) - (15 - grad_anti);
+					}
+
                     if (luma_diff < 0)
                         luma_diff = -luma_diff;
                     int score =
                         10000 +
                         (max_disp * learnDisp) +
+						(grad_diff0 * learnGrad) +
+						(grad_diff1 * learnGrad) +
                         (((int)correlation + (int)(SVS_DESCRIPTOR_PIXELS - anticorrelation)) * learnDesc) -
                         (luma_diff * learnLuma) -
                         (disp * learnDisp);
@@ -1379,12 +1428,11 @@ void svs_filter_plane(
     int no_of_possible_matches, /* the number of stereo matches */
     int max_disparity_pixels) /*maximum disparity in pixels */
 {
-    int i, j, hf, hist_max, w = SVS_FILTER_SAMPLING, w2, n, horizontal = 0;
+    int i, hf, hist_max, w = SVS_FILTER_SAMPLING, w2, n, horizontal = 0;
     unsigned int x, y, disp, tx = 0, ty = 0, bx = 0, by = 0;
     int hist_thresh, hist_mean, hist_mean_hits, mass, disp2;
     int min_ww, max_ww, m, ww, d;
     int ww0, ww1, disp0, disp1, cww, dww, ddisp;
-    int max_hits;
     no_of_planes = 0;
 
     /* clear quadrants */
@@ -1468,7 +1516,9 @@ void svs_filter_plane(
         // right hemifield 0
         case 7: {
             tx = imgWidth * 2 / 3;
+            ty = 0;
             bx = imgWidth;
+            by = imgHeight;
             horizontal = 1;
             break;
         }
@@ -1682,49 +1732,6 @@ void svs_filter_plane(
             /* by default set outlier probability to zero,
                which eliminates it from further enquiries */
             svs_matches[i * 4] = 0;
-
-            /* if the point is within a known plane region then force
-               its disparity onto the plane */
-            x = svs_matches[i * 4 + 1];
-            y = svs_matches[i * 4 + 2];
-            max_hits = 0;
-            for (j = no_of_planes-1; j >= 0; j--) {
-                if ((x > plane[j*9+0]) &&
-                        (x < plane[j*9+2]) &&
-                        (y > plane[j*9+1]) &&
-                        (y < plane[j*9+3])) {
-
-                    if (max_hits < plane[j*9+7]) {
-                                        
-                        max_hits = plane[j*9+7];
-                        
-                        /* find the disparity value at this point on the plane */
-                        if (plane[j*9+4] == 1) {
-                        
-                            disp = plane[j*9+5] +
-                                   ((x - plane[j*9+0]) *
-                                    (plane[j*9+6] - plane[j*9+5]) /
-                                    (plane[j*9+2] - plane[j*9+0]));
-                        }
-                        else {
-
-                            disp = plane[j*9+5] +
-                                    ((y - plane[j*9+1]) *
-                                     (plane[j*9+6] - plane[j*9+5]) /
-                                     (plane[j*9+3] - plane[j*9+1]));
-                        }
-                        
-                        /* ignore big disparities, which are likely to be noise */
-                        if (disp < 4) { 
-                            /* update disparity for this stereo match */
-                            svs_matches[i * 4 + 3] = disp;
-                            
-                            /* non zero match probability resurects this stereo match */
-                            svs_matches[i * 4] = 1; 
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -1756,8 +1763,6 @@ void svs_rectify(
 
 /* initialises arrays */
 void init_svs() {
-    int i;
-    
     calibration_map = (int *)malloc(SVS_MAX_IMAGE_WIDTH*SVS_MAX_IMAGE_HEIGHT*4);
     row_peaks = (unsigned int *)malloc(SVS_MAX_IMAGE_WIDTH*4);
     row_sum = (int*)malloc(SVS_MAX_IMAGE_WIDTH*4);
@@ -1772,10 +1777,13 @@ void init_svs() {
     svs_read_calib_params();
     svs_prev_width = svs_width;
     
+#ifdef SVS_FOOTLINE    
+    int i;
     footline_slope = (unsigned short int**)malloc(3*sizeof(unsigned short int*));
     for (i = 0; i < 3; i++) {
         footline_slope[i] = (unsigned short int*)malloc(5*4);
     }
+#endif
 }
 
 /* initialises arrays associated with matching
@@ -1975,6 +1983,7 @@ void svs_ground_plane()
 #endif
 }
 
+#ifdef SVS_FOOTLINE
 /* shows footline */
 void svs_show_footline(
     unsigned char *outbuf)  /* output image.  Note that this is YUVY */
@@ -2049,6 +2058,7 @@ void svs_show_footline(
         }
     }
 }
+#endif
 
 /* shows stereo matches as blended spots */
 void svs_show_matches(
@@ -2297,11 +2307,13 @@ void svs_stereo(int send_disparities)
             /* luminance match weight */
             int learnLuma = 35;
             /* disparity weight */
-            int learnDisp = 1;
+            int learnDisp = 1;            
             /* priors*/
             int use_priors = 1;
             int learnPrior = 4;
             int groundPrior = 200;
+            /* gradient */
+            int learnGrad = 10;
 
 #ifdef SVS_PROFILE
             t[2] = readRTC();
@@ -2313,6 +2325,7 @@ void svs_stereo(int send_disparities)
                           learnLuma,
                           learnDisp,
                           learnPrior,
+                          learnGrad,
                           groundPrior,
                           use_priors);
 
