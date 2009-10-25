@@ -25,8 +25,7 @@
 #endif
 
 extern int picoc(char *);
-extern void httpd_get();
-extern void httpd_post();
+extern void httpd_request(char firstChar);
 
 int main() {
     unsigned char ch;
@@ -68,10 +67,8 @@ int main() {
                     send_80x64planar();
                     break;
                 case 'G':
-                    httpd_get();
-                    break;
                 case 'P':
-                    httpd_post();
+                    httpd_request(ch);
                     break;
                 case 'y':
                     invert_video();

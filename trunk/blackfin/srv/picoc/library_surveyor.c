@@ -376,8 +376,8 @@ void Cvblob(struct ParseState *Parser, struct Value *ReturnValue, struct Value *
 }
 
 void Cvjpeg (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
-    unsigned int ix, image_size, qual;
-    unsigned char *cp, *output_start, *output_end;
+    unsigned int image_size, qual;
+    unsigned char *output_start, *output_end;
     
     qual = Param[0]->Val->Integer;
     if ((qual < 1) || (qual > 8))

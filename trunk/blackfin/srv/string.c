@@ -14,6 +14,7 @@
  *  GNU General Public License for more details (www.gnu.org/licenses)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include "malloc.h"
+#include "stdlib.h"
 
 int strcmp(char *s1, char *s2)
 {
@@ -59,7 +60,7 @@ char *strncpy(char *dst, const char *src, int n)
 {
   if (n != 0) {
     char *d = dst;
-    char *s = src;
+    const char *s = src;
     do {
       if ((*d++ = *s++) == 0) {
         /* NUL pad the remaining n-1 bytes */
@@ -149,28 +150,39 @@ int isdigit(c)
 
 void memcpy (char *dst, char *src, int count)
 {
-   short *isrc, *idst;
-
-   /* if count and pointers are even, transfer 16-bits at a time */
-   if ((count & 0x00000001) || 
-       ((int)dst & 0x00000001) || 
-       ((int)src & 0x00000001)) {
-       while (count--)
-           *dst++ = *src++;
-   } else {
-
-       idst = (short *)dst;
-       isrc = (short *)src;
-       count /= 2;
-       while (count--)
-           *idst++ = *isrc++;
-   }
+   while (count--)
+       *dst++ = *src++;
 }
 
 void memset (char *dst, char ch, int count)
 {
     while (count--)
         *dst++ = ch;
+}
+
+void *memmove (void *dst, void *src, int count)
+{
+    void *ret = dst;
+
+    if (dst <= src || (char *)dst >= ((char *)src + count)) {
+        while (count--) {
+            *(char *)dst = *(char *)src;
+            dst = (char *)dst + 1;
+            src = (char *)src + 1;
+        }
+    }
+    else {
+        dst = (char *)dst + count - 1;
+        src = (char *)src + count - 1;
+
+        while (count--) {
+            *(char *)dst = *(char *)src;
+            dst = (char *)dst - 1;
+            src = (char *)src - 1;
+        }
+    }
+
+    return(ret);
 }
 
 unsigned int ctoi(unsigned char c) {
@@ -250,5 +262,141 @@ cont:
 	}
 	/* NOTREACHED */
 }
+
+
+
+char *strtoksafe(char *s, const char *delim, char **last)
+{
+	char *spanp;
+	int c, sc;
+	char *tok;
+
+	if (s == 0 && (s = *last) == 0)
+		return (0);
+
+	/*
+	 * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
+	 */
+cont:
+	c = *s++;
+	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
+		if (c == sc)
+			goto cont;
+	}
+
+	if (c == 0) {		/* no non-delimiter characters */
+		*last = 0;
+		return (0);
+	}
+	tok = s - 1;
+
+	/*
+	 * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
+	 * Note that delim must have one NUL; we stop if we see that, too.
+	 */
+	for (;;) {
+		c = *s++;
+		spanp = (char *)delim;
+		do {
+			if ((sc = *spanp++) == c) {
+				if (c == 0)
+					s = 0;
+				else
+					s[-1] = 0;
+				*last = s;
+				return (tok);
+			}
+		} while (sc != 0);
+	}
+	/* NOTREACHED */
+}
+
+
+char * strstr (
+        const char * str1,
+        const char * str2
+        )
+{
+        char *cp = (char *) str1;
+        char *s1, *s2;
+
+        if ( !*str2 )
+            return(char *)str1;
+
+        while (*cp)
+        {
+                s1 = cp;
+                s2 = (char *) str2;
+
+                while ( *s1 && *s2 && !(*s1-*s2) )
+                        s1++, s2++;
+
+                if (!*s2)
+                        return cp;
+
+                cp++;
+        }
+
+        return 0;
+
+}
+
+
+char * strnstr (
+        const char * str1,
+        const char * str2,
+        int n
+        )
+{
+        char *cp = (char *) str1;
+        char *s1, *s2;
+
+        if ( !*str2 )
+            return(char *)str1;
+
+        while (n > 0)
+        {
+                s1 = cp;
+                s2 = (char *) str2;
+
+                int n2 = n;
+                while ( n2 > 0  && *s2 && !(*s1-*s2) )
+                        s1++, s2++, --n2;
+
+                if (!*s2)
+                        return cp;
+
+                cp++;
+                --n;
+        }
+
+        return 0;
+
+}
+
+
+
+
+BOOL        strReplace ( 
+char *      dest,
+int         destMax,     
+char *      pattern,     
+char *      replacement)
+{
+    char * targ = strstr (dest, pattern);
+    if (targ != NULL) {
+        int destLen = strlen (dest);
+        int patLen = strlen (pattern);
+        int repLen = strlen (replacement);
+        if (destLen + repLen - patLen + 1 > destMax)
+            return FALSE;
+        memmove (targ + repLen, targ + patLen, (destLen - (targ - dest) - patLen + 1) * sizeof (char));
+        memcpy (targ, replacement, repLen);
+        return TRUE;
+    }        
+    else
+        return FALSE;
+}
+
 
 

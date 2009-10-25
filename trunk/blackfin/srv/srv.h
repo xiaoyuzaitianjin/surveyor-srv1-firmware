@@ -2,8 +2,12 @@
 #define SRV_H
 
 #define SSYNC asm("ssync;")
-#define TRUE 1
-#define FALSE 0
+
+
+/* general macros */
+
+#define countof(a)      (sizeof(a)/sizeof(a[0]))
+
 
 #define SCCB_ON  1   // enables SCCB mode for I2C (used by OV9655 camera)
 #define SCCB_OFF 0
@@ -22,6 +26,7 @@
 
 /* SDRAM allocation */
 #define FLASH_BUFFER 0x00100000  // address in SDRAM for buffering flash and xmodem 
+#define FLASH_BUFFER_SIZE 0x00100000
 #define C_HEAPSTART  0x00200000  // 512kB buffer for picoC
 #define C_HEAPSIZE   0x00080000
 #define SPI_BUFFER1  0x00280000  // 256kB buffer for transfer of data via SPI bus
@@ -209,6 +214,7 @@ extern int svs_ground_slope_percent;
 extern int svs_enable_ground_priors;
 extern int svs_enable_mapping;
 extern int svs_disp_left, svs_disp_right, svs_steer;
+extern unsigned char version_string[];
 
 #endif
 

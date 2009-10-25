@@ -60,9 +60,9 @@ void gps_show() {
     if (!gps_parse())
         printf("no response from gps\r\n");
     if (ublox)
-        printf("##gps: ublox\r\n");
+        printf("##gps: i2c\r\n");
     else
-        printf("##gps: locosys\r\n");
+        printf("##gps: uart\r\n");
     printf("gps lat: %d\r\n", gps_gga.lat);
     printf("gps lon: %d\r\n", gps_gga.lon);
     printf("gps alt: %d\r\n", gps_gga.alt);
@@ -104,7 +104,7 @@ int gps_parse() {
             }
         }
         if (!ublox) {
-            init_uart1(57600);
+            init_uart1(9600);
             uart1_flag = 1;
             locosys = 1;
         }

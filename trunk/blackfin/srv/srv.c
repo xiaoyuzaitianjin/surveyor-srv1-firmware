@@ -1105,9 +1105,9 @@ void scale_image_to_80x64_planar (unsigned char *src, unsigned char *dst, unsign
 /* XModem Receive.
    Serial protocol char: X */
 void xmodem_receive () {
-    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00020000); ix++)
+    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + FLASH_BUFFER_SIZE); ix++)
         *((unsigned char *)ix) = 0;   // clear the read buffer
-      err1 = xmodemReceive((unsigned char *)FLASH_BUFFER, 131072);
+      err1 = xmodemReceive((unsigned char *)FLASH_BUFFER, FLASH_BUFFER_SIZE);
       if (err1 < 0) {
           printf("##Xmodem receive error: %d\r\n", err1);
       } else {
@@ -1122,7 +1122,7 @@ void launch_editor() {
 /* Clear flash buffer
    Serial protocol char: z-c */
 void clear_flash_buffer () {
-    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00020000); ix++)
+    for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + FLASH_BUFFER_SIZE); ix++)
       *((unsigned char *)ix) = 0;   // clear the read buffer
     printf("##zclear buffer\r\n");
 }

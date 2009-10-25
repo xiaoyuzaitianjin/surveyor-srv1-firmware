@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 17 October 2009 
+SRV-1 firmware build for Blackfin - 25 October 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * added invert_video() support for OV7725
@@ -30,7 +30,12 @@ SRV-1 firmware build for Blackfin - 17 October 2009
       vsend(size);
   will capture and send a JPEG frame via UART0 / matchport without any 
   additional headers
- 
+
+* changed memcpy() to fix possible problem in picoC, httpd and xmodem
+
+* added HTTP POST method for upload of files - somewhat browser dependent
+  at the moment, so still work-in-progress
+   
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 12 September 2009 
