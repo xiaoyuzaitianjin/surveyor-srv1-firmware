@@ -12,6 +12,7 @@ extern int  atoi(char *);
 extern void itoa(int, char *);
 extern void reverse(char *);
 extern void memcpy(unsigned char *, unsigned char *, int);
+extern void memcpy2(unsigned char *, unsigned char *, int);
 extern void *memmove (void *dst, void *src, int count);
 extern void memset(unsigned char*, unsigned char, int);
 extern unsigned int ctoi(unsigned char);

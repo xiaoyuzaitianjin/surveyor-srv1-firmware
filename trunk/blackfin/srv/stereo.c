@@ -689,7 +689,7 @@ void svs_send_features()
     svs_data->crc = (unsigned short)crc16_ccitt((void *)svs_data, sizeof(svs_data));
 
     /* copy data into the send buffer */
-    memcpy(
+    memcpy2(
         (void*)(FLASH_BUFFER+16384),
         (void*)svs_data,
         16384);
@@ -887,7 +887,7 @@ int svs_grab(
 #endif
 
     /* copy rectified back to the original */
-    memcpy((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, imgWidth * imgHeight * 4);
+    memcpy2((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, imgWidth * imgHeight * 4);
 
 #ifdef SVS_PROFILE
     t[3] = readRTC();
@@ -930,7 +930,7 @@ int svs_grab(
     printf("svs_grab:\n\r");
     printf("    move_image                  %d\n\r", t[1]-t[0]);
     printf("    svs_rectify                 %d\n\r", t[2]-t[1]);
-    printf("    memcpy                      %d\n\r", t[3]-t[2]);
+    printf("    memcpy2                      %d\n\r", t[3]-t[2]);
     printf("    move_yuv422_to_planar       %d\n\r", t[4]-t[3]);
     printf("    svs_get_features_vertical   %d\n\r", t[5]-t[4]);
     printf("    svs_get_features_horizontal %d\n\r", t[6]-t[5]);
@@ -2622,8 +2622,8 @@ void map_recenter()
         }
 
         /* copy buffer back to the map */
-        memcpy((void*)map_coords, (void*)buffer_coords, array_length*8);
-        memcpy((void*)map_occupancy, (void*)buffer_occupancy, array_length*4);
+        memcpy2((void*)map_coords, (void*)buffer_coords, array_length*8);
+        memcpy2((void*)map_occupancy, (void*)buffer_occupancy, array_length*4);
 
         /* set the new map centre position */
         map_x_mm = robot_x_mm;
