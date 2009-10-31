@@ -25,15 +25,28 @@
 #ifndef PATH_MAX
 #define PATH_MAX 1024
 #endif
+#define GETS_BUF_MAX 256
 
 /* coercion of numeric types to other numeric types */
 #ifndef NO_FP
-#define IS_INTEGER_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeFP || (v)->Typ->Base == TypeChar)
-#define COERCE_INTEGER(v) (((v)->Typ->Base == TypeInt) ? (int)(v)->Val->Integer : (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (v)->Val->FP))
+#define IS_FP(v) ((v)->Typ->Base == TypeFP)
+#define FP_VAL(v) ((v)->Val->FP)
 #else
-#define IS_INTEGER_COERCIBLE(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeChar)
-#define COERCE_INTEGER(v) (((v)->Typ->Base == TypeChar) ? (int)(v)->Val->Character : (v)->Val->Integer)
+#define IS_FP(v) 0
+#define FP_VAL(v) 0
 #endif
+
+#ifdef NATIVE_POINTERS
+#define IS_POINTER_COERCIBLE(v, ap) ((ap) ? ((v)->Typ->Base == TypePointer) : 0)
+#define POINTER_COERCE(v) ((int)(v)->Val->NativePointer)
+#else
+#define IS_POINTER_COERCIBLE(v, ap) 0
+#define POINTER_COERCE(v) 0
+#endif
+
+#define IS_INTEGER_NUMERIC(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeChar || (v)->Typ->Base == TypeShort)
+#define IS_NUMERIC_COERCIBLE(v) (IS_INTEGER_NUMERIC(v) || IS_FP(v))
+#define IS_NUMERIC_COERCIBLE_PLUS_POINTERS(v,ap) (IS_NUMERIC_COERCIBLE(v) || IS_POINTER_COERCIBLE(v,ap))
 
 
 struct Table;
@@ -41,32 +54,32 @@ struct Table;
 /* lexical tokens */
 enum LexToken
 {
-    TokenNone, 
-    TokenComma,
-    TokenAssign, TokenAddAssign, TokenSubtractAssign, TokenMultiplyAssign, TokenDivideAssign, TokenModulusAssign,
-    TokenShiftLeftAssign, TokenShiftRightAssign, TokenArithmeticAndAssign, TokenArithmeticOrAssign, TokenArithmeticExorAssign,
-    TokenQuestionMark, TokenColon, 
-    TokenLogicalOr, 
-    TokenLogicalAnd, 
-    TokenArithmeticOr, 
-    TokenArithmeticExor, 
-    TokenAmpersand, 
-    TokenEqual, TokenNotEqual, 
-    TokenLessThan, TokenGreaterThan, TokenLessEqual, TokenGreaterEqual,
-    TokenShiftLeft, TokenShiftRight, 
-    TokenPlus, TokenMinus, 
-    TokenAsterisk, TokenSlash, TokenModulus,
-    TokenIncrement, TokenDecrement, TokenUnaryNot, TokenUnaryExor, TokenSizeof,
-    TokenLeftSquareBracket, TokenRightSquareBracket, TokenDot, TokenArrow, 
-    TokenOpenBracket, TokenCloseBracket,
-    TokenIdentifier, TokenIntegerConstant, TokenFPConstant, TokenStringConstant, TokenCharacterConstant,
-    TokenSemicolon, TokenEllipsis,
-    TokenLeftBrace, TokenRightBrace,
-    TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
-    TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
-    TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
-    TokenHashDefine, TokenHashInclude, TokenNew, TokenDelete,
-    TokenEOF, TokenEndOfLine, TokenEndOfFunction
+    /* 0x00 */ TokenNone, 
+    /* 0x01 */ TokenComma,
+    /* 0x02 */ TokenAssign, TokenAddAssign, TokenSubtractAssign, TokenMultiplyAssign, TokenDivideAssign, TokenModulusAssign,
+    /* 0x08 */ TokenShiftLeftAssign, TokenShiftRightAssign, TokenArithmeticAndAssign, TokenArithmeticOrAssign, TokenArithmeticExorAssign,
+    /* 0x0d */ TokenQuestionMark, TokenColon, 
+    /* 0x0f */ TokenLogicalOr, 
+    /* 0x10 */ TokenLogicalAnd, 
+    /* 0x11 */ TokenArithmeticOr, 
+    /* 0x12 */ TokenArithmeticExor, 
+    /* 0x13 */ TokenAmpersand, 
+    /* 0x14 */ TokenEqual, TokenNotEqual, 
+    /* 0x16 */ TokenLessThan, TokenGreaterThan, TokenLessEqual, TokenGreaterEqual,
+    /* 0x1a */ TokenShiftLeft, TokenShiftRight, 
+    /* 0x1c */ TokenPlus, TokenMinus, 
+    /* 0x1e */ TokenAsterisk, TokenSlash, TokenModulus,
+    /* 0x21 */ TokenIncrement, TokenDecrement, TokenUnaryNot, TokenUnaryExor, TokenSizeof, TokenCast,
+    /* 0x27 */ TokenLeftSquareBracket, TokenRightSquareBracket, TokenDot, TokenArrow, 
+    /* 0x2b */ TokenOpenBracket, TokenCloseBracket,
+    /* 0x2d */ TokenIdentifier, TokenIntegerConstant, TokenFPConstant, TokenStringConstant, TokenCharacterConstant,
+    /* 0x32 */ TokenSemicolon, TokenEllipsis,
+    /* 0x34 */ TokenLeftBrace, TokenRightBrace,
+    /* 0x36 */ TokenIntType, TokenCharType, TokenFloatType, TokenDoubleType, TokenVoidType, TokenEnumType,
+    /* 0x3c */ TokenLongType, TokenSignedType, TokenShortType, TokenStructType, TokenUnionType, TokenUnsignedType, TokenTypedef,
+    /* 0x43 */ TokenContinue, TokenDo, TokenElse, TokenFor, TokenIf, TokenWhile, TokenBreak, TokenSwitch, TokenCase, TokenDefault, TokenReturn,
+    /* 0x4e */ TokenHashDefine, TokenHashInclude, TokenNew, TokenDelete,
+    /* 0x52 */ TokenEOF, TokenEndOfLine, TokenEndOfFunction
 };
 
 /* used in dynamic memory allocation */
@@ -90,11 +103,15 @@ enum RunMode
 /* parser state - has all this detail so we can parse nested files */
 struct ParseState
 {
-    const void *Pos;
+    const unsigned char *Pos;
     int Line;
     const char *FileName;
     enum RunMode Mode;          /* whether to skip or run code */
     int SearchLabel;            /* what case label we're searching for */
+#ifdef FANCY_ERROR_REPORTING
+    int CharacterPos;
+    const char *SourceText;
+#endif
 };
 
 /* values */
@@ -102,17 +119,22 @@ enum BaseType
 {
     TypeVoid,                   /* no type */
     TypeInt,                    /* integer */
+    TypeShort,                  /* short integer */
+    TypeChar,                   /* a single character */
+    TypeUnsignedInt,            /* unsigned integer */
+    TypeUnsignedShort,          /* unsigned short integer */
+    TypeUnsignedChar,           /* a single unsigned character */
 #ifndef NO_FP
     TypeFP,                     /* floating point */
 #endif
-    TypeChar,                   /* a single character */
     TypeFunction,               /* a function */
     TypeMacro,                  /* a macro */
     TypePointer,                /* a pointer */
     TypeArray,                  /* an array of a sub-type */
     TypeStruct,                 /* aggregate type */
     TypeUnion,                  /* merged type */
-    TypeEnum,                   /* enumated integer type */
+    TypeEnum,                   /* enumerated integer type */
+    Type_Type                   /* a type for storing types */
 };
 
 /* data type */
@@ -144,7 +166,9 @@ struct FuncDef
 /* values */
 struct ArrayValue
 {
+#ifndef NATIVE_POINTERS
     unsigned int Size;              /* the number of elements in the array */
+#endif
     void *Data;                     /* pointer to the array data */
 };
 
@@ -158,9 +182,12 @@ struct PointerValue
 
 union AnyValue
 {
-    unsigned char Character;
+    char Character;
     short ShortInteger;
     int Integer;
+    unsigned char UnsignedCharacter;
+    unsigned short UnsignedShortInteger;
+    unsigned int UnsignedInteger;
     char *Identifier;
     struct ArrayValue Array;
     struct ParseState Parser;
@@ -228,8 +255,12 @@ struct LexState
 {
     const char *Pos;
     const char *End;
-    int Line;
     const char *FileName;
+    int Line;
+#ifdef FANCY_ERROR_REPORTING
+    int CharacterPos;
+    const char *SourceText;
+#endif
 };
 
 /* library function definition */
@@ -246,7 +277,9 @@ union OutputStreamInfo
     {
         struct ParseState *Parser;
         char *WritePos;
+#ifndef NATIVE_POINTERS
         char *MaxPos;
+#endif
     } Str;
 };
 
@@ -260,6 +293,9 @@ struct OutputStream
     union OutputStreamInfo i;
 };
 
+/* possible results of parsing a statement */
+enum ParseResult { ParseResultEOF, ParseResultError, ParseResultOk };
+
 /* globals */
 extern void *HeapStackTop;
 extern void *HeapMemStart;
@@ -267,15 +303,18 @@ extern struct Table GlobalTable;
 extern struct StackFrame *TopStackFrame;
 extern struct ValueType UberType;
 extern struct ValueType IntType;
+extern struct ValueType ShortType;
 extern struct ValueType CharType;
 #ifndef NO_FP
 extern struct ValueType FPType;
 #endif
 extern struct ValueType VoidType;
+extern struct ValueType TypeType;
 extern struct ValueType FunctionType;
 extern struct ValueType MacroType;
 extern struct ValueType *CharPtrType;
 extern struct ValueType *CharArrayType;
+extern struct ValueType *VoidPtrType;
 extern char *StrEmpty;
 extern struct PointerValue NULLPointer;
 extern struct LibraryFunction CLibrary[];
@@ -297,7 +336,7 @@ void TableStrFree();
 void LexInit();
 void LexCleanup();
 void *LexAnalyse(const char *FileName, const char *Source, int SourceLen, int *TokenLen);
-void LexInitParser(struct ParseState *Parser, void *TokenSource, const char *FileName, int Line, int RunIt);
+void LexInitParser(struct ParseState *Parser, const char *SourceText, void *TokenSource, const char *FileName, int RunIt);
 enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int IncPos);
 void LexToEndOfLine(struct ParseState *Parser);
 void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser);
@@ -306,7 +345,7 @@ void LexInteractiveCompleted(struct ParseState *Parser);
 void LexInteractiveStatementPrompt();
 
 /* parse.c */
-int ParseStatement(struct ParseState *Parser);
+enum ParseResult ParseStatement(struct ParseState *Parser);
 struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueType *ReturnType, char *Identifier, int IsProtoType);
 void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt);
 void ParseInteractive();
@@ -316,6 +355,12 @@ void ParserCopyPos(struct ParseState *To, struct ParseState *From);
 /* expression.c */
 int ExpressionParse(struct ParseState *Parser, struct Value **Result);
 int ExpressionParseInt(struct ParseState *Parser);
+void ExpressionAssign(struct ParseState *Parser, struct Value *DestValue, struct Value *SourceValue, int Force, const char *FuncName, int ParamNo, int AllowPointerCoercion);
+int ExpressionCoerceInteger(struct Value *Val);
+unsigned int ExpressionCoerceUnsignedInteger(struct Value *Val);
+#ifndef NO_FP
+double ExpressionCoerceFP(struct Value *Val);
+#endif
 
 /* type.c */
 void TypeInit();
@@ -333,10 +378,11 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
 void HeapInit();
 void *HeapAllocStack(int Size);
 int HeapPopStack(void *Addr, int Size);
+void HeapUnpopStack(int Size);
 void HeapPushStackFrame();
 int HeapPopStackFrame();
-void *HeapAlloc(int Size);
-void HeapFree(void *Mem);
+void *HeapAllocMem(int Size);
+void HeapFreeMem(void *Mem);
 
 /* variable.c */
 void VariableInit();
@@ -347,10 +393,10 @@ void *VariableAlloc(struct ParseState *Parser, int Size, int OnHeap);
 void VariableStackPop(struct ParseState *Parser, struct Value *Var);
 struct Value *VariableAllocValueAndData(struct ParseState *Parser, int DataSize, int IsLValue, struct Value *LValueFrom, int OnHeap);
 struct Value *VariableAllocValueAndCopy(struct ParseState *Parser, struct Value *FromValue, int OnHeap);
-struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct ValueType *Typ, int IsLValue, struct Value *LValueFrom);
+struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct ValueType *Typ, int IsLValue, struct Value *LValueFrom, int OnHeap);
 struct Value *VariableAllocValueFromExistingData(struct ParseState *Parser, struct ValueType *Typ, union AnyValue *FromValue, int IsLValue, struct Value *LValueFrom);
 struct Value *VariableAllocValueShared(struct ParseState *Parser, struct Value *FromValue);
-void VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue, int MakeWritable);
+struct Value *VariableDefine(struct ParseState *Parser, char *Ident, struct Value *InitValue, struct ValueType *Typ, int MakeWritable);
 int VariableDefined(const char *Ident);
 void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LVal);
 void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct ValueType *Typ, union AnyValue *FromValue, int IsWritable);
@@ -358,19 +404,20 @@ void VariableStackFrameAdd(struct ParseState *Parser, int NumParams);
 void VariableStackFramePop(struct ParseState *Parser);
 struct Value *VariableStringLiteralGet(char *Ident);
 void VariableStringLiteralDefine(char *Ident, struct Value *Val);
-void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType);
+void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType, int *DerefIsLValue);
 
 /* clibrary.c */
 void LibraryInit(struct Table *GlobalTable, const char *LibraryName, struct LibraryFunction (*FuncList)[]);
 void CLibraryInit();
 void PrintCh(char OutCh, struct OutputStream *Stream);
-void PrintInt(int Num, struct OutputStream *Stream);
+void PrintInt(int Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream);
 void PrintStr(const char *Str, struct OutputStream *Stream);
 void PrintFP(double Num, struct OutputStream *Stream);
 void PrintType(struct ValueType *Typ, struct OutputStream *Stream);
 
 /* platform.c */
 void ProgramFail(struct ParseState *Parser, const char *Message, ...);
+void AssignFail(struct ParseState *Parser, const char *Format, struct ValueType *Type1, struct ValueType *Type2, int Num1, int Num2, const char *FuncName, int ParamNo);
 void LexFail(struct LexState *Lexer, const char *Message, ...);
 void PlatformCleanup();
 void PlatformScanFile(const char *FileName);

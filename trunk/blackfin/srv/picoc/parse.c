@@ -7,17 +7,18 @@ static void *CleanupTokens = NULL;
 void ParseCleanup()
 {
     if (CleanupTokens != NULL)
-        HeapFree(CleanupTokens);
+        HeapFreeMem(CleanupTokens);
 }
 
 /* parse a statement, but only run it if Condition is TRUE */
-int ParseStatementMaybeRun(struct ParseState *Parser, int Condition)
+enum ParseResult ParseStatementMaybeRun(struct ParseState *Parser, int Condition)
 {
     if (Parser->Mode != RunModeSkip && !Condition)
     {
         enum RunMode OldMode = Parser->Mode;
+        int Result;
         Parser->Mode = RunModeSkip;
-        int Result = ParseStatement(Parser);
+        Result = ParseStatement(Parser);
         Parser->Mode = OldMode;
         return Result;
     }
@@ -36,6 +37,9 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
     struct ParseState FuncBody;
     int ParamCount = 0;
 
+    if (TopStackFrame != NULL)
+        ProgramFail(Parser, "nested function definitions are not allowed");
+        
     LexGetToken(Parser, NULL, TRUE);  /* open bracket */
     ParamParser = *Parser;
     Token = LexGetToken(Parser, NULL, TRUE);
@@ -56,19 +60,22 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
     FuncValue->Val->FuncDef.ReturnType = ReturnType;
     FuncValue->Val->FuncDef.NumParams = ParamCount;
     FuncValue->Val->FuncDef.VarArgs = FALSE;
-    FuncValue->Val->FuncDef.ParamType = (void *)FuncValue->Val + sizeof(struct FuncDef);
-    FuncValue->Val->FuncDef.ParamName = (void *)FuncValue->Val->FuncDef.ParamType + sizeof(struct ValueType *) * ParamCount;
+    FuncValue->Val->FuncDef.ParamType = (struct ValueType **)((char *)FuncValue->Val + sizeof(struct FuncDef));
+    FuncValue->Val->FuncDef.ParamName = (char **)((char *)FuncValue->Val->FuncDef.ParamType + sizeof(struct ValueType *) * ParamCount);
    
     for (ParamCount = 0; ParamCount < FuncValue->Val->FuncDef.NumParams; ParamCount++)
-    { /* harvest the parameters into the function definition */
+    { 
+        /* harvest the parameters into the function definition */
         if (ParamCount == FuncValue->Val->FuncDef.NumParams-1 && LexGetToken(&ParamParser, NULL, FALSE) == TokenEllipsis)
-        { /* ellipsis at end */
+        { 
+            /* ellipsis at end */
             FuncValue->Val->FuncDef.NumParams--;
             FuncValue->Val->FuncDef.VarArgs = TRUE;
             break;
         }
         else
-        { /* add a parameter */
+        { 
+            /* add a parameter */
             TypeParse(&ParamParser, &ParamType, &ParamIdentifier);
             FuncValue->Val->FuncDef.ParamType[ParamCount] = ParamType;
             FuncValue->Val->FuncDef.ParamName[ParamCount] = ParamIdentifier;
@@ -79,13 +86,16 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
             ProgramFail(&ParamParser, "comma expected");
     }
     
+    if (FuncValue->Val->FuncDef.NumParams != 0 && Token != TokenCloseBracket && Token != TokenComma && Token != TokenEllipsis)
+        ProgramFail(&ParamParser, "bad parameter");
+    
     if (!IsPrototype)
     {
         if (LexGetToken(Parser, NULL, FALSE) != TokenLeftBrace)
             ProgramFail(Parser, "bad function definition");
         
         FuncBody = *Parser;
-        if (!ParseStatementMaybeRun(Parser, FALSE))
+        if (ParseStatementMaybeRun(Parser, FALSE) != ParseResultOk)
             ProgramFail(Parser, "function definition expected");
 
         FuncValue->Val->FuncDef.Body = FuncBody;
@@ -105,6 +115,7 @@ int ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
     struct ValueType *BasicType;
     struct ValueType *Typ;
     struct Value *CValue;
+    struct Value *NewVariable;
 
     TypeParseFront(Parser, &BasicType);
     do
@@ -123,20 +134,24 @@ int ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
             }
             else
             {
-                if (Token == TokenVoidType && Identifier != StrEmpty)
+                if (Typ == &VoidType && Identifier != StrEmpty)
                     ProgramFail(Parser, "can't define a void variable");
                     
-                if (LexGetToken(Parser, NULL, FALSE) != TokenAssign)
-                    VariableDefine(Parser, Identifier, VariableAllocValueFromType(Parser, Typ, TRUE, NULL), TRUE);
-                else
-                { /* we're assigning an initial value */
+                if (Parser->Mode == RunModeRun)
+                    NewVariable = VariableDefine(Parser, Identifier, NULL, Typ, TRUE);
+                
+                if (LexGetToken(Parser, NULL, FALSE) == TokenAssign)
+                {
+                    /* we're assigning an initial value */
                     LexGetToken(Parser, NULL, TRUE);
                     if (!ExpressionParse(Parser, &CValue))
                         ProgramFail(Parser, "expression expected");
                         
-                    VariableDefine(Parser, Identifier, CValue, TRUE);
                     if (Parser->Mode == RunModeRun)
+                    {
+                        ExpressionAssign(Parser, NewVariable, CValue, FALSE, NULL, 0, FALSE);
                         VariableStackPop(Parser, CValue);
+                    }
                 }
             }
         }
@@ -173,6 +188,9 @@ void ParserCopyPos(struct ParseState *To, struct ParseState *From)
 {
     To->Pos = From->Pos;
     To->Line = From->Line;
+#ifdef FANCY_ERROR_REPORTING
+    To->CharacterPos = From->CharacterPos;
+#endif
 }
 
 /* parse a "for" statement */
@@ -187,7 +205,7 @@ void ParseFor(struct ParseState *Parser)
     if (LexGetToken(Parser, NULL, TRUE) != TokenOpenBracket)
         ProgramFail(Parser, "'(' expected");
                         
-    if (!ParseStatement(Parser))
+    if (ParseStatement(Parser) != ParseResultOk)
         ProgramFail(Parser, "statement expected");
     
     ParserCopyPos(&PreConditional, Parser);
@@ -203,7 +221,7 @@ void ParseFor(struct ParseState *Parser)
         ProgramFail(Parser, "')' expected");
     
     ParserCopyPos(&PreStatement, Parser);
-    if (!ParseStatementMaybeRun(Parser, Condition))
+    if (ParseStatementMaybeRun(Parser, Condition) != ParseResultOk)
         ProgramFail(Parser, "statement expected");
     
     if (Parser->Mode == RunModeContinue)
@@ -242,16 +260,18 @@ enum RunMode ParseBlock(struct ParseState *Parser, int AbsorbOpenBrace, int Cond
         ProgramFail(Parser, "'{' expected");
     
     if (Parser->Mode != RunModeSkip && !Condition)
-    { /* condition failed - skip this block instead */
+    { 
+        /* condition failed - skip this block instead */
         enum RunMode OldMode = Parser->Mode;
         Parser->Mode = RunModeSkip;
-        while (ParseStatement(Parser))
+        while (ParseStatement(Parser) == ParseResultOk)
         {}
         Parser->Mode = OldMode;
     }
     else
-    { /* just run it in its current mode */
-        while (ParseStatement(Parser))
+    { 
+        /* just run it in its current mode */
+        while (ParseStatement(Parser) == ParseResultOk)
         {}
     }
     
@@ -262,7 +282,7 @@ enum RunMode ParseBlock(struct ParseState *Parser, int AbsorbOpenBrace, int Cond
 }
 
 /* parse a statement */
-int ParseStatement(struct ParseState *Parser)
+enum ParseResult ParseStatement(struct ParseState *Parser)
 {
     struct Value *CValue;
     struct Value *LexerValue;
@@ -274,9 +294,10 @@ int ParseStatement(struct ParseState *Parser)
     switch (Token)
     {
         case TokenEOF:
-            return FALSE;
+            return ParseResultEOF;
             
         case TokenIdentifier: 
+        case TokenAsterisk: 
             *Parser = PreState;
             ExpressionParse(Parser, &CValue);
             if (Parser->Mode == RunModeRun) 
@@ -297,13 +318,13 @@ int ParseStatement(struct ParseState *Parser)
             if (LexGetToken(Parser, NULL, TRUE) != TokenCloseBracket)
                 ProgramFail(Parser, "')' expected");
 
-            if (!ParseStatementMaybeRun(Parser, Condition))
+            if (ParseStatementMaybeRun(Parser, Condition) != ParseResultOk)
                 ProgramFail(Parser, "statement expected");
             
             if (LexGetToken(Parser, NULL, FALSE) == TokenElse)
             {
                 LexGetToken(Parser, NULL, TRUE);
-                if (!ParseStatementMaybeRun(Parser, !Condition))
+                if (ParseStatementMaybeRun(Parser, !Condition) != ParseResultOk)
                     ProgramFail(Parser, "statement expected");
             }
             CheckTrailingSemicolon = FALSE;
@@ -312,12 +333,21 @@ int ParseStatement(struct ParseState *Parser)
         case TokenWhile:
             {
                 struct ParseState PreConditional;
+
+                if (LexGetToken(Parser, NULL, TRUE) != TokenOpenBracket)
+                    ProgramFail(Parser, "'(' expected");
+                    
                 ParserCopyPos(&PreConditional, Parser);
                 do
                 {
                     ParserCopyPos(Parser, &PreConditional);
                     Condition = ExpressionParseInt(Parser);
-                    ParseBlock(Parser, TRUE, Condition);
+                    if (LexGetToken(Parser, NULL, TRUE) != TokenCloseBracket)
+                        ProgramFail(Parser, "')' expected");
+                    
+                    if (ParseStatementMaybeRun(Parser, Condition) != ParseResultOk)
+                        ProgramFail(Parser, "statement expected");
+                    
                     if (Parser->Mode == RunModeContinue)
                         Parser->Mode = RunModeRun;
                     
@@ -337,15 +367,22 @@ int ParseStatement(struct ParseState *Parser)
                 do
                 {
                     ParserCopyPos(Parser, &PreStatement);
-                    ParseBlock(Parser, TRUE, TRUE);
+                    if (ParseStatement(Parser) != ParseResultOk)
+                        ProgramFail(Parser, "statement expected");
+                
                     if (Parser->Mode == RunModeContinue)
                         Parser->Mode = RunModeRun;
 
                     if (LexGetToken(Parser, NULL, TRUE) != TokenWhile)
                         ProgramFail(Parser, "'while' expected");
                     
+                    if (LexGetToken(Parser, NULL, TRUE) != TokenOpenBracket)
+                        ProgramFail(Parser, "'(' expected");
+                        
                     Condition = ExpressionParseInt(Parser);
-                
+                    if (LexGetToken(Parser, NULL, TRUE) != TokenCloseBracket)
+                        ProgramFail(Parser, "')' expected");
+                    
                 } while (Condition && Parser->Mode == RunModeRun);           
                 
                 if (Parser->Mode == RunModeBreak)
@@ -361,6 +398,7 @@ int ParseStatement(struct ParseState *Parser)
         case TokenSemicolon: break;
 
         case TokenIntType:
+        case TokenShortType:
         case TokenCharType:
         case TokenFloatType:
         case TokenDoubleType:
@@ -368,6 +406,8 @@ int ParseStatement(struct ParseState *Parser)
         case TokenStructType:
         case TokenUnionType:
         case TokenEnumType:
+        case TokenSignedType:
+        case TokenUnsignedType:
             *Parser = PreState;
             CheckTrailingSemicolon = ParseDeclaration(Parser, Token);
             break;
@@ -385,7 +425,7 @@ int ParseStatement(struct ParseState *Parser)
 #ifndef NATIVE_POINTERS
             PlatformScanFile(LexerValue->Val->Pointer.Segment->Val->Array.Data);
 #else
-            PlatformScanFile(((struct Value *)(LexerValue->Val->NativePointer))->Val->Array.Data);
+            PlatformScanFile((char *)LexerValue->Val->NativePointer);
 #endif
             CheckTrailingSemicolon = FALSE;
             break;
@@ -463,13 +503,12 @@ int ParseStatement(struct ParseState *Parser)
                 if (!ExpressionParse(Parser, &CValue) && TopStackFrame->ReturnValue->Typ->Base != TypeVoid)
                     ProgramFail(Parser, "value required in return");
                     
-                if (CValue->Typ != TopStackFrame->ReturnValue->Typ)
-                    ProgramFail(Parser, "wrong return type");
-                    
-                // XXX - make assignment a separate function
-                // XXX - also arrays need cleverer assignment
-                memcpy((void *)TopStackFrame->ReturnValue->Val, (void *)CValue->Val, TypeSizeValue(CValue));
-                VariableStackPop(Parser, CValue);
+                if (TopStackFrame->ReturnValue->Typ->Base != TypeVoid)
+                {
+                    ExpressionAssign(Parser, TopStackFrame->ReturnValue, CValue, TRUE, NULL, 0, FALSE);
+                    VariableStackPop(Parser, CValue);
+                }
+                
                 Parser->Mode = RunModeReturn;
             }
             else
@@ -488,7 +527,7 @@ int ParseStatement(struct ParseState *Parser)
                 {
                     if (TopStackFrame->ReturnValue->Typ->Base == TypePointer)
                     { /* this was a pointer to something - delete the object we're pointing to */
-                        // XXX - now I'm having second thoughts about this
+                        /* XXX - now I'm having second thoughts about this */
                         WasPointer = TRUE;
                     }
                     
@@ -517,34 +556,36 @@ int ParseStatement(struct ParseState *Parser)
         
         default:
             *Parser = PreState;
-            return FALSE;
+            return ParseResultError;
     }
     
     if (CheckTrailingSemicolon && LexGetToken(Parser, NULL, FALSE) == TokenSemicolon)
         LexGetToken(Parser, NULL, TRUE);
     
-    return TRUE;
+    return ParseResultOk;
 }
 
 /* quick scan a source file for definitions */
 void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt)
 {
     struct ParseState Parser;
+    enum ParseResult Ok;
     
     void *OldCleanupTokens = CleanupTokens;
     void *Tokens = LexAnalyse(FileName, Source, SourceLen, NULL);
     if (OldCleanupTokens == NULL)
         CleanupTokens = Tokens;
 
-    LexInitParser(&Parser, Tokens, FileName, 1, RunIt);
+    LexInitParser(&Parser, Source, Tokens, FileName, RunIt);
 
-    while (ParseStatement(&Parser))
-    {}
+    do {
+        Ok = ParseStatement(&Parser);
+    } while (Ok == ParseResultOk);
     
-    if (LexGetToken(&Parser, NULL, FALSE) != TokenEOF)
+    if (Ok == ParseResultError)
         ProgramFail(&Parser, "parse error");
     
-    HeapFree(Tokens);
+    HeapFreeMem(Tokens);
     if (OldCleanupTokens == NULL)
         CleanupTokens = NULL;
 }
@@ -553,10 +594,10 @@ void Parse(const char *FileName, const char *Source, int SourceLen, int RunIt)
 void ParseInteractive()
 {
     struct ParseState Parser;
-    int Ok;
+    enum ParseResult Ok;
     
     PlatformPrintf(INTERACTIVE_PROMPT_START);
-    LexInitParser(&Parser, NULL, StrEmpty, 1, TRUE);
+    LexInitParser(&Parser, NULL, NULL, StrEmpty, TRUE);
     PlatformSetExitPoint();
     LexInteractiveClear(&Parser);
 
@@ -566,7 +607,10 @@ void ParseInteractive()
         Ok = ParseStatement(&Parser);
         LexInteractiveCompleted(&Parser);
         
-    } while (Ok);
+    } while (Ok == ParseResultOk);
+    
+    if (Ok == ParseResultError)
+        ProgramFail(&Parser, "parse error");
     
     PlatformPrintf("\n");
 }

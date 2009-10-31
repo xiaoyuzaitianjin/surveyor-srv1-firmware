@@ -1,3 +1,5 @@
+//#include <math.h>
+
 #include "picoc.h"
 
 struct OutputStream CStdOut;
@@ -21,11 +23,11 @@ void LibraryInit(struct Table *GlobalTable, const char *LibraryName, struct Libr
     for (Count = 0; (*FuncList)[Count].Prototype != NULL; Count++)
     {
         Tokens = LexAnalyse(IntrinsicName, (*FuncList)[Count].Prototype, strlen((char *)(*FuncList)[Count].Prototype), NULL);
-        LexInitParser(&Parser, Tokens, IntrinsicName, Count+1, TRUE);
+        LexInitParser(&Parser, (*FuncList)[Count].Prototype, Tokens, IntrinsicName, TRUE);
         TypeParse(&Parser, &ReturnType, &Identifier);
         NewValue = ParseFunctionDefinition(&Parser, ReturnType, Identifier, TRUE);
         NewValue->Val->FuncDef.Intrinsic = (*FuncList)[Count].Func;
-        HeapFree(Tokens);
+        HeapFreeMem(Tokens);
     }
 }
 
@@ -43,8 +45,10 @@ void SPutc(unsigned char Ch, union OutputStreamInfo *Stream)
 {
     struct StringOutputStream *Out = &Stream->Str;
     *Out->WritePos++ = Ch;
+#ifndef NATIVE_POINTERS
     if (Out->WritePos == Out->MaxPos)
         Out->WritePos--;
+#endif
 }
 
 /* print a character to a stream without using printf/sprintf */
@@ -60,36 +64,56 @@ void PrintStr(const char *Str, struct OutputStream *Stream)
         PrintCh(*Str++, Stream);
 }
 
-/* print an integer to a stream without using printf/sprintf */
-void PrintInt(int Num, struct OutputStream *Stream)
+/* print a single character a given number of times */
+void PrintRepeatedChar(char ShowChar, int Length, struct OutputStream *Stream)
 {
-    int Div;
-    int Remainder = 0;
-    int Printing = FALSE;
+    while (Length-- > 0)
+        PrintCh(ShowChar, Stream);
+}
+
+/* print an unsigned integer to a stream without using printf/sprintf */
+void PrintUnsigned(unsigned int Num, unsigned int Base, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream)
+{
+    char Result[33];
+    int ResPos = sizeof(Result);
+
+    if (Num == 0)
+        PrintCh('0', Stream);
+            
+    Result[--ResPos] = '\0';
+    while (Num > 0)
+    {
+        unsigned int NextNum = Num / Base;
+        unsigned int Digit = Num - NextNum * Base;
+        if (Digit < 10)
+            Result[--ResPos] = '0' + Digit;
+        else
+            Result[--ResPos] = 'a' + Digit - 10;
+        
+        Num = NextNum;
+    }
     
+    if (FieldWidth > 0 && !LeftJustify)
+        PrintRepeatedChar(ZeroPad ? '0' : ' ', FieldWidth - (sizeof(Result) - 1 - ResPos), Stream);
+        
+    PrintStr(&Result[ResPos], Stream);
+
+    if (FieldWidth > 0 && LeftJustify)
+        PrintRepeatedChar(' ', FieldWidth - (sizeof(Result) - 1 - ResPos), Stream);
+}
+
+/* print an integer to a stream without using printf/sprintf */
+void PrintInt(int Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream)
+{
     if (Num < 0)
     {
         PrintCh('-', Stream);
-        Num = -Num;    
+        Num = -Num;
+        if (FieldWidth != 0)
+            FieldWidth--;
     }
     
-    if (Num == 0)
-        PrintCh('0', Stream);
-    else
-    {
-        Div = LARGE_INT_POWER_OF_TEN;
-        while (Div > 0)
-        {
-            Remainder = Num / Div;
-            if (Printing || Remainder > 0)
-            {
-                PrintCh('0' + Remainder, Stream);
-                Printing = TRUE;
-            }
-            Num -= Remainder * Div;
-            Div /= 10;
-        }
-    }
+    PrintUnsigned((unsigned int)Num, 10, FieldWidth, ZeroPad, LeftJustify, Stream);
 }
 
 #ifndef NO_FP
@@ -97,22 +121,35 @@ void PrintInt(int Num, struct OutputStream *Stream)
 void PrintFP(double Num, struct OutputStream *Stream)
 {
     int Exponent = 0;
+    int MaxDecimal;
     
-    if (abs(Num) >= 1e7)
-        Exponent = log(Num) / LOG10E;
-    else if (abs(Num) <= 1e-7)
-        Exponent = log(Num) / LOG10E - 0.999999999;
+    if (Num < 0)
+    {
+        PrintCh('-', Stream);
+        Num = -Num;    
+    }
     
-    Num /= pow(10.0, Exponent);
-    PrintInt((int)Num, Stream);
+    if (Num >= 1e7)
+        Exponent = math_log10(Num);
+    else if (Num <= 1e-7 && Num != 0.0)
+        Exponent = math_log10(Num) - 0.999999999;
+    
+    Num /= math_pow(10.0, Exponent);    
+    PrintInt((int)Num, 0, FALSE, FALSE, Stream);
     PrintCh('.', Stream);
-    for (Num -= (int)Num; Num != 0.0; Num *= 10.0)
-        PrintCh('0' + (int)Num, Stream);
-    
-    if (Exponent)
+    Num = (Num - (int)Num) * 10;
+    if (math_abs(Num) >= 1e-7)
+    {
+        for (MaxDecimal = 6; MaxDecimal > 0 && math_abs(Num) >= 1e-7; Num = (Num - (int)(Num + 1e-7)) * 10, MaxDecimal--)
+            PrintCh('0' + (int)(Num + 1e-7), Stream);
+    }
+    else
+        PrintCh('0', Stream);
+        
+    if (Exponent != 0)
     {
         PrintCh('e', Stream);
-        PrintInt(Exponent, Stream);
+        PrintInt(Exponent, 0, FALSE, FALSE, Stream);
     }
 }
 #endif
@@ -122,19 +159,24 @@ void PrintType(struct ValueType *Typ, struct OutputStream *Stream)
 {
     switch (Typ->Base)
     {
-        case TypeVoid:      PrintStr("void", Stream); break;
-        case TypeInt:       PrintStr("int", Stream); break;
+        case TypeVoid:          PrintStr("void", Stream); break;
+        case TypeInt:           PrintStr("int", Stream); break;
+        case TypeShort:         PrintStr("short", Stream); break;
+        case TypeChar:          PrintStr("char", Stream); break;
+        case TypeUnsignedInt:   PrintStr("unsigned int", Stream); break;
+        case TypeUnsignedShort: PrintStr("unsigned short", Stream); break;
+        case TypeUnsignedChar:  PrintStr("unsigned char", Stream); break;
 #ifndef NO_FP
-        case TypeFP:        PrintStr("double", Stream); break;
+        case TypeFP:            PrintStr("double", Stream); break;
 #endif
-        case TypeChar:      PrintStr("char", Stream); break;
-        case TypeFunction:  PrintStr("function", Stream); break;
-        case TypeMacro:     PrintStr("macro", Stream); break;
-        case TypePointer:   if (Typ->FromType) PrintType(Typ->FromType, Stream); PrintCh('*', Stream); break;
-        case TypeArray:     PrintType(Typ->FromType, Stream); PrintCh('[', Stream); if (Typ->ArraySize != 0) PrintInt(Typ->ArraySize, Stream); PrintCh(']', Stream); break;
-        case TypeStruct:    PrintStr("struct ", Stream); PrintStr(Typ->Identifier, Stream); break;
-        case TypeUnion:     PrintStr("union ", Stream); PrintStr(Typ->Identifier, Stream); break;
-        case TypeEnum:      PrintStr("enum ", Stream); PrintStr(Typ->Identifier, Stream); break;
+        case TypeFunction:      PrintStr("function", Stream); break;
+        case TypeMacro:         PrintStr("macro", Stream); break;
+        case TypePointer:       if (Typ->FromType) PrintType(Typ->FromType, Stream); PrintCh('*', Stream); break;
+        case TypeArray:         PrintType(Typ->FromType, Stream); PrintCh('[', Stream); if (Typ->ArraySize != 0) PrintInt(Typ->ArraySize, 0, FALSE, FALSE, Stream); PrintCh(']', Stream); break;
+        case TypeStruct:        PrintStr("struct ", Stream); PrintStr(Typ->Identifier, Stream); break;
+        case TypeUnion:         PrintStr("union ", Stream); PrintStr(Typ->Identifier, Stream); break;
+        case TypeEnum:          PrintStr("enum ", Stream); PrintStr(Typ->Identifier, Stream); break;
+        case Type_Type:         PrintStr("type ", Stream); break;
     }
 }
 
@@ -145,6 +187,9 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
     struct Value *NextArg = Param[0];
     struct ValueType *FormatType;
     int ArgCount = 1;
+    int LeftJustify = FALSE;
+    int ZeroPad = FALSE;
+    int FieldWidth = 0;
 #ifndef NATIVE_POINTERS
     char *Format;
     struct Value *CharArray = Param[0]->Val->Pointer.Segment;
@@ -152,10 +197,10 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
     if (Param[0]->Val->Pointer.Offset < 0 || Param[0]->Val->Pointer.Offset >= CharArray->Val->Array.Size)
         Format = StrEmpty;
     else
-        Format = CharArray->Val->Array.Data + Param[0]->Val->Pointer.Offset;
+        Format = (char *)CharArray->Val->Array.Data + Param[0]->Val->Pointer.Offset;
 #else
     char *Format = Param[0]->Val->NativePointer;
-    // XXX - dereference this properly
+    /* XXX - dereference this properly */
 #endif
     
     for (FPos = Format; *FPos != '\0'; FPos++)
@@ -163,10 +208,29 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
         if (*FPos == '%')
         {
             FPos++;
+            if (*FPos == '-')
+            {
+                /* a leading '-' means left justify */
+                LeftJustify = TRUE;
+                FPos++;
+            }
+            
+            if (*FPos == '0')
+            {
+                /* a leading zero means zero pad a decimal number */
+                ZeroPad = TRUE;
+                FPos++;
+            }
+            
+            /* get any field width in the format */
+            while (isdigit(*FPos))
+                FieldWidth = FieldWidth * 10 + (*FPos++ - '0');
+            
+            /* now check the format type */
             switch (*FPos)
             {
                 case 's': FormatType = CharPtrType; break;
-                case 'd': case 'c': FormatType = &IntType; break;
+                case 'd': case 'u': case 'x': case 'b': case 'c': FormatType = &IntType; break;
 #ifndef NO_FP
                 case 'f': FormatType = &FPType; break;
 #endif
@@ -181,8 +245,11 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
                     PrintStr("XXX", Stream);   /* not enough parameters for format */
                 else
                 {
-                    NextArg = (struct Value *)((void *)NextArg + sizeof(struct Value) + TypeStackSizeValue(NextArg));
-                    if (NextArg->Typ != FormatType && !(FormatType == &IntType && IS_INTEGER_COERCIBLE(NextArg)))
+                    NextArg = (struct Value *)((char *)NextArg + sizeof(struct Value) + TypeStackSizeValue(NextArg));
+                    if (NextArg->Typ != FormatType && 
+                            !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) &&
+                            !(FormatType == CharPtrType && (NextArg->Typ->Base == TypePointer || 
+                                                             (NextArg->Typ->Base == TypeArray && NextArg->Typ->FromType->Base == TypeChar) ) ) )
                         PrintStr("XXX", Stream);   /* bad type for format */
                     else
                     {
@@ -190,26 +257,37 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
                         {
                             case 's':
                             {
-#ifndef NATIVE_POINTERS
-                                struct Value *CharArray = NextArg->Val->Pointer.Segment;
                                 char *Str;
                                 
-                                if (NextArg->Val->Pointer.Offset < 0 || NextArg->Val->Pointer.Offset >= CharArray->Val->Array.Size)
-                                    Str = StrEmpty;
-                                else
-                                    Str = CharArray->Val->Array.Data + NextArg->Val->Pointer.Offset;
+                                if (NextArg->Typ->Base == TypePointer)
+                                {
+#ifndef NATIVE_POINTERS
+                                    struct Value *CharArray = NextArg->Val->Pointer.Segment;
+
+                                    if (NextArg->Val->Pointer.Offset < 0 || NextArg->Val->Pointer.Offset >= CharArray->Val->Array.Size)
+                                        Str = StrEmpty;
+                                    else
+                                        Str = (char *)CharArray->Val->Array.Data + NextArg->Val->Pointer.Offset;
 #else
-                                char *Str = NextArg->Val->NativePointer;
-                                // XXX - dereference this properly
+                                    Str = NextArg->Val->NativePointer;
 #endif
+                                }
+                                else
+                                    Str = NextArg->Val->Array.Data;
                                     
-                                PrintStr(Str, Stream); 
+                                if (Str == NULL)
+                                    PrintStr("NULL", Stream); 
+                                else
+                                    PrintStr(Str, Stream); 
                                 break;
                             }
-                            case 'd': PrintInt(COERCE_INTEGER(NextArg), Stream); break;
-                            case 'c': PrintCh(COERCE_INTEGER(NextArg), Stream); break;
+                            case 'd': PrintInt(ExpressionCoerceInteger(NextArg), FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'u': PrintUnsigned((unsigned int)ExpressionCoerceInteger(NextArg), 10, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'x': PrintUnsigned((unsigned int)ExpressionCoerceInteger(NextArg), 16, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'b': PrintUnsigned((unsigned int)ExpressionCoerceInteger(NextArg), 2, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'c': PrintCh(ExpressionCoerceInteger(NextArg), Stream); break;
 #ifndef NO_FP
-                            case 'f': PrintFP(NextArg->Val->FP, Stream); break;
+                            case 'f': PrintFP(ExpressionCoerceFP(NextArg), Stream); break;
 #endif
                         }
                     }
@@ -238,15 +316,16 @@ void LibSPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Val
     struct OutputStream StrStream;
     struct Value *DerefVal;
     int DerefOffset;
-    struct ValueType *DerefType;
-    StrStream.i.Str.WritePos = VariableDereferencePointer(StrStream.i.Str.Parser, Param[0], &DerefVal, &DerefOffset, &DerefType);
+    StrStream.i.Str.WritePos = VariableDereferencePointer(StrStream.i.Str.Parser, Param[0], &DerefVal, &DerefOffset, NULL, NULL);
 
     if (DerefVal->Typ->Base != TypeArray)
         ProgramFail(Parser, "can only print to arrays of char");
         
     StrStream.Putch = &SPutc;
     StrStream.i.Str.Parser = Parser;
-    StrStream.i.Str.MaxPos = StrStream.i.Str.WritePos- DerefOffset + DerefVal->Val->Array.Size;
+#ifndef NATIVE_POINTERS
+    StrStream.i.Str.MaxPos = StrStream.i.Str.WritePos - DerefOffset + DerefVal->Val->Array.Size;
+#endif
     GenericPrintf(Parser, ReturnValue, Param+1, NumArgs-1, &StrStream);
     PrintCh(0, &StrStream);
 #ifndef NATIVE_POINTERS
@@ -262,7 +341,7 @@ void LibGets(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 {
 #ifndef NATIVE_POINTERS
     struct Value *CharArray = Param[0]->Val->Pointer.Segment;
-    char *ReadBuffer = CharArray->Val->Array.Data + Param[0]->Val->Pointer.Offset;
+    char *ReadBuffer = (char *)CharArray->Val->Array.Data + Param[0]->Val->Pointer.Offset;
     int MaxLength = CharArray->Val->Array.Size - Param[0]->Val->Pointer.Offset;
     char *Result;
 
@@ -280,15 +359,10 @@ void LibGets(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 #else
     struct Value *CharArray = (struct Value *)(Param[0]->Val->NativePointer);
     char *ReadBuffer = CharArray->Val->Array.Data;
-    int MaxLength = CharArray->Val->Array.Size;
     char *Result;
 
     ReturnValue->Val->NativePointer = NULL;
-    
-    if (MaxLength < 0)
-        return; /* no room for data */
-    
-    Result = PlatformGetLine(ReadBuffer, MaxLength);
+    Result = PlatformGetLine(ReadBuffer, GETS_BUF_MAX);
     if (Result == NULL)
         return;
     
@@ -301,6 +375,180 @@ void LibGetc(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
     ReturnValue->Val->Integer = PlatformGetCharacter();
 }
 
+void LibExit(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    PlatformExit();
+}
+
+#ifdef PICOC_MATH_LIBRARY
+void LibSin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_sin(Param[0]->Val->FP);
+}
+
+void LibCos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_cos(Param[0]->Val->FP);
+}
+
+void LibTan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_tan(Param[0]->Val->FP);
+}
+
+void LibAsin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_asin(Param[0]->Val->FP);
+}
+
+void LibAcos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_acos(Param[0]->Val->FP);
+}
+
+void LibAtan(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_atan(Param[0]->Val->FP);
+}
+
+void LibSinh(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_sinh(Param[0]->Val->FP);
+}
+
+void LibCosh(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_cosh(Param[0]->Val->FP);
+}
+
+void LibTanh(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_tanh(Param[0]->Val->FP);
+}
+
+void LibExp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_exp(Param[0]->Val->FP);
+}
+
+void LibFabs(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_fabs(Param[0]->Val->FP);
+}
+
+void LibLog(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_log(Param[0]->Val->FP);
+}
+
+void LibLog10(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_log10(Param[0]->Val->FP);
+}
+
+void LibPow(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_pow(Param[0]->Val->FP, Param[1]->Val->FP);
+}
+
+void LibSqrt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_sqrt(Param[0]->Val->FP);
+}
+
+void LibRound(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_floor(Param[0]->Val->FP + 0.5);   /* XXX - fix for soft float */
+}
+
+void LibCeil(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_ceil(Param[0]->Val->FP);
+}
+
+void LibFloor(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->FP = math_floor(Param[0]->Val->FP);
+}
+#endif
+
+#ifdef NATIVE_POINTERS
+void LibMalloc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->NativePointer = malloc(Param[0]->Val->Integer);
+}
+
+void LibCalloc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->NativePointer = calloc(Param[0]->Val->Integer, Param[1]->Val->Integer);
+}
+
+void LibRealloc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->NativePointer = realloc(Param[0]->Val->NativePointer, Param[1]->Val->Integer);
+}
+
+void LibFree(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    free(Param[0]->Val->NativePointer);
+}
+
+void LibStrcpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    strcpy(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer);
+}
+
+void LibStrncpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    strncpy(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+}
+
+void LibStrcmp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->Integer = strcmp(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer);
+}
+
+void LibStrncmp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->Integer = strncmp(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+}
+
+void LibStrcat(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    strcat(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer);
+}
+
+void LibIndex(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->NativePointer = index(Param[0]->Val->NativePointer, Param[1]->Val->Integer);
+}
+
+void LibRindex(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->NativePointer = rindex(Param[0]->Val->NativePointer, Param[1]->Val->Integer);
+}
+
+void LibStrlen(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->Integer = strlen(Param[0]->Val->NativePointer);
+}
+
+void LibMemset(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    memset(Param[0]->Val->NativePointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
+}
+
+void LibMemcpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    memcpy(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+}
+
+void LibMemcmp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    ReturnValue->Val->Integer = memcmp(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+}
+#endif
+
 /* list of all library functions and their prototypes */
 struct LibraryFunction CLibrary[] =
 {
@@ -308,5 +556,43 @@ struct LibraryFunction CLibrary[] =
     { LibSPrintf,       "char *sprintf(char *, char *, ...)" },
     { LibGets,          "void gets(char *, int)" },
     { LibGetc,          "int getchar()" },
+    { LibExit,          "void exit()" },
+#ifdef PICOC_MATH_LIBRARY
+    { LibSin,           "float sin(float)" },
+    { LibCos,           "float cos(float)" },
+    { LibTan,           "float tan(float)" },
+    { LibAsin,          "float asin(float)" },
+    { LibAcos,          "float acos(float)" },
+    { LibAtan,          "float atan(float)" },
+    { LibSinh,          "float sinh(float)" },
+    { LibCosh,          "float cosh(float)" },
+    { LibTanh,          "float tanh(float)" },
+    { LibExp,           "float exp(float)" },
+    { LibFabs,          "float fabs(float)" },
+    { LibLog,           "float log(float)" },
+    { LibLog10,         "float log10(float)" },
+    { LibPow,           "float pow(float,float)" },
+    { LibSqrt,          "float sqrt(float)" },
+    { LibRound,         "float round(float)" },
+    { LibCeil,          "float ceil(float)" },
+    { LibFloor,         "float floor(float)" },
+#endif
+#ifdef NATIVE_POINTERS
+    { LibMalloc,        "void *malloc(int)" },
+    { LibCalloc,        "void *calloc(int,int)" },
+    { LibCalloc,        "void *realloc(void *,int)" },
+    { LibFree,          "void free(void *)" },
+    { LibStrcpy,        "void strcpy(char *,char *)" },
+    { LibStrncpy,       "void strncpy(char *,char *,int)" },
+    { LibStrcmp,        "int strcmp(char *,char *)" },
+    { LibStrncmp,       "int strncmp(char *,char *,int)" },
+    { LibStrcat,        "void strcat(char *,char *)" },
+    { LibIndex,         "char *index(char *,int)" },
+    { LibRindex,        "char *rindex(char *,int)" },
+    { LibStrlen,        "int strlen(char *)" },
+    { LibMemset,        "void memset(void *,int,int)" },
+    { LibMemcpy,        "void memcpy(void *,void *,int)" },
+    { LibMemcmp,        "int memcmp(void *,void *,int)" },
+#endif
     { NULL,             NULL }
 };

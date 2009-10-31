@@ -70,7 +70,7 @@ int move_start_time, move_stop_time, move_time_mS;
 int robot_moving;
 
 /* Version */
-unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.91 "  __TIME__ " - " __DATE__ ;
+unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.93beta "  __TIME__ " - " __DATE__ ;
 
 /* Frame count output string */
 unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";

@@ -3,17 +3,22 @@
 /* some basic types */
 struct ValueType UberType;
 struct ValueType IntType;
+struct ValueType ShortType;
 struct ValueType CharType;
-struct ValueType WordType;
+struct ValueType UnsignedIntType;
+struct ValueType UnsignedShortType;
+struct ValueType UnsignedCharType;
 #ifndef NO_FP
 struct ValueType FPType;
 #endif
 struct ValueType VoidType;
+struct ValueType TypeType;
 struct ValueType FunctionType;
 struct ValueType MacroType;
 struct ValueType EnumType;
 struct ValueType *CharPtrType;
 struct ValueType *CharArrayType;
+struct ValueType *VoidPtrType;
 
 
 /* add a new type to the set of types we know about */
@@ -63,8 +68,8 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
 /* stack space used by a value */
 int TypeStackSizeValue(struct Value *Val)
 {
-    if (Val->ValOnStack)
-        return TypeSizeValue(Val); // XXX - doesn't handle passing system-memory arrays by value correctly
+    if (Val != NULL && Val->ValOnStack)
+        return TypeSizeValue(Val); /* XXX - doesn't handle passing system-memory arrays by value correctly */
     else
         return 0;
 }
@@ -72,14 +77,15 @@ int TypeStackSizeValue(struct Value *Val)
 /* memory used by a value */
 int TypeSizeValue(struct Value *Val)
 {
-    if (Val->Typ->Base == TypeChar)
+    if (Val->Typ->Base == TypeChar || Val->Typ->Base == TypeShort)
         return sizeof(int);     /* allow some extra room for type extension to int */
     else if (Val->Typ->Base != TypeArray)
         return Val->Typ->Sizeof;
     else
-        return sizeof(struct ArrayValue) + Val->Typ->FromType->Sizeof * Val->Val->Array.Size;
+        return sizeof(struct ArrayValue) + Val->Typ->FromType->Sizeof * Val->Typ->ArraySize;
 }
 
+#ifndef NATIVE_POINTERS
 /* the last accessible offset of a value */
 int TypeLastAccessibleOffset(struct Value *Val)
 {
@@ -88,16 +94,26 @@ int TypeLastAccessibleOffset(struct Value *Val)
     else
         return Val->Typ->FromType->Sizeof * (Val->Val->Array.Size-1);
 }
+#endif
 
 /* memory used by a variable given its type and array size */
 int TypeSize(struct ValueType *Typ, int ArraySize, int Compact)
 {
-    if (Typ->Base == TypeChar && !Compact)
+    if ( (Typ->Base == TypeChar || Typ->Base == TypeShort) && !Compact)
         return sizeof(int);     /* allow some extra room for type extension to int */
     else if (Typ->Base != TypeArray)
         return Typ->Sizeof;
     else
         return sizeof(struct ArrayValue) + Typ->FromType->Sizeof * ArraySize;
+}
+
+/* memory used by the base (non-array) type of a type. This is used for alignment. */
+int TypeSizeAlignment(struct ValueType *Typ)
+{
+    if (Typ->Base == TypeArray)
+        return sizeof(unsigned int);
+    else
+        return Typ->Sizeof;
 }
 
 /* add a base type */
@@ -120,18 +136,27 @@ void TypeInit()
 {
     UberType.DerivedTypeList = NULL;
     TypeAddBaseType(&IntType, TypeInt, sizeof(int));
-#ifndef NO_FP
-    TypeAddBaseType(&FPType, TypeFP, sizeof(double));
-#endif
+    TypeAddBaseType(&ShortType, TypeShort, sizeof(short));
+    TypeAddBaseType(&CharType, TypeChar, sizeof(char));
+    TypeAddBaseType(&UnsignedIntType, TypeUnsignedInt, sizeof(unsigned int));
+    TypeAddBaseType(&UnsignedShortType, TypeUnsignedShort, sizeof(unsigned short));
+    TypeAddBaseType(&UnsignedCharType, TypeUnsignedChar, sizeof(unsigned char));
     TypeAddBaseType(&VoidType, TypeVoid, 0);
     TypeAddBaseType(&FunctionType, TypeFunction, sizeof(int));
     TypeAddBaseType(&MacroType, TypeMacro, sizeof(int));
-    TypeAddBaseType(&CharType, TypeChar, sizeof(char));
+#ifndef NO_FP
+    TypeAddBaseType(&FPType, TypeFP, sizeof(double));
+    TypeAddBaseType(&TypeType, Type_Type, sizeof(double));  /* must be large enough to cast to a double */
+#else
+    TypeAddBaseType(&TypeType, Type_Type, sizeof(struct ValueType *));
+#endif
     CharArrayType = TypeAdd(NULL, &CharType, TypeArray, 0, StrEmpty, sizeof(char));
 #ifndef NATIVE_POINTERS
     CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
+    VoidPtrType = TypeAdd(NULL, &VoidType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
 #else
     CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(void *));
+    VoidPtrType = TypeAdd(NULL, &VoidType, TypePointer, 0, StrEmpty, sizeof(void *));
 #endif
 }
 
@@ -152,11 +177,11 @@ void TypeCleanupNode(struct ValueType *Typ)
             if (SubType->Members != NULL)
             {
                 VariableTableCleanup(SubType->Members);
-                HeapFree(SubType->Members);
+                HeapFreeMem(SubType->Members);
             }
 
             /* free this node */
-            HeapFree(SubType);
+            HeapFreeMem(SubType);
         }
     }
 }
@@ -174,6 +199,7 @@ void TypeParseStruct(struct ParseState *Parser, struct ValueType **Typ, int IsSt
     char *MemberIdentifier;
     struct Value *MemberValue;
     enum LexToken Token;
+    int AlignBoundary;
     
     if (TopStackFrame != NULL)
         ProgramFail(Parser, "struct/union definitions can only be globals");
@@ -194,8 +220,8 @@ void TypeParseStruct(struct ParseState *Parser, struct ValueType **Typ, int IsSt
     
     LexGetToken(Parser, NULL, TRUE);    
     (*Typ)->Members = VariableAlloc(Parser, sizeof(struct Table) + STRUCT_TABLE_SIZE * sizeof(struct TableEntry), TRUE);
-    (*Typ)->Members->HashTable = (void *)(*Typ)->Members + sizeof(struct Table);
-    TableInitTable((*Typ)->Members, (void *)(*Typ)->Members + sizeof(struct Table), STRUCT_TABLE_SIZE, TRUE);
+    (*Typ)->Members->HashTable = (struct TableEntry **)((char *)(*Typ)->Members + sizeof(struct Table));
+    TableInitTable((*Typ)->Members, (struct TableEntry **)((char *)(*Typ)->Members + sizeof(struct Table)), STRUCT_TABLE_SIZE, TRUE);
     
     do {
         TypeParse(Parser, &MemberType, &MemberIdentifier);
@@ -205,15 +231,21 @@ void TypeParseStruct(struct ParseState *Parser, struct ValueType **Typ, int IsSt
         MemberValue = VariableAllocValueAndData(Parser, sizeof(int), FALSE, NULL, TRUE);
         MemberValue->Typ = MemberType;
         if (IsStruct)
-        { /* allocate this member's location in the struct */
+        { 
+            /* allocate this member's location in the struct */
+            AlignBoundary = TypeSizeAlignment(MemberValue->Typ);
+            if (((*Typ)->Sizeof & (AlignBoundary-1)) != 0)
+                (*Typ)->Sizeof += AlignBoundary - ((*Typ)->Sizeof & (AlignBoundary-1));
+                
             MemberValue->Val->Integer = (*Typ)->Sizeof;
-            (*Typ)->Sizeof += MemberValue->Typ->Sizeof;
+            (*Typ)->Sizeof += TypeSizeValue(MemberValue);
         }
         else
-        { /* union members always start at 0, make sure it's big enough to hold the largest member */
+        { 
+            /* union members always start at 0, make sure it's big enough to hold the largest member */
             MemberValue->Val->Integer = 0;
             if (MemberValue->Typ->Sizeof > (*Typ)->Sizeof)
-                (*Typ)->Sizeof = MemberValue->Typ->Sizeof;
+                (*Typ)->Sizeof = TypeSizeValue(MemberValue);
         }
         
         if (!TableSet((*Typ)->Members, MemberIdentifier, MemberValue))
@@ -270,7 +302,7 @@ void TypeParseEnum(struct ParseState *Parser, struct ValueType **Typ)
             EnumValue = ExpressionParseInt(Parser);
         }
         
-        VariableDefine(Parser, EnumIdentifier, &InitValue, FALSE);
+        VariableDefine(Parser, EnumIdentifier, &InitValue, NULL, FALSE);
             
         Token = LexGetToken(Parser, NULL, TRUE);
         if (Token != TokenComma && Token != TokenRightBrace)
@@ -286,12 +318,33 @@ int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ)
 {
     struct ParseState Before = *Parser;
     enum LexToken Token = LexGetToken(Parser, NULL, TRUE);
+    int Unsigned = FALSE;
     *Typ = NULL;
 
+    /* handle signed/unsigned with no trailing type */
+    if (Token == TokenSignedType || Token == TokenUnsignedType)
+    {
+        enum LexToken FollowToken = LexGetToken(Parser, NULL, FALSE);
+        Unsigned = (Token == TokenUnsignedType);
+        
+        if (FollowToken != TokenIntType && FollowToken != TokenLongType && FollowToken != TokenShortType && FollowToken != TokenCharType)
+        {
+            if (Token == TokenUnsignedType)
+                *Typ = &UnsignedIntType;
+            else
+                *Typ = &IntType;
+            
+            return TRUE;
+        }
+        
+        Token = LexGetToken(Parser, NULL, TRUE);
+    }
+    
     switch (Token)
     {
-        case TokenIntType: case TokenLongType: case TokenShortType: *Typ = &IntType; break;
-        case TokenCharType: *Typ = &CharType; break;
+        case TokenIntType: case TokenLongType: *Typ = Unsigned ? &UnsignedIntType : &IntType; break;
+        case TokenShortType: *Typ = Unsigned ? &UnsignedShortType : &ShortType; break;
+        case TokenCharType: *Typ = Unsigned ? &UnsignedCharType : &CharType; break;
 #ifndef NO_FP
         case TokenFloatType: case TokenDoubleType: *Typ = &FPType; break;
 #endif
@@ -375,8 +428,9 @@ void TypeParseIdentPart(struct ParseState *Parser, struct ValueType *BasicTyp, s
                 case TokenLeftSquareBracket:
                     {
                         enum RunMode OldMode = Parser->Mode;
+                        int ArraySize;
                         Parser->Mode = RunModeRun;
-                        int ArraySize = ExpressionParseInt(Parser);
+                        ArraySize = ExpressionParseInt(Parser);
                         Parser->Mode = OldMode;
                         
                         if (LexGetToken(Parser, NULL, TRUE) != TokenRightSquareBracket)
@@ -386,8 +440,10 @@ void TypeParseIdentPart(struct ParseState *Parser, struct ValueType *BasicTyp, s
                     }
                     break;
                     
-//                case TokenOpenBracket:
-//                    break;  // XXX - finish this
+#if 0
+                case TokenOpenBracket:
+                    break;  /* XXX - finish this */
+#endif
                 
                 default: *Parser = Before; Done = TRUE; break;
             }

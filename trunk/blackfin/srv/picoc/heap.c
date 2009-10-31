@@ -53,24 +53,39 @@ void HeapInit()
  * clears memory. can return NULL if out of stack space */
 void *HeapAllocStack(int Size)
 {
-    void *NewMem = HeapStackTop;
-    void *NewTop = HeapStackTop + MEM_ALIGN(Size);
-    if (NewTop > HeapBottom)
+    char *NewMem = HeapStackTop;
+    char *NewTop = (char *)HeapStackTop + MEM_ALIGN(Size);
+#ifdef DEBUG_HEAP
+    printf("HeapAllocStack(%d) at 0x%lx\n", MEM_ALIGN(Size), (unsigned long)HeapStackTop);
+#endif
+    if (NewTop > (char *)HeapBottom)
         return NULL;
         
-    HeapStackTop = NewTop;
+    HeapStackTop = (void *)NewTop;
     memset(NewMem, '\0', Size);
     return NewMem;
+}
+
+/* allocate some space on the stack, in the current stack frame */
+void HeapUnpopStack(int Size)
+{
+#ifdef DEBUG_HEAP
+    printf("HeapUnpopStack(%d) at 0x%lx\n", MEM_ALIGN(Size), (unsigned long)HeapStackTop);
+#endif
+    HeapStackTop = (void *)((char *)HeapStackTop + MEM_ALIGN(Size));
 }
 
 /* free some space at the top of the stack */
 int HeapPopStack(void *Addr, int Size)
 {
     int ToLose = MEM_ALIGN(Size);
-    if (ToLose > (HeapStackTop - (void *)&HeapMemory[0]))
+    if (ToLose > ((char *)HeapStackTop - (char *)&HeapMemory[0]))
         return FALSE;
     
-    HeapStackTop -= ToLose;
+#ifdef DEBUG_HEAP
+    printf("HeapPopStack(0x%lx, %d) back to 0x%lx\n", (unsigned long)Addr, MEM_ALIGN(Size), (unsigned long)HeapStackTop - ToLose);
+#endif
+    HeapStackTop = (void *)((char *)HeapStackTop - ToLose);
     assert(HeapStackTop == Addr);
     
     return TRUE;
@@ -84,7 +99,7 @@ void HeapPushStackFrame()
 #endif
     *(void **)HeapStackTop = StackFrame;
     StackFrame = HeapStackTop;
-    HeapStackTop += sizeof(void *);
+    HeapStackTop = (void *)((char *)HeapStackTop + sizeof(void *));
 }
 
 /* pop the current stack frame, freeing all memory in the frame. can return NULL */
@@ -104,7 +119,7 @@ int HeapPopStackFrame()
 }
 
 /* allocate some dynamically allocated memory. memory is cleared. can return NULL if out of memory */
-void *HeapAlloc(int Size)
+void *HeapAllocMem(int Size)
 {
 #ifdef USE_MALLOC_HEAP
     return calloc(Size, 1);
@@ -158,7 +173,7 @@ void *HeapAlloc(int Size)
 #ifdef DEBUG_HEAP
                 printf("allocating %d(%d) from freelist, split chunk (%d)", Size, AllocSize, (*FreeNode)->Size);
 #endif
-                NewMem = (void *)*FreeNode + (*FreeNode)->Size - AllocSize;
+                NewMem = (void *)((char *)*FreeNode + (*FreeNode)->Size - AllocSize);
                 assert((unsigned long)NewMem >= (unsigned long)&HeapMemory[0] && (unsigned char *)NewMem - &HeapMemory[0] < HEAP_SIZE);
                 (*FreeNode)->Size -= AllocSize;
                 NewMem->Size = AllocSize;
@@ -171,10 +186,10 @@ void *HeapAlloc(int Size)
 #ifdef DEBUG_HEAP
         printf("allocating %d(%d) at bottom of heap (0x%lx-0x%lx)", Size, AllocSize, (long)(HeapBottom - AllocSize), (long)HeapBottom);
 #endif
-        if (HeapBottom - AllocSize < HeapStackTop)
+        if ((char *)HeapBottom - AllocSize < (char *)HeapStackTop)
             return NULL;
         
-        HeapBottom -= AllocSize;
+        HeapBottom = (void *)((char *)HeapBottom - AllocSize);
         NewMem = HeapBottom;
         NewMem->Size = AllocSize;
     }
@@ -188,12 +203,12 @@ void *HeapAlloc(int Size)
 }
 
 /* free some dynamically allocated memory */
-void HeapFree(void *Mem)
+void HeapFreeMem(void *Mem)
 {
 #ifdef USE_MALLOC_HEAP
     return free(Mem);
 #else
-    struct AllocNode *MemNode = (struct AllocNode *)(Mem-sizeof(int));
+    struct AllocNode *MemNode = (struct AllocNode *)((char *)Mem-sizeof(int));
     int Bucket = MemNode->Size >> 2;
     
     assert((unsigned long)Mem >= (unsigned long)&HeapMemory[0] && (unsigned char *)Mem - &HeapMemory[0] < HEAP_SIZE);
@@ -206,7 +221,7 @@ void HeapFree(void *Mem)
 #ifdef DEBUG_HEAP
         printf("freeing %d from bottom of heap\n", MemNode->Size);
 #endif
-        HeapBottom += MemNode->Size;
+        HeapBottom = (void *)((char *)HeapBottom + MemNode->Size);
 #ifdef DEBUG_HEAP
         ShowBigList();
 #endif

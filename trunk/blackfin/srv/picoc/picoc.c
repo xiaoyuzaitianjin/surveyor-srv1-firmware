@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        PlatformPrintf("Format: picoc <program.c> - run a program\n        picoc -i          - interactive mode\n");
+        printf("Format: picoc <program.c> - run a program\n        picoc -i          - interactive mode\n");
         exit(1);
     }
     
@@ -61,10 +61,10 @@ int picoc(char *SourceStr)
     
     Initialise();
     if (SourceStr) {
-        for (ix=0; ix<strlen(SourceStr); ix++)  // clear out ctrl-z from XMODEM transfer
+        for (ix=0; ix<strlen(SourceStr); ix++)  /* clear out ctrl-z from XMODEM transfer */
             if (SourceStr[ix] == 0x1A)
                 SourceStr[ix] = 0x20;
-        //printf("%s\n\r", SourceStr);  // display program source
+        //printf("%s\n\r", SourceStr);  /* display program source */
         //printf("=====================\n");
     }
     ExitBuf[40] = 0;
