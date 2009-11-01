@@ -1105,7 +1105,11 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_abbrev  0x00003025      0x193 picoc/platform.o
  .debug_abbrev  0x000031b8      0x181 picoc/platform_surveyor.o
 
+<<<<<<< .mine
+.debug_info     0x00000000     0xfc18
+=======
 .debug_info     0x00000000    0x109ed
+>>>>>>> .r89
  .debug_info    0x00000000      0x136 camera.o
  .debug_info    0x00000136      0x1e7 edit.o
  .debug_info    0x0000031d      0x90b httpd.o
@@ -1118,6 +1122,28 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x000027ed       0x54 myfunc.o
  .debug_info    0x00002841       0x75 main.o
  .debug_info    0x000028b6      0x23a malloc.o
+<<<<<<< .mine
+ .debug_info    0x00002af0      0x7df string.o
+ .debug_info    0x000032cf     0x1dec srv.o
+ .debug_info    0x000050bb      0x465 uart.o
+ .debug_info    0x00005520      0xbfe colors.o
+ .debug_info    0x0000611e      0xb0b jpeg.o
+ .debug_info    0x00006c29      0x438 neural.o
+ .debug_info    0x00007061       0x64 init.o
+ .debug_info    0x000070c5      0x391 sdcard.o
+ .debug_info    0x00007456      0x54f picoc/picoc.o
+ .debug_info    0x000079a5      0x8db picoc/table.o
+ .debug_info    0x00008280      0xf3c picoc/lex.o
+ .debug_info    0x000091bc      0xc1e picoc/parse.o
+ .debug_info    0x00009dda     0x12a0 picoc/expression.o
+ .debug_info    0x0000b07a      0x29f picoc/heap.o
+ .debug_info    0x0000b319      0xcda picoc/type.o
+ .debug_info    0x0000bff3      0xb67 picoc/variable.o
+ .debug_info    0x0000cb5a      0xaa1 picoc/clibrary.o
+ .debug_info    0x0000d5fb     0x20e3 picoc/library_surveyor.o
+ .debug_info    0x0000f6de      0x2fb picoc/platform.o
+ .debug_info    0x0000f9d9      0x23f picoc/platform_surveyor.o
+=======
  .debug_info    0x00002af0      0x7df string.o
  .debug_info    0x000032cf     0x1dec srv.o
  .debug_info    0x000050bb      0x465 uart.o
@@ -1138,8 +1164,13 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x0000de89     0x20eb picoc/library_surveyor.o
  .debug_info    0x0000ff74      0x80b picoc/platform.o
  .debug_info    0x0001077f      0x26e picoc/platform_surveyor.o
+>>>>>>> .r89
 
+<<<<<<< .mine
+.debug_line     0x00000000     0x3de5
+=======
 .debug_line     0x00000000     0x4023
+>>>>>>> .r89
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
  .debug_line    0x00000143      0x29c httpd.o
@@ -1152,6 +1183,28 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_line    0x00000e18       0x3c myfunc.o
  .debug_line    0x00000e54      0x133 main.o
  .debug_line    0x00000f87       0xa6 malloc.o
+<<<<<<< .mine
+ .debug_line    0x0000102d      0x197 string.o
+ .debug_line    0x000011c4      0xb25 srv.o
+ .debug_line    0x00001ce9      0x12f uart.o
+ .debug_line    0x00001e18      0x380 colors.o
+ .debug_line    0x00002198      0x315 jpeg.o
+ .debug_line    0x000024ad      0x11e neural.o
+ .debug_line    0x000025cb       0x53 init.o
+ .debug_line    0x0000261e      0x10b sdcard.o
+ .debug_line    0x00002729       0x92 picoc/picoc.o
+ .debug_line    0x000027bb       0xe3 picoc/table.o
+ .debug_line    0x0000289e      0x36e picoc/lex.o
+ .debug_line    0x00002c0c      0x26b picoc/parse.o
+ .debug_line    0x00002e77      0x46f picoc/expression.o
+ .debug_line    0x000032e6       0xe9 picoc/heap.o
+ .debug_line    0x000033cf      0x1e4 picoc/type.o
+ .debug_line    0x000035b3      0x1a2 picoc/variable.o
+ .debug_line    0x00003755      0x176 picoc/clibrary.o
+ .debug_line    0x000038cb      0x3c3 picoc/library_surveyor.o
+ .debug_line    0x00003c8e       0xc7 picoc/platform.o
+ .debug_line    0x00003d55       0x90 picoc/platform_surveyor.o
+=======
  .debug_line    0x0000102d      0x197 string.o
  .debug_line    0x000011c4      0xb25 srv.o
  .debug_line    0x00001ce9      0x12f uart.o
@@ -1172,8 +1225,13 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_line    0x00003ab5      0x3bc picoc/library_surveyor.o
  .debug_line    0x00003e71      0x114 picoc/platform.o
  .debug_line    0x00003f85       0x9e picoc/platform_surveyor.o
+>>>>>>> .r89
 
+<<<<<<< .mine
+.debug_frame    0x00000000     0x39e8
+=======
 .debug_frame    0x00000000     0x3b44
+>>>>>>> .r89
  .debug_frame   0x00000000       0x4c camera.o
  .debug_frame   0x0000004c      0x100 edit.o
  .debug_frame   0x0000014c       0xd0 httpd.o
@@ -1186,6 +1244,28 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_frame   0x000009fc       0x28 myfunc.o
  .debug_frame   0x00000a24       0x38 main.o
  .debug_frame   0x00000a5c       0x94 malloc.o
+<<<<<<< .mine
+ .debug_frame   0x00000af0      0x210 string.o
+ .debug_frame   0x00000d00      0xb18 srv.o
+ .debug_frame   0x00001818      0x1f4 uart.o
+ .debug_frame   0x00001a0c      0x274 colors.o
+ .debug_frame   0x00001c80      0x1b0 jpeg.o
+ .debug_frame   0x00001e30      0x16c neural.o
+ .debug_frame   0x00001f9c       0xa4 init.o
+ .debug_frame   0x00002040      0x1a8 sdcard.o
+ .debug_frame   0x000021e8       0x74 picoc/picoc.o
+ .debug_frame   0x0000225c      0x14c picoc/table.o
+ .debug_frame   0x000023a8      0x29c picoc/lex.o
+ .debug_frame   0x00002644      0x1b8 picoc/parse.o
+ .debug_frame   0x000027fc      0x2e0 picoc/expression.o
+ .debug_frame   0x00002adc       0xbc picoc/heap.o
+ .debug_frame   0x00002b98      0x1dc picoc/type.o
+ .debug_frame   0x00002d74      0x2e0 picoc/variable.o
+ .debug_frame   0x00003054      0x1b4 picoc/clibrary.o
+ .debug_frame   0x00003208      0x6d8 picoc/library_surveyor.o
+ .debug_frame   0x000038e0       0x7c picoc/platform.o
+ .debug_frame   0x0000395c       0x8c picoc/platform_surveyor.o
+=======
  .debug_frame   0x00000af0      0x210 string.o
  .debug_frame   0x00000d00      0xb18 srv.o
  .debug_frame   0x00001818      0x1f4 uart.o
@@ -1206,8 +1286,13 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_frame   0x0000330c      0x6c0 picoc/library_surveyor.o
  .debug_frame   0x000039cc       0xd8 picoc/platform.o
  .debug_frame   0x00003aa4       0xa0 picoc/platform_surveyor.o
+>>>>>>> .r89
 
+<<<<<<< .mine
+.debug_loc      0x00000000    0x13d2e
+=======
 .debug_loc      0x00000000    0x149aa
+>>>>>>> .r89
  .debug_loc     0x00000000       0x5b camera.o
  .debug_loc     0x0000005b      0x2eb edit.o
  .debug_loc     0x00000346      0xd2b httpd.o
@@ -1216,6 +1301,32 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_loc     0x00001b4e      0x79d printf.o
  .debug_loc     0x000022eb      0x6ac xmodem.o
  .debug_loc     0x00002997      0xf70 float.o
+<<<<<<< .mine
+ .debug_loc     0x00003907     0x1045 gps.o
+ .debug_loc     0x0000494c       0x3e myfunc.o
+ .debug_loc     0x0000498a       0x2b main.o
+ .debug_loc     0x000049b5      0x1e1 malloc.o
+ .debug_loc     0x00004b96      0xb0f string.o
+ .debug_loc     0x000056a5     0x25bd srv.o
+ .debug_loc     0x00007c62      0x6d3 uart.o
+ .debug_loc     0x00008335     0x1422 colors.o
+ .debug_loc     0x00009757     0x14f7 jpeg.o
+ .debug_loc     0x0000ac4e      0x460 neural.o
+ .debug_loc     0x0000b0ae      0x122 init.o
+ .debug_loc     0x0000b1d0      0x6cb sdcard.o
+ .debug_loc     0x0000b89b       0xfa picoc/picoc.o
+ .debug_loc     0x0000b995      0x614 picoc/table.o
+ .debug_loc     0x0000bfa9      0xfb2 picoc/lex.o
+ .debug_loc     0x0000cf5b      0xb63 picoc/parse.o
+ .debug_loc     0x0000dabe     0x1d84 picoc/expression.o
+ .debug_loc     0x0000f842      0x2e2 picoc/heap.o
+ .debug_loc     0x0000fb24      0x951 picoc/type.o
+ .debug_loc     0x00010475      0xd45 picoc/variable.o
+ .debug_loc     0x000111ba      0x8db picoc/clibrary.o
+ .debug_loc     0x00011a95     0x1eef picoc/library_surveyor.o
+ .debug_loc     0x00013984      0x20f picoc/platform.o
+ .debug_loc     0x00013b93      0x19b picoc/platform_surveyor.o
+=======
  .debug_loc     0x00003907     0x1045 gps.o
  .debug_loc     0x0000494c       0x3e myfunc.o
  .debug_loc     0x0000498a       0x2b main.o
@@ -1240,9 +1351,14 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_loc     0x00012307     0x1e8b picoc/library_surveyor.o
  .debug_loc     0x00014192      0x5f7 picoc/platform.o
  .debug_loc     0x00014789      0x221 picoc/platform_surveyor.o
+>>>>>>> .r89
 
 .debug_pubnames
+<<<<<<< .mine
+                0x00000000     0x27bf
+=======
                 0x00000000     0x2907
+>>>>>>> .r89
  .debug_pubnames
                 0x00000000       0x59 camera.o
  .debug_pubnames
@@ -1288,25 +1404,65 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_pubnames
                 0x000018f3       0xe1 picoc/table.o
  .debug_pubnames
+<<<<<<< .mine
+                0x000019d4      0x1b8 picoc/lex.o
+=======
                 0x000019d4      0x1c9 picoc/lex.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x00001b8c       0xe8 picoc/parse.o
+=======
                 0x00001b9d       0xe8 picoc/parse.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x00001c74      0x208 picoc/expression.o
+=======
                 0x00001c85      0x25d picoc/expression.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x00001e7c       0xad picoc/heap.o
+=======
                 0x00001ee2       0xc6 picoc/heap.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x00001f29      0x1b6 picoc/type.o
+=======
                 0x00001fa8      0x229 picoc/type.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x000020df      0x274 picoc/variable.o
+=======
                 0x000021d1      0x274 picoc/variable.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x00002353       0xd1 picoc/clibrary.o
+=======
                 0x00002445      0x105 picoc/clibrary.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x00002424      0x2c5 picoc/library_surveyor.o
+=======
                 0x0000254a      0x2bb picoc/library_surveyor.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x000026e9       0x55 picoc/platform.o
+=======
                 0x00002805       0x81 picoc/platform.o
+>>>>>>> .r89
  .debug_pubnames
+<<<<<<< .mine
+                0x0000273e       0x81 picoc/platform_surveyor.o
+=======
                 0x00002886       0x81 picoc/platform_surveyor.o
+>>>>>>> .r89
 
 .debug_aranges  0x00000000      0x400
  .debug_aranges
@@ -1374,6 +1530,73 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_aranges
                 0x000003e0       0x20 picoc/platform_surveyor.o
 
+<<<<<<< .mine
+.debug_str      0x00000000     0x3992
+ .debug_str     0x00000000       0xee camera.o
+                                 0xf4 (size before relaxing)
+ .debug_str     0x000000ee       0x94 edit.o
+                                 0xf2 (size before relaxing)
+ .debug_str     0x00000182      0x37c httpd.o
+                                0x421 (size before relaxing)
+ .debug_str     0x000004fe       0x55 i2c.o
+                                 0xc6 (size before relaxing)
+ .debug_str     0x00000553      0x263 stm_m25p32.o
+                                0x31d (size before relaxing)
+ .debug_str     0x000007b6       0x4e printf.o
+                                 0xdd (size before relaxing)
+ .debug_str     0x00000804       0xce xmodem.o
+                                0x164 (size before relaxing)
+ .debug_str     0x000008d2      0x161 float.o
+                                0x208 (size before relaxing)
+ .debug_str     0x00000a33       0xb2 gps.o
+                                0x15b (size before relaxing)
+ .debug_str     0x00000ae5       0x10 myfunc.o
+                                 0x6e (size before relaxing)
+ .debug_str     0x00000af5       0x15 main.o
+                                 0x73 (size before relaxing)
+ .debug_str     0x00000b0a       0x6a malloc.o
+                                 0xdf (size before relaxing)
+ .debug_str     0x00000b74      0x119 string.o
+                                0x1c1 (size before relaxing)
+ .debug_str     0x00000c8d      0x91f srv.o
+                                0xae2 (size before relaxing)
+ .debug_str     0x000015ac      0x145 uart.o
+                                0x209 (size before relaxing)
+ .debug_str     0x000016f1       0xd9 colors.o
+                                0x214 (size before relaxing)
+ .debug_str     0x000017ca      0x439 jpeg.o
+                                0x51c (size before relaxing)
+ .debug_str     0x00001c03       0xd9 neural.o
+                                0x176 (size before relaxing)
+ .debug_str     0x00001cdc       0x43 init.o
+                                 0x93 (size before relaxing)
+ .debug_str     0x00001d1f       0xce sdcard.o
+                                0x14e (size before relaxing)
+ .debug_str     0x00001ded      0x232 picoc/picoc.o
+                                0x372 (size before relaxing)
+ .debug_str     0x0000201f      0x11f picoc/table.o
+                                0x425 (size before relaxing)
+ .debug_str     0x0000213e      0x84b picoc/lex.o
+                                0xb9b (size before relaxing)
+ .debug_str     0x00002989      0x248 picoc/parse.o
+                                0xaaa (size before relaxing)
+ .debug_str     0x00002bd1      0x453 picoc/expression.o
+                                0xd66 (size before relaxing)
+ .debug_str     0x00003024       0xf8 picoc/heap.o
+                                0x1a6 (size before relaxing)
+ .debug_str     0x0000311c      0x18a picoc/type.o
+                                0xa8c (size before relaxing)
+ .debug_str     0x000032a6      0x25c picoc/variable.o
+                                0x63e (size before relaxing)
+ .debug_str     0x00003502      0x16f picoc/clibrary.o
+                                0x533 (size before relaxing)
+ .debug_str     0x00003671      0x25d picoc/library_surveyor.o
+                                0x739 (size before relaxing)
+ .debug_str     0x000038ce       0x54 picoc/platform.o
+                                0x1e7 (size before relaxing)
+ .debug_str     0x00003922       0x70 picoc/platform_surveyor.o
+                                0x1d2 (size before relaxing)
+=======
 .debug_str      0x00000000     0x3c1c
  .debug_str     0x00000000       0xc8 camera.o
                                  0xce (size before relaxing)
@@ -1439,6 +1662,7 @@ OUTPUT(srv1.bin elf32-bfin)
                                 0x4af (size before relaxing)
  .debug_str     0x00003bac       0x70 picoc/platform_surveyor.o
                                 0x1d7 (size before relaxing)
+>>>>>>> .r89
 
 .comment        0x00000000      0x380
  .comment       0x00000000       0x1c camera.o
