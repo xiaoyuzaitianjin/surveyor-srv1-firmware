@@ -1,5 +1,19 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 5 November 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* fixed I2C timing for 5H and 5S types of uBlox5 GPS modules
+
+* added $c command to read raw data from HMC5843 3-axis compass
+
+* updated picoC to 0.93 version
+
+* fixed firmware upload using HTTP POST in httpd.c.  Upload works from 
+  Chrome and Safari, but still have issues with Firefox
+  
+============================================================================
+
 SRV-1 firmware build for Blackfin - 25 October 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
@@ -35,7 +49,7 @@ SRV-1 firmware build for Blackfin - 25 October 2009
 
 * added HTTP POST method for upload of files - somewhat browser dependent
   at the moment, so still work-in-progress
-   
+
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 12 September 2009 

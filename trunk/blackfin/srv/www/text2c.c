@@ -1,15 +1,15 @@
-// text2c.cpp 
+// text2c.c 
 //
 
-#include "stdafx.h"
 #include <stdio.h>
-
+#define true 1
+#define false 0
 
 int main(int argc, char* argv[])
 {
-    bool eol = true;
+    int eol = true;
 
-    int ch;
+    char ch;
     while ((ch = getchar()) != EOF) {
         if (eol) {
             printf ("\"");

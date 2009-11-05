@@ -95,7 +95,7 @@ int gps_parse() {
     i1 = i2 = ilast = 0;  // to get rid of compiler warnings
 
     if ((ublox == 0) && (locosys == 0)) {  // check first for ublox on i2c channel 042
-        for (ix=0; ix<1000; ix++) {
+        for (ix=0; ix<250; ix++) {
             ch = read_ublox();
             delayUS(500);
             if (ch != 0xff) {
@@ -110,7 +110,7 @@ int gps_parse() {
         }
     }
 
-    t0 = readRTC();  // set up for 1-second timeout
+    t0 = readRTC();  // set up for 1-sec timeout
     while (1) {
         if ((readRTC() - t0) > 1000) { // check for timeout
             gps_gga.fix = 0;

@@ -90,8 +90,9 @@ void i2cread(unsigned char i2c_device, unsigned char *i2c_data, unsigned int dat
     else
         *pTWI_CONTROL = TWI_ENA | PRESCALE120M;
 
-    *pTWI_CLKDIV = CLKLOW(67) | CLKHI(33);    // For 100KHz SCL speed: CLKDIV = (1/100KHz)/(1/10MHz) = 
-                              //  100 -> SCL symetric: CLKHI = 50, CLKLOW = 50 
+    *pTWI_CLKDIV = CLKLOW(120) | CLKHI(80);    // For 100KHz SCL speed: CLKDIV = (1/100KHz)/(1/10MHz) = 
+                              //  100 -> SCL symmetric: CLKHI = 50, CLKLOW = 50 
+                              //  current settings of 120/80 yield 50kHz SCL for slow uBlox5 I2C interface
     *pTWI_MASTER_ADDR = i2c_device; // Target address (7-bits plus the read/write bit the TWI controls
 
     while ((*pTWI_FIFO_STAT & XMTSTAT) == XMT_FULL)

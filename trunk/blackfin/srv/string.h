@@ -56,3 +56,13 @@ int         destMax,            // Maximum size of destination string buffer, to
 char *      pattern,            // Pattern to search for
 char *      replacement);       // Replacement string
 
+
+
+//
+// getUnaligned32: get a 32-bit value from an unaligned address
+//
+extern unsigned getUnaligned32 (    // Returns value
+void *          p);                 // Pointer to 32-bit value, need not be 32-bit aligned
+
+
+

@@ -636,7 +636,7 @@ reqBody[reqBodyCount] = 0;
                             secBody += 4;
 
                             //
-                            // Get Content-Disposition section header and the field name for this section
+                           // Get Content-Disposition section header and the field name for this section
                             //
                             if (getHdrString (secStart, "Content-Disposition: ", contDisp, countof (contDisp)) &&
                                 getParam (contDisp, "name=", nameParam, countof (nameParam))) {
@@ -694,6 +694,7 @@ reqBody[reqBodyCount] = 0;
                     } // while parsing request body
                 } // if first boundary
 
+
                 //
                 // Validate the upload, then flash the fugger
                 //
@@ -718,8 +719,11 @@ reqBody[reqBodyCount] = 0;
                          (fileBodyLength < BOOT_LOADER_MIN_SIZE  ||  fileBodyLength > BOOT_LOADER_MAX_SIZE))
                     sprintf (resultMsg, "Boot loader file size (%d) too big or too small", fileBodyLength);
                 else if (uploadDest == toBootLoader  &&
-                         ((int *)fileBodyStart)[0] != 0xFFA00000  &&  ((int *)fileBodyStart)[0] != 0xFF800000)
-                    sprintf (resultMsg, "Boot loader first-word signature wrong");
+                         getUnaligned32 (fileBodyStart) != 0xFFA00000  &&  
+                         getUnaligned32 (fileBodyStart) != 0xFF800000) {
+                    sprintf (resultMsg, "Boot loader first-word signature (0x%08x) wrong", 
+                                getUnaligned32 (fileBodyStart));
+                }
                 else {
                     //
                     // Set destination and flash write size based on parameters
@@ -740,7 +744,8 @@ reqBody[reqBodyCount] = 0;
                     // Move the file down to the beginning of FLASH_BUFFER and pad the sectors with zeroes
                     //
                     memmove ((void *) FLASH_BUFFER, fileBodyStart, fileBodyLength);
-                    memset ((void *) FLASH_BUFFER + fileBodyLength, 0, bytesToWrite - fileBodyLength);
+                    memset ((void *) (FLASH_BUFFER + fileBodyLength), 0, bytesToWrite - fileBodyLength);
+#if 1
                     if (spi_write (flashAddress, (unsigned char *) FLASH_BUFFER,
                                     (unsigned char *) FLASH_BUFFER + bytesToWrite, bytesToWrite) != bytesToWrite)
                     {
@@ -748,6 +753,7 @@ reqBody[reqBodyCount] = 0;
                         error = FALSE;
                     }
                     else
+#endif
                     {
                         resultColor = "#c0ffc0";        // green
                         if (uploadDest == toSectors)

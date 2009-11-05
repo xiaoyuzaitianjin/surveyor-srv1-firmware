@@ -94,6 +94,7 @@ int encoder_flag;
 /* IMU globals */
 int x_acc, x_acc0, x_center;
 int y_acc, y_acc0, y_center;
+int compass_init;
 
 /* Failsafe globals */
 int failsafe_mode = 0;
@@ -146,6 +147,7 @@ void init_io() {
     segmentation_flag = 0;
     invert_flag = 0;
     encoder_flag = 0;
+    compass_init = 0;
 
     #ifdef STEREO
     stereo_processing_flag = 0;
@@ -415,7 +417,7 @@ void read_tilt()
     printf("##$T%d %4d\r\n", channel, tilt(channel));
 }
 
-void read_compass()
+void read_compass2x()
 {
     unsigned char i2c_data[3];
     unsigned int ix;
@@ -427,6 +429,30 @@ void read_compass()
     i2cread(0x22, (unsigned char *)i2c_data, 2, SCCB_ON);
     ix = (((unsigned int)i2c_data[0] << 8) + i2c_data[1]) / 10;
     printf("##$C %3d\r\n", ix);
+}
+
+void read_compass3x() {
+    unsigned char i2c_data[12];
+    short i, head, pitch, roll;
+    unsigned char addr;
+ 
+    // HMC5843
+    addr = 0x1E;
+    if (compass_init == 0) {
+        i2c_data[0] = 0x00; i2c_data[1] = 0x20; i2cwrite(addr, (unsigned char *)i2c_data, 2, SCCB_ON);
+        i2c_data[0] = 0x01; i2c_data[1] = 0x20; i2cwrite(addr, (unsigned char *)i2c_data, 2, SCCB_ON);
+        i2c_data[0] = 0x02; i2c_data[1] = 0x00; i2cwrite(addr, (unsigned char *)i2c_data, 2, SCCB_ON);
+        delayMS(10);
+        compass_init = 1;
+    }
+    for(i = 0; i < 6; i++) i2c_data[i] = 0x00;
+    i2c_data[0] = 0x03;
+    i2cread(addr, (unsigned char *)i2c_data, 6, SCCB_ON);
+    head = ((short) (i2c_data[0] * 256 + i2c_data[1]));
+    pitch = ((short) (i2c_data[2] * 256 + i2c_data[3]));
+    roll = ((short) (i2c_data[4] * 256 + i2c_data[5]));
+    printf("##c x=%d y=%d z=%d [%d %d %d %d %d %d]\r\n", head, pitch, roll,
+             i2c_data[0], i2c_data[1], i2c_data[2], i2c_data[3], i2c_data[4], i2c_data[5]);
 }
 
 /* init all 3 possible AD7998 A/D's */

@@ -77,7 +77,8 @@ unsigned int tilt(unsigned int);
 void read_tilt();
 
 /* Compass */
-void read_compass();
+void read_compass2x();
+void read_compass3x();
 
 /* Lasers */
 void lasers_on ();

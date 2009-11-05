@@ -165,6 +165,33 @@ void memcpy2 (char *dst, char *src, int count)
         *idst++ = *isrc++;
 }
 
+
+#if 0
+//
+// This version sometimes only copied two bytes for reasons unknown
+//
+void memcpy (char *dst, char *src, int count)
+{
+   short *isrc, *idst;
+
+   /* if count and pointers are even, transfer 16-bits at a time */
+   if ((count & 0x00000001) || 
+       ((int)dst & 0x00000001) || 
+       ((int)src & 0x00000001)) {
+       while (count--)
+           *dst++ = *src++;
+   } else {
+
+       idst = (short *)dst;
+       isrc = (short *)src;
+       count /= 2;
+       while (count--)
+           *idst++ = *isrc++;
+   }
+}
+#endif
+
+
 void memset (char *dst, char ch, int count)
 {
     while (count--)
@@ -407,6 +434,21 @@ char *      replacement)
     }        
     else
         return FALSE;
+}
+
+
+
+
+
+unsigned    getUnaligned32 (
+void *      p)
+{
+    unsigned char * c = p;
+#ifdef _BIG_ENDIAN
+    return c[3] + (c[2] << 8) + (c[1] << 16) + (c[0] << 24);
+#else
+    return c[0] + (c[1] << 8) + (c[2] << 16) + (c[3] << 24);
+#endif
 }
 
 
