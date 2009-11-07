@@ -2,6 +2,7 @@
 
 //#define SVS_MAPPING_BY_DEFAULT
 //#define SVS_FOOTLINE
+//#define SVS_ENABLE_MAPPING
 #define SVS_MAX_FEATURES         2000
 #define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280
@@ -95,6 +96,8 @@ extern void svs_footline_update(int max_disparity_percent);
 
 /* mapping */
 
+#ifdef SVS_ENABLE_MAPPING
+
 #define MAP_WIDTH_CELLS      200
 #define MAP_CELL_SIZE_MM     40
 #define MAP_MIN_RANGE_MM     200
@@ -106,4 +109,6 @@ extern void map_recenter();
 extern void scan_match(int right_turn_pixels, int tollerance, svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
 extern void show_map(unsigned char* outbuf);
 extern void update_pose(svs_data_struct *svs_data, svs_data_struct *svs_data_previous);
+
+#endif
 

@@ -2337,6 +2337,7 @@ void svs_stereo(int send_disparities)
 #endif
             if (send_disparities != 0) svs_send_disparities(matches);
 
+#ifdef SVS_ENABLE_MAPPING
             /* mapping */
             if (svs_enable_mapping != 0) {
                 if (prev_svs_enable_mapping == 0) init_map();
@@ -2347,6 +2348,7 @@ void svs_stereo(int send_disparities)
                     map_update(matches, max_disparity_percent, svs_matches, footline);
                 }
             }
+#endif
         }
 
         // swap data buffers to enable visual odometry between successive frames */
@@ -2356,11 +2358,14 @@ void svs_stereo(int send_disparities)
 
         svs_show_matches((unsigned char *)FRAME_BUF, matches);
         //svs_show_footline((unsigned char *)FRAME_BUF);
+
+#ifdef SVS_ENABLE_MAPPING
         if (svs_enable_mapping != 0) {
             if (prev_svs_enable_mapping == 0) init_map();
             show_map((unsigned char *)FRAME_BUF);
         }
         prev_svs_enable_mapping = svs_enable_mapping;
+#endif
 
         *pPORTHIO &= 0xFEFF;  // set stereo sync flag low
     }
@@ -2371,6 +2376,8 @@ void svs_stereo(int send_disparities)
 /* mapping */
 /* -----------------------------------------------------------------------------------------------------*/
 
+
+#ifdef SVS_ENABLE_MAPPING
 
 /* grid map with occupancy represented as log odds */
 int* map_occupancy;
@@ -3015,4 +3022,5 @@ void show_map(
 
 }
 
+#endif
 
