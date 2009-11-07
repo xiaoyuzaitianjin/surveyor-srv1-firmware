@@ -10,7 +10,7 @@ SRV-1 firmware build for Blackfin - 5 November 2009
 * updated picoC to 0.93 version
 
 * fixed firmware upload using HTTP POST in httpd.c.  Upload works from 
-  Chrome and Safari, but still have issues with Firefox
+  Chrome and Safari, but still has issues with Firefox
   
 ============================================================================
 

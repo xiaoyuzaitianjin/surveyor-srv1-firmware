@@ -24,8 +24,7 @@
 #include "stdlib.h"
 #include "stm_m25p32.h"
 
-
-#define REQBUF_SIZE             4096
+#define REQBUF_SIZE             2048
 #define INLINEIMGBUF_SIZE       (64 * 1024)
 
 #define FLASH_SECTOR_SIZE       (64 * 1024)
@@ -37,17 +36,12 @@
 #define BOOT_LOADER_MIN_SIZE    (16 * 1024)
 #define BOOT_LOADER_MAX_SIZE    (BOOT_LOADER_SECTORS * FLASH_SECTOR_SIZE)
 
-
 char adminHtml[] =
-#include "www/admin.html.c"
-;
-
-
+#include "www/admin.html.c";
 
 static char robotJpg[] = "/robot.jpg";
 static char robotCgi[] = "/robot.cgi?";
 static char adminPath[] = "/admin";
-
 
 static char *fileNames[] = {  // index from file name to flash sector:  
     "/00.html",  // sector 10-11
@@ -62,26 +56,15 @@ static char *fileNames[] = {  // index from file name to flash sector:
     "/09.html"   // sector 28-29
 };
 
-
-
-
 #define CONNECTION_HEADER   "Connection: Close\r\n"       // better in IE, Safari
 
-//static char inlineImgTag[] = "$$camera$$";
-
 static char cgiBody[] = "0\r\n";
-
 static char body404[] = "File not found\r\n";
 static char body501[] = "Request format not supported\r\n";
-
 static char resultCode404[] = "HTTP/1.1 404 File not found";
 static char resultCode501[] = "HTTP/1.1 501 Request format not supported";
 
-
-
-//
 // Get the value of an HTTP header as a string
-//
 static  BOOL    getHdrString (              // Returns TRUE if header found
 char *          hdrs,                       // String containing all headers
 char *          hdrName,                    // Header name to find, including ": " delimiter
@@ -95,13 +78,9 @@ int             valMaxChars)                // Size of value buffer in character
 
     value[0] = 0;   // Return empty string if header not found
 
-    //
     // Scan lines in the headers
-    //
     while (*hdrs != 0) {
-        //
         // If header name matches, return the value
-        //
         if (strncmp (hdrs, hdrName, hdrNameLen) == 0) {
             hdrs += hdrNameLen;
             while (*hdrs != 0  &&  *hdrs != '\r'  &&  *hdrs != '\n') {
@@ -113,9 +92,7 @@ int             valMaxChars)                // Size of value buffer in character
             return TRUE;        
         }
 
-        //
         // Find the beginning of the next line
-        //
         else {
             while (*hdrs != 0  &&  *hdrs != '\r'  &&  *hdrs != '\n')
                 ++hdrs;
@@ -128,9 +105,7 @@ int             valMaxChars)                // Size of value buffer in character
 }
 
 
-//
-// Get the value of an HTTP header as a decimal int
-//
+/* Get the value of an HTTP header as a decimal int */
 static  BOOL    getHdrDecimal (             // Returns TRUE if header found
 char *          hdrs,                       // String containing all headers
 char *          hdrName,                    // Header name to find, including ": " delimiter
@@ -144,19 +119,12 @@ int *           value)                      // Out: returned header value. Uncha
 }
 
 
-//
-// Get the value of an HTTP "name=value" parameter from a header string or url parameter list
-//
-// Handles both header strings like:
-//
-//    Content-Disposition: form-data; name="file1"; filename="Terrier1.jpg"
-//
-// and URL parameters like:
-//
-//    path?name=file1&filename=Terrier1.jpg
-//
-// Removes any quotes surrounding value.
-//
+/* Get the value of an HTTP "name=value" parameter from a header string or url parameter list
+   Handles both header strings like:
+      Content-Disposition: form-data; name="file1"; filename="Terrier1.jpg"
+   and URL parameters like:
+      path?name=file1&filename=Terrier1.jpg
+   Removes any quotes surrounding value.*/
 static  BOOL    getParam (      // Returns TRUE if paramName found; FALSE if not found or valMaxChars too small
 char *          params,         // URL/header parameter string
 char *          paramName,      // Name of parameter, including equals sign, as in "name="
@@ -205,70 +173,6 @@ int             valMaxChars)    // In: maximum size of value buffer, including n
 }
 
 
-
-#if 0
-// Not needed for now
-
-static unsigned char base64[64] = {
-   'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
-   'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
-   'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
-   'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
-};
-
-
-int     base64_camera_frame (
-char *  buf,
-int     bufSize) {
-    int i;
-    unsigned char *cp, b0, b1, b2, b3;
-    unsigned int image_size;
-    unsigned char *output_start, *output_end; 
-    int len;
-
-    grab_frame();
-    output_start = (unsigned char *)JPEG_BUF;
-    output_end = encode_image((unsigned char *)FRAME_BUF, output_start, quality, 
-            FOUR_TWO_TWO, imgWidth, imgHeight); 
-    image_size = (unsigned int)(output_end - output_start);
-    led1_on();
-    cp = (unsigned char *)JPEG_BUF;
-    switch (image_size % 3) {  // pad image for base64 encoding
-        case 0:
-            break;
-        case 1:
-            *(cp + image_size - 1) = 0;
-            image_size += 1;
-            break;
-        case 2:
-            *(cp + image_size - 1) = 0;
-            *(cp + image_size - 2) = 0;
-            image_size += 2;
-            break;
-    } 
-
-    len = 0;
-    for (i=0; i<image_size; i+=3) {
-        if (len >= bufSize - 4)
-            break;
-        b0 = ((*cp & 0xFC) >> 2); 
-        b1 = ((*cp & 0x03) << 4) | ((*(cp+1) & 0xF0) >> 4); 
-        b2 = ((*(cp+1) & 0x0F) << 2) | ((*(cp+2) & 0xC0) >> 6); 
-        b3 = *(cp+2) & 0x3F;
-        *buf++ = base64[b0];
-        *buf++ = base64[b1];
-        *buf++ = base64[b2];
-        *buf++ = base64[b3];
-        cp += 3;
-        len += 4;
-    }
-    return len;
-}
-#endif
-
-
-
-
 int clean_buffer(char *buf) {
     char *cp;
     
@@ -285,9 +189,7 @@ int clean_buffer(char *buf) {
 }
 
 
-//
-// Build the response body for the admin page
-//
+/* Build the response body for the admin page*/
 char *  adminBodyBuilder (      // Returns malloc-ed body string. Caller must free this. NULL if alloc error
 char *  statusMsg,              // Status message string to display. NULL if none
 char *  statusColor,            // Status message color as HTML color, e.g., "#ff0000". NULL if default
@@ -314,7 +216,6 @@ int *   contentLength)          // Out: length of response body
 }
 
 
-
 void    httpd_request (char firstChar)
 {
     static char reqBuf[REQBUF_SIZE+1]; 
@@ -323,33 +224,21 @@ void    httpd_request (char firstChar)
     char ch;
 
     // request fields
-
     char * method;
     char * path;
     char * protocol;
     char * headers;
 
     // response fields
-
     char * body = NULL;
     BOOL freeBody = FALSE;
     char * resultCode = "HTTP/1.1 200 OK";
     char * contentType = "text/html";
     int contentLength = 0, flashContentLength = 0;
 
-#if 0
-    static char * inlineImgBuf = 0;
-    int insertInlineImg = FALSE;
-    int inlineImgLength = 0;
-    char * inlineTagPtr = 0;
-#endif
-
     BOOL deferredReset = FALSE;
 
-
-    //
     // Receive the request and headers
-    //
     reqBuf[0] = firstChar;
     ret = 1;
     t0 = readRTC();
@@ -358,8 +247,8 @@ void    httpd_request (char firstChar)
         {
             char pch = reqBuf[ret - 1];     // ret always >= 1
             reqBuf[ret++] = ch;
-                            // Read to the end of the headers: handle any permutation of empty line EOL sequences
-                            // Apparently some clients just terminate lines with LF
+                   // Read to the end of the headers: handle any permutation of empty line EOL sequences
+                   // Apparently some clients just terminate lines with LF
             if ((ret >= 4  &&  strncmp (reqBuf + ret - 4, "\r\n\r\n", 4) == 0)  ||
                 (pch == 0x0d  &&  ch == 0x0d)  ||  (pch == 0x0a  &&  ch == 0x0a))
                 break;
@@ -367,9 +256,7 @@ void    httpd_request (char firstChar)
     }
     reqBuf[ret] = 0;
 
-    //
     // Parse the request fields
-    //
     method = strtok(reqBuf, " ");
     path = strtok(0, " ");
     protocol = strtok(0, "\r\n");
@@ -383,14 +270,10 @@ void    httpd_request (char firstChar)
         goto exit;
 
     
-    //------------------------
     // GET method
-    //
     if (strcmp (method, "GET") == 0) {
 
-        //
         // Camera image binary - robot.jpg
-        //
         if (strncmp(path, robotJpg, countof (robotJpg) - 1) == 0) {
             grab_frame();
             led1_on();
@@ -401,9 +284,7 @@ void    httpd_request (char firstChar)
             contentType = "image/jpeg";
         }
 
-        //
         // Robot control - robot.cgi
-        //
         else if (strncmp(path, robotCgi, countof(robotCgi) - 1) == 0) {
             char * params = path + countof (robotCgi) - 1;
             char cmd = params[0];
@@ -457,23 +338,17 @@ void    httpd_request (char firstChar)
             contentType = "text/plain";
         }
 
-        //
         // admin - built-in administration page
-        //
         else if (strncmp(path, adminPath, countof(adminPath) - 1) == 0) {
             body = adminBodyBuilder (NULL, NULL, &contentLength);
             freeBody = TRUE;
         }
 
-        //
         // Look up HTML from flash
-        //
         else {
             int fileIndex = countof(fileNames);     // assume no match
 
-            //
             // Look up the name
-            //
             if ((strcmp(path, "/") == 0) || (strcmp(path, "/index.html") == 0))
                 fileIndex = 0;
             else {
@@ -482,9 +357,7 @@ void    httpd_request (char firstChar)
                         break;
             }
 
-            //
             // If it's found, pull it out of flash
-            //
             if (fileIndex < countof(fileNames)) {
                 char * cp;
 
@@ -492,31 +365,9 @@ void    httpd_request (char firstChar)
                 body = cp = (char *) FLASH_BUFFER;
                 flashContentLength = contentLength = clean_buffer(cp);  // last character of html file should be '>'.  clean out anything else
     
-#if 0  // DISABLED for now
-                //
-                // See if the inline image tag is present and generate the image if needed
-                //
-                insertInlineImg = FALSE;
-                while ((*cp != 0) && (cp < (char *)(FLASH_BUFFER+0x00020000))) {
-                    if ((*cp == '$') && (*(cp+1) == '$')) {
-                        if (strncmp(cp, inlineImgTag, sizeof (inlineImgTag) - 1) == 0) {
-                            insertInlineImg = TRUE;
-                            inlineTagPtr = cp;
-                            if (inlineImgBuf == 0)
-                                inlineImgBuf = malloc (INLINEIMGBUF_SIZE);
-                            inlineImgLength = base64_camera_frame (inlineImgBuf, INLINEIMGBUF_SIZE);
-                            contentLength += inlineImgLength - sizeof (inlineImgTag) + 1;
-                            break;
-                        }
-                    }
-                    ++cp;
-                }
-#endif
             }
 
-            //
             // Not found - 404
-            //
             else {
                 body = body404;
                 resultCode = resultCode404;
@@ -527,27 +378,20 @@ void    httpd_request (char firstChar)
     } // if GET method
 
 
-
-    //---------------------------
     // POST method
-    //
     else if (strcmp (method, "POST") == 0) {
         char * reqBody = (char *) FLASH_BUFFER;
         int reqBodyCount = 0;
         int reqContentLength = -1;  // assume no Content-Length header
         static char reqContentType[128];
 
-        //
         // Assume error
-        //
         BOOL error = TRUE;
         body = body501;
         contentLength = countof (body501) - 1;
         resultCode = resultCode501;
 
-        //
         // Receive the request body
-        //
         getHdrDecimal (headers, "Content-Length: ", &reqContentLength);   // get Content-Length
         int lastCharTime = readRTC();
         while (readRTC() - lastCharTime < 2000  &&  (reqContentLength == -1  ||  reqBodyCount < reqContentLength)) {
@@ -561,17 +405,13 @@ void    httpd_request (char firstChar)
 
         getHdrString (headers, "Content-Type: ", reqContentType, countof (reqContentType));
 
-        //
         // admin -- Post to administration page
-        //
         if (strncmp(path, adminPath, countof(adminPath) - 1) == 0) {
             static char type[64];
             static char boundary[128];
             int boundaryLen;
 
-            //
             // Get the content type and boundary parameter
-            //
             type[0] = 0;
             char * typeEnd = strchr (reqContentType, ';');
             if (typeEnd != NULL) {
@@ -582,15 +422,11 @@ void    httpd_request (char firstChar)
             getParam (reqContentType, "boundary=", boundary + 2, countof (boundary) - 2);
             boundaryLen = strlen (boundary);
 
-            //
             // If everything is in order for an upload,
-            //
             if (reqBodyCount == reqContentLength  &&  strcmp (type, "multipart/form-data") == 0  &&  
                     boundaryLen > 0  &&  contentLength <= FLASH_BUFFER_SIZE) {
 
-                //
                 // Init POST body fields
-                //
                 char *fileBodyStart = NULL;
                 int fileBodyLength = 0;
                 enum { undefined, toSectors, toBootLoader } uploadDest = undefined;
@@ -608,9 +444,7 @@ reqBody[reqBodyCount] = 0;
 //DebugStrLn (reqBody);
 #endif
 
-                //
                 // Parse sections of the body
-                //
                 if (strncmp (reqBody, boundary, boundaryLen) == 0)    // if boundary at start of body
                 {
                     char * secStart = NULL;
@@ -620,9 +454,7 @@ reqBody[reqBodyCount] = 0;
 
                     while (TRUE)
                     {
-                        //
                         // Find the next boundary. If there was a prev boundary, process this section
-                        //
                         secEnd = strnstr (reqBody + bodyIndex, boundary, reqBodyCount - bodyIndex);
                         if (secEnd == NULL)
                             break;
@@ -635,24 +467,18 @@ reqBody[reqBodyCount] = 0;
                             *secBody = 0;   // terminate section headers
                             secBody += 4;
 
-                            //
-                           // Get Content-Disposition section header and the field name for this section
-                            //
+                            // Get Content-Disposition section header and the field name for this section
                             if (getHdrString (secStart, "Content-Disposition: ", contDisp, countof (contDisp)) &&
                                 getParam (contDisp, "name=", nameParam, countof (nameParam))) {
                                 static char val[32];
 
-                                //
                                 // fileItem1: the file being uploaded
-                                //
                                 if (strcmp (nameParam, "fileItem1") == 0) {
                                     fileBodyStart = secBody;
                                     fileBodyLength = secEnd - secBody;
                                 }
 
-                                //
                                 // uploadRadios: the upload destination
-                                //
                                 else if (strcmp (nameParam, "uploadRadios") == 0) {
                                     static char toSectorsStr[] = "toSectors", toBootLoaderStr[] = "toBootLoader";
                                     if (strncmp (secBody, toSectorsStr, countof (toSectorsStr) - 1) == 0)
@@ -661,9 +487,7 @@ reqBody[reqBodyCount] = 0;
                                         uploadDest = toBootLoader;                                           
                                 }
 
-                                //
                                 // sectorStart
-                                //
                                 else if (strcmp (nameParam, "sectorStart") == 0  &&  secEnd - secBody > 0) {
                                     strncpy (val, secBody, min (countof (val), secEnd - secBody));
                                     val[countof (val) - 1] = 0;
@@ -672,9 +496,7 @@ reqBody[reqBodyCount] = 0;
                                         sectorStart = -1;
                                 }
 
-                                //
                                 // confirmBootLoader
-                                //
                                 else if (strcmp (nameParam, "confirmBootLoader") == 0) {
                                     if (strncmp (secBody, "on", 2) == 0  ||  strncmp (secBody, "1", 1) == 0)
                                         confirmBootLoader = TRUE;
@@ -684,9 +506,7 @@ reqBody[reqBodyCount] = 0;
                         
                         secStart = secEnd + boundaryLen + 2;   // start of the next section is after end of last
 
-                        //
                         // If we're at the end boundary, we're done
-                        //
                         if (secStart[0] == '-'  &&  secStart[1] == '-')
                             break;
                         secStart += 2; // skip CRLFs after boundary
@@ -694,10 +514,7 @@ reqBody[reqBodyCount] = 0;
                     } // while parsing request body
                 } // if first boundary
 
-
-                //
                 // Validate the upload, then flash the fugger
-                //
                 static char resultMsg[128];
                 resultMsg[0] = 0;
                 char * resultColor = "#ffa0a0";     // assume error: red
@@ -725,9 +542,7 @@ reqBody[reqBodyCount] = 0;
                                 getUnaligned32 (fileBodyStart));
                 }
                 else {
-                    //
                     // Set destination and flash write size based on parameters
-                    //
                     int flashAddress, bytesToWrite;
                     if (uploadDest == toSectors)
                     {
@@ -740,9 +555,7 @@ reqBody[reqBodyCount] = 0;
                         bytesToWrite = BOOT_LOADER_SECTORS * FLASH_SECTOR_SIZE;
                     }
 
-                    //
                     // Move the file down to the beginning of FLASH_BUFFER and pad the sectors with zeroes
-                    //
                     memmove ((void *) FLASH_BUFFER, fileBodyStart, fileBodyLength);
                     memset ((void *) (FLASH_BUFFER + fileBodyLength), 0, bytesToWrite - fileBodyLength);
 #if 1
@@ -763,15 +576,11 @@ reqBody[reqBodyCount] = 0;
                     }
                 }
 
-                //
                 // Form our response
-                //
                 body = adminBodyBuilder (resultMsg, resultColor, &contentLength);
                 freeBody = TRUE;
 
-                //
                 // Unless we got a valid file, clear the flash buffer
-                //
                 if (error)
                     memset ((void *) FLASH_BUFFER, 0, FLASH_BUFFER_SIZE);
             } // if starting boundary
@@ -779,23 +588,15 @@ reqBody[reqBodyCount] = 0;
     } // if POST method
 
 
-
-    //----------------------------
     // Unknown method
-    //
     else {
-DebugStr ("http_get unknown method=");
-DebugStr (method);
-DebugStr ("\r\n");
         body = body501;
         contentLength = countof (body501) - 1;
         resultCode = resultCode501;
     }
 
 
-    //
     // Send response headers
-    //
     printf ("%s\r\n"
             "Content-Type: %s\r\n"
             "Cache-Control: no-cache\r\n"
@@ -807,9 +608,7 @@ DebugStr ("\r\n");
             contentType,
             contentLength);
 
-    //
     // Send response body
-    //
 #if 0
     if (insertInlineImg) {
         putchars ((unsigned char *) body, inlineTagPtr - body);
@@ -824,26 +623,17 @@ DebugStr ("\r\n");
             putchars ((unsigned char *) body, contentLength);
     }
 
-    //
     // If the response body was malloc-ed, free it
-    //
     if (freeBody  &&  body != NULL)
         free (body);
 
-    //
     // If a reset request came in, reset
-    //
     if (deferredReset)
     {
-//DebugStrLn ("httpd reset");
         reset_cpu();
     }
 
 exit:
-//DebugStr ("httpd_get exit\r\n");
     return;
 }
-
-
-
 
