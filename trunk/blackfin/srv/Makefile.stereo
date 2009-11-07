@@ -1,4 +1,4 @@
-CSRCS   = init.o main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c httpd.c\
+CSRCS   = init.c main.c srv.c uart.c camera.c jpeg.c i2c.c stm_m25p32.c float.c httpd.c\
   xmodem.c colors.c edit.c malloc.c string.c stereo.c printf.c myfunc.c neural.c gps.c sdcard.c \
   picoc/picoc.c picoc/table.c picoc/lex.c picoc/parse.c picoc/expression.c \
   picoc/heap.c picoc/type.c picoc/variable.c picoc/clibrary.c \

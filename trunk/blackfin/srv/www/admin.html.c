@@ -142,7 +142,7 @@
 "\r\n"
 "<div>\r\n"
 "\r\n"
-"    <p align=\"right\"><input id=\"resetBtn\" type=\"button\" value=\"Reset SRV\" onclick=\"onResetBtn()\"\r\n"
+"    <p align=\"left\"><input id=\"resetBtn\" type=\"button\" value=\"Reset SRV\" onclick=\"onResetBtn()\"\r\n"
 "    style=\"width: 7em; font-size: 8pt; color: #000000; background-color: #ff6060\"></p>\r\n"
 "\r\n"
 "    <p style=\"font-size: 8pt\">$$version$$</p>\r\n"
