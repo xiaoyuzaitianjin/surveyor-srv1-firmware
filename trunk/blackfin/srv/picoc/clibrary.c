@@ -1,5 +1,3 @@
-//#include <math.h>
-
 #include "picoc.h"
 
 struct OutputStream CStdOut;
@@ -45,10 +43,6 @@ void SPutc(unsigned char Ch, union OutputStreamInfo *Stream)
 {
     struct StringOutputStream *Out = &Stream->Str;
     *Out->WritePos++ = Ch;
-#ifndef NATIVE_POINTERS
-    if (Out->WritePos == Out->MaxPos)
-        Out->WritePos--;
-#endif
 }
 
 /* print a character to a stream without using printf/sprintf */
@@ -72,7 +66,7 @@ void PrintRepeatedChar(char ShowChar, int Length, struct OutputStream *Stream)
 }
 
 /* print an unsigned integer to a stream without using printf/sprintf */
-void PrintUnsigned(unsigned int Num, unsigned int Base, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream)
+void PrintUnsigned(unsigned long Num, unsigned int Base, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream)
 {
     char Result[33];
     int ResPos = sizeof(Result);
@@ -83,8 +77,8 @@ void PrintUnsigned(unsigned int Num, unsigned int Base, int FieldWidth, int Zero
     Result[--ResPos] = '\0';
     while (Num > 0)
     {
-        unsigned int NextNum = Num / Base;
-        unsigned int Digit = Num - NextNum * Base;
+        unsigned long NextNum = Num / Base;
+        unsigned long Digit = Num - NextNum * Base;
         if (Digit < 10)
             Result[--ResPos] = '0' + Digit;
         else
@@ -103,7 +97,7 @@ void PrintUnsigned(unsigned int Num, unsigned int Base, int FieldWidth, int Zero
 }
 
 /* print an integer to a stream without using printf/sprintf */
-void PrintInt(int Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream)
+void PrintInt(long Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream)
 {
     if (Num < 0)
     {
@@ -113,7 +107,7 @@ void PrintInt(int Num, int FieldWidth, int ZeroPad, int LeftJustify, struct Outp
             FieldWidth--;
     }
     
-    PrintUnsigned((unsigned int)Num, 10, FieldWidth, ZeroPad, LeftJustify, Stream);
+    PrintUnsigned((unsigned long)Num, 10, FieldWidth, ZeroPad, LeftJustify, Stream);
 }
 
 #ifndef NO_FP
@@ -135,13 +129,13 @@ void PrintFP(double Num, struct OutputStream *Stream)
         Exponent = math_log10(Num) - 0.999999999;
     
     Num /= math_pow(10.0, Exponent);    
-    PrintInt((int)Num, 0, FALSE, FALSE, Stream);
+    PrintInt((long)Num, 0, FALSE, FALSE, Stream);
     PrintCh('.', Stream);
-    Num = (Num - (int)Num) * 10;
+    Num = (Num - (long)Num) * 10;
     if (math_abs(Num) >= 1e-7)
     {
-        for (MaxDecimal = 6; MaxDecimal > 0 && math_abs(Num) >= 1e-7; Num = (Num - (int)(Num + 1e-7)) * 10, MaxDecimal--)
-            PrintCh('0' + (int)(Num + 1e-7), Stream);
+        for (MaxDecimal = 6; MaxDecimal > 0 && math_abs(Num) >= 1e-7; Num = (Num - (long)(Num + 1e-7)) * 10, MaxDecimal--)
+            PrintCh('0' + (long)(Num + 1e-7), Stream);
     }
     else
         PrintCh('0', Stream);
@@ -163,9 +157,10 @@ void PrintType(struct ValueType *Typ, struct OutputStream *Stream)
         case TypeInt:           PrintStr("int", Stream); break;
         case TypeShort:         PrintStr("short", Stream); break;
         case TypeChar:          PrintStr("char", Stream); break;
+        case TypeLong:          PrintStr("long", Stream); break;
         case TypeUnsignedInt:   PrintStr("unsigned int", Stream); break;
         case TypeUnsignedShort: PrintStr("unsigned short", Stream); break;
-        case TypeUnsignedChar:  PrintStr("unsigned char", Stream); break;
+        case TypeUnsignedLong:  PrintStr("unsigned long", Stream); break;
 #ifndef NO_FP
         case TypeFP:            PrintStr("double", Stream); break;
 #endif
@@ -190,18 +185,7 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
     int LeftJustify = FALSE;
     int ZeroPad = FALSE;
     int FieldWidth = 0;
-#ifndef NATIVE_POINTERS
-    char *Format;
-    struct Value *CharArray = Param[0]->Val->Pointer.Segment;
-
-    if (Param[0]->Val->Pointer.Offset < 0 || Param[0]->Val->Pointer.Offset >= CharArray->Val->Array.Size)
-        Format = StrEmpty;
-    else
-        Format = (char *)CharArray->Val->Array.Data + Param[0]->Val->Pointer.Offset;
-#else
     char *Format = Param[0]->Val->NativePointer;
-    /* XXX - dereference this properly */
-#endif
     
     for (FPos = Format; *FPos != '\0'; FPos++)
     {
@@ -240,12 +224,13 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
             }
             
             if (FormatType != NULL)
-            { /* we have to format something */
+            { 
+                /* we have to format something */
                 if (ArgCount >= NumArgs)
                     PrintStr("XXX", Stream);   /* not enough parameters for format */
                 else
                 {
-                    NextArg = (struct Value *)((char *)NextArg + sizeof(struct Value) + TypeStackSizeValue(NextArg));
+                    NextArg = (struct Value *)((char *)NextArg + MEM_ALIGN(sizeof(struct Value) + TypeStackSizeValue(NextArg)));
                     if (NextArg->Typ != FormatType && 
                             !((FormatType == &IntType || *FPos == 'f') && IS_NUMERIC_COERCIBLE(NextArg)) &&
                             !(FormatType == CharPtrType && (NextArg->Typ->Base == TypePointer || 
@@ -260,20 +245,9 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
                                 char *Str;
                                 
                                 if (NextArg->Typ->Base == TypePointer)
-                                {
-#ifndef NATIVE_POINTERS
-                                    struct Value *CharArray = NextArg->Val->Pointer.Segment;
-
-                                    if (NextArg->Val->Pointer.Offset < 0 || NextArg->Val->Pointer.Offset >= CharArray->Val->Array.Size)
-                                        Str = StrEmpty;
-                                    else
-                                        Str = (char *)CharArray->Val->Array.Data + NextArg->Val->Pointer.Offset;
-#else
                                     Str = NextArg->Val->NativePointer;
-#endif
-                                }
                                 else
-                                    Str = NextArg->Val->Array.Data;
+                                    Str = &NextArg->Val->ArrayMem[0];
                                     
                                 if (Str == NULL)
                                     PrintStr("NULL", Stream); 
@@ -282,10 +256,10 @@ void GenericPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct 
                                 break;
                             }
                             case 'd': PrintInt(ExpressionCoerceInteger(NextArg), FieldWidth, ZeroPad, LeftJustify, Stream); break;
-                            case 'u': PrintUnsigned((unsigned int)ExpressionCoerceInteger(NextArg), 10, FieldWidth, ZeroPad, LeftJustify, Stream); break;
-                            case 'x': PrintUnsigned((unsigned int)ExpressionCoerceInteger(NextArg), 16, FieldWidth, ZeroPad, LeftJustify, Stream); break;
-                            case 'b': PrintUnsigned((unsigned int)ExpressionCoerceInteger(NextArg), 2, FieldWidth, ZeroPad, LeftJustify, Stream); break;
-                            case 'c': PrintCh(ExpressionCoerceInteger(NextArg), Stream); break;
+                            case 'u': PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 10, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'x': PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 16, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'b': PrintUnsigned(ExpressionCoerceUnsignedInteger(NextArg), 2, FieldWidth, ZeroPad, LeftJustify, Stream); break;
+                            case 'c': PrintCh(ExpressionCoerceUnsignedInteger(NextArg), Stream); break;
 #ifndef NO_FP
                             case 'f': PrintFP(ExpressionCoerceFP(NextArg), Stream); break;
 #endif
@@ -323,42 +297,16 @@ void LibSPrintf(struct ParseState *Parser, struct Value *ReturnValue, struct Val
         
     StrStream.Putch = &SPutc;
     StrStream.i.Str.Parser = Parser;
-#ifndef NATIVE_POINTERS
-    StrStream.i.Str.MaxPos = StrStream.i.Str.WritePos - DerefOffset + DerefVal->Val->Array.Size;
-#endif
     GenericPrintf(Parser, ReturnValue, Param+1, NumArgs-1, &StrStream);
     PrintCh(0, &StrStream);
-#ifndef NATIVE_POINTERS
-    ReturnValue->Val->Pointer.Segment = *Param;
-    ReturnValue->Val->Pointer.Offset = 0;
-#else
     ReturnValue->Val->NativePointer = *Param;
-#endif
 }
 
 /* get a line of input. protected from buffer overrun */
 void LibGets(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-#ifndef NATIVE_POINTERS
-    struct Value *CharArray = Param[0]->Val->Pointer.Segment;
-    char *ReadBuffer = (char *)CharArray->Val->Array.Data + Param[0]->Val->Pointer.Offset;
-    int MaxLength = CharArray->Val->Array.Size - Param[0]->Val->Pointer.Offset;
-    char *Result;
-
-    ReturnValue->Val->Pointer.Segment = NULL;
-    ReturnValue->Val->Pointer.Offset = 0;
-    
-    if (Param[0]->Val->Pointer.Offset < 0 || MaxLength < 0)
-        return; /* no room for data */
-    
-    Result = PlatformGetLine(ReadBuffer, MaxLength);
-    if (Result == NULL)
-        return;
-    
-    ReturnValue->Val->Pointer = Param[0]->Val->Pointer;
-#else
     struct Value *CharArray = (struct Value *)(Param[0]->Val->NativePointer);
-    char *ReadBuffer = CharArray->Val->Array.Data;
+    char *ReadBuffer = &CharArray->Val->ArrayMem[0];
     char *Result;
 
     ReturnValue->Val->NativePointer = NULL;
@@ -367,7 +315,6 @@ void LibGets(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
         return;
     
     ReturnValue->Val->NativePointer = Param[0]->Val->NativePointer;
-#endif
 }
 
 void LibGetc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
@@ -472,21 +419,25 @@ void LibFloor(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 }
 #endif
 
-#ifdef NATIVE_POINTERS
+#ifndef NO_STRING_FUNCTIONS
 void LibMalloc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
     ReturnValue->Val->NativePointer = malloc(Param[0]->Val->Integer);
 }
 
+#ifndef NO_CALLOC
 void LibCalloc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
     ReturnValue->Val->NativePointer = calloc(Param[0]->Val->Integer, Param[1]->Val->Integer);
 }
+#endif
 
+#ifndef NO_REALLOC
 void LibRealloc(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
     ReturnValue->Val->NativePointer = realloc(Param[0]->Val->NativePointer, Param[1]->Val->Integer);
 }
+#endif
 
 void LibFree(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
@@ -495,57 +446,136 @@ void LibFree(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 
 void LibStrcpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    strcpy(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer);
+    char *To = (char *)Param[0]->Val->NativePointer;
+    char *From = (char *)Param[1]->Val->NativePointer;
+    
+    while (*From != '\0')
+        *To++ = *From++;
+    
+    *To = '\0';
 }
 
 void LibStrncpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    strncpy(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+    char *To = (char *)Param[0]->Val->NativePointer;
+    char *From = (char *)Param[1]->Val->NativePointer;
+    int Len = Param[2]->Val->Integer;
+    
+    for (; *From != '\0' && Len > 0; Len--)
+        *To++ = *From++;
+    
+    if (Len > 0)
+        *To = '\0';
 }
 
 void LibStrcmp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->Integer = strcmp(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer);
+    char *Str1 = (char *)Param[0]->Val->NativePointer;
+    char *Str2 = (char *)Param[1]->Val->NativePointer;
+    int StrEnded;
+    
+    for (StrEnded = FALSE; !StrEnded; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++)
+    {
+         if (*Str1 < *Str2) { ReturnValue->Val->Integer = -1; return; } 
+         else if (*Str1 > *Str2) { ReturnValue->Val->Integer = 1; return; }
+    }
+    
+    ReturnValue->Val->Integer = 0;
 }
 
 void LibStrncmp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->Integer = strncmp(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+    char *Str1 = (char *)Param[0]->Val->NativePointer;
+    char *Str2 = (char *)Param[1]->Val->NativePointer;
+    int Len = Param[2]->Val->Integer;
+    int StrEnded;
+    
+    for (StrEnded = FALSE; !StrEnded && Len > 0; StrEnded = (*Str1 == '\0' || *Str2 == '\0'), Str1++, Str2++, Len--)
+    {
+         if (*Str1 < *Str2) { ReturnValue->Val->Integer = -1; return; } 
+         else if (*Str1 > *Str2) { ReturnValue->Val->Integer = 1; return; }
+    }
+    
+    ReturnValue->Val->Integer = 0;
 }
 
 void LibStrcat(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    strcat(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer);
+    char *To = (char *)Param[0]->Val->NativePointer;
+    char *From = (char *)Param[1]->Val->NativePointer;
+    
+    while (*To != '\0')
+        To++;
+    
+    while (*From != '\0')
+        *To++ = *From++;
+    
+    *To = '\0';
 }
 
 void LibIndex(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->NativePointer = index(Param[0]->Val->NativePointer, Param[1]->Val->Integer);
+    char *Pos = (char *)Param[0]->Val->NativePointer;
+    int SearchChar = Param[1]->Val->Integer;
+
+    while (*Pos != '\0' && *Pos != SearchChar)
+        Pos++;
+    
+    if (*Pos != SearchChar)
+        ReturnValue->Val->NativePointer = NULL;
+    else
+        ReturnValue->Val->NativePointer = Pos;
 }
 
 void LibRindex(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->NativePointer = rindex(Param[0]->Val->NativePointer, Param[1]->Val->Integer);
+    char *Pos = (char *)Param[0]->Val->NativePointer;
+    int SearchChar = Param[1]->Val->Integer;
+
+    ReturnValue->Val->NativePointer = NULL;
+    for (; *Pos != '\0'; Pos++)
+    {
+        if (*Pos == SearchChar)
+            ReturnValue->Val->NativePointer = Pos;
+    }
 }
 
 void LibStrlen(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->Integer = strlen(Param[0]->Val->NativePointer);
+    char *Pos = (char *)Param[0]->Val->NativePointer;
+    int Len;
+    
+    for (Len = 0; *Pos != '\0'; Pos++)
+        Len++;
+    
+    ReturnValue->Val->Integer = Len;
 }
 
 void LibMemset(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
+    /* we can use the system memset() */
     memset(Param[0]->Val->NativePointer, Param[1]->Val->Integer, Param[2]->Val->Integer);
 }
 
 void LibMemcpy(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
+    /* we can use the system memcpy() */
     memcpy(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
 }
 
 void LibMemcmp(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->Integer = memcmp(Param[0]->Val->NativePointer, Param[1]->Val->NativePointer, Param[2]->Val->Integer);
+    unsigned char *Mem1 = (unsigned char *)Param[0]->Val->NativePointer;
+    unsigned char *Mem2 = (unsigned char *)Param[1]->Val->NativePointer;
+    int Len = Param[2]->Val->Integer;
+    
+    for (; Len > 0; Mem1++, Mem2++, Len--)
+    {
+         if (*Mem1 < *Mem2) { ReturnValue->Val->Integer = -1; return; } 
+         else if (*Mem1 > *Mem2) { ReturnValue->Val->Integer = 1; return; }
+    }
+    
+    ReturnValue->Val->Integer = 0;
 }
 #endif
 
@@ -577,11 +607,15 @@ struct LibraryFunction CLibrary[] =
     { LibCeil,          "float ceil(float)" },
     { LibFloor,         "float floor(float)" },
 #endif
-#ifdef NATIVE_POINTERS
     { LibMalloc,        "void *malloc(int)" },
+#ifndef NO_CALLOC
     { LibCalloc,        "void *calloc(int,int)" },
-    { LibCalloc,        "void *realloc(void *,int)" },
+#endif
+#ifndef NO_REALLOC
+    { LibRealloc,       "void *realloc(void *,int)" },
+#endif
     { LibFree,          "void free(void *)" },
+#ifndef NO_STRING_FUNCTIONS
     { LibStrcpy,        "void strcpy(char *,char *)" },
     { LibStrncpy,       "void strncpy(char *,char *,int)" },
     { LibStrcmp,        "int strcmp(char *,char *)" },

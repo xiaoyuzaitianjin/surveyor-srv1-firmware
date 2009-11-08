@@ -44,7 +44,8 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
     ParamParser = *Parser;
     Token = LexGetToken(Parser, NULL, TRUE);
     if (Token != TokenCloseBracket && Token != TokenEOF)
-    { /* count the number of parameters */
+    { 
+        /* count the number of parameters */
         ParamCount++;
         while ((Token = LexGetToken(Parser, NULL, TRUE)) != TokenCloseBracket && Token != TokenEOF)
         { 
@@ -108,14 +109,68 @@ struct Value *ParseFunctionDefinition(struct ParseState *Parser, struct ValueTyp
     return FuncValue;
 }
 
+/* assign an initial value to a variable */
+void ParseDeclarationAssignment(struct ParseState *Parser, struct Value *NewVariable)
+{
+    struct Value *CValue;
+    int ArrayIndex;
+    enum LexToken Token = TokenComma;
+
+    if (LexGetToken(Parser, NULL, FALSE) == TokenLeftBrace)
+    {
+        /* this is an array initialiser */
+        LexGetToken(Parser, NULL, TRUE);
+        
+        for (ArrayIndex = 0; ArrayIndex < NewVariable->Typ->ArraySize; ArrayIndex++)
+        {
+            struct Value *ArrayElement = NULL;
+            
+            if (Token != TokenComma)
+                ProgramFail(Parser, "comma expected");
+                
+            if (Parser->Mode == RunModeRun)
+                ArrayElement = VariableAllocValueFromExistingData(Parser, NewVariable->Typ->FromType, (union AnyValue *)(&NewVariable->Val->ArrayMem[0] + TypeSize(NewVariable->Typ->FromType, 0, TRUE) * ArrayIndex), TRUE, NewVariable);
+                
+            if (!ExpressionParse(Parser, &CValue))
+                ProgramFail(Parser, "expression expected");
+                
+            if (Parser->Mode == RunModeRun)
+            {
+                ExpressionAssign(Parser, ArrayElement, CValue, FALSE, NULL, 0, FALSE);
+                VariableStackPop(Parser, CValue);
+                VariableStackPop(Parser, ArrayElement);
+            }
+            
+            Token = LexGetToken(Parser, NULL, TRUE);
+        }
+        
+        if (Token == TokenComma)
+            Token = LexGetToken(Parser, NULL, TRUE);
+
+        if (Token != TokenRightBrace)
+            ProgramFail(Parser, "'}' expected");
+    }
+    else
+    {
+        /* this is a normal expression initialiser */
+        if (!ExpressionParse(Parser, &CValue))
+            ProgramFail(Parser, "expression expected");
+            
+        if (Parser->Mode == RunModeRun)
+        {
+            ExpressionAssign(Parser, NewVariable, CValue, FALSE, NULL, 0, FALSE);
+            VariableStackPop(Parser, CValue);
+        }
+    }
+}
+
 /* declare a variable or function */
 int ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
 {
     char *Identifier;
     struct ValueType *BasicType;
     struct ValueType *Typ;
-    struct Value *CValue;
-    struct Value *NewVariable;
+    struct Value *NewVariable = NULL;
 
     TypeParseFront(Parser, &BasicType);
     do
@@ -144,14 +199,7 @@ int ParseDeclaration(struct ParseState *Parser, enum LexToken Token)
                 {
                     /* we're assigning an initial value */
                     LexGetToken(Parser, NULL, TRUE);
-                    if (!ExpressionParse(Parser, &CValue))
-                        ProgramFail(Parser, "expression expected");
-                        
-                    if (Parser->Mode == RunModeRun)
-                    {
-                        ExpressionAssign(Parser, NewVariable, CValue, FALSE, NULL, 0, FALSE);
-                        VariableStackPop(Parser, CValue);
-                    }
+                    ParseDeclarationAssignment(Parser, NewVariable);
                 }
             }
         }
@@ -400,6 +448,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser)
         case TokenIntType:
         case TokenShortType:
         case TokenCharType:
+        case TokenLongType:
         case TokenFloatType:
         case TokenDoubleType:
         case TokenVoidType:
@@ -422,11 +471,7 @@ enum ParseResult ParseStatement(struct ParseState *Parser)
             if (LexGetToken(Parser, &LexerValue, TRUE) != TokenStringConstant)
                 ProgramFail(Parser, "\"filename.h\" expected");
             
-#ifndef NATIVE_POINTERS
-            PlatformScanFile(LexerValue->Val->Pointer.Segment->Val->Array.Data);
-#else
             PlatformScanFile((char *)LexerValue->Val->NativePointer);
-#endif
             CheckTrailingSemicolon = FALSE;
             break;
 #endif
@@ -443,7 +488,8 @@ enum ParseResult ParseStatement(struct ParseState *Parser)
             if (LexGetToken(Parser, NULL, FALSE) != TokenLeftBrace)
                 ProgramFail(Parser, "'{' expected");
             
-            { /* new block so we can store parser state */
+            { 
+                /* new block so we can store parser state */
                 enum RunMode OldMode = Parser->Mode;
                 int OldSearchLabel = Parser->SearchLabel;
                 Parser->Mode = RunModeCaseSearch;
@@ -500,13 +546,18 @@ enum ParseResult ParseStatement(struct ParseState *Parser)
         case TokenReturn:
             if (Parser->Mode == RunModeRun)
             {
-                if (!ExpressionParse(Parser, &CValue) && TopStackFrame->ReturnValue->Typ->Base != TypeVoid)
-                    ProgramFail(Parser, "value required in return");
-                    
                 if (TopStackFrame->ReturnValue->Typ->Base != TypeVoid)
                 {
+                    if (!ExpressionParse(Parser, &CValue))
+                        ProgramFail(Parser, "value required in return");
+                    
                     ExpressionAssign(Parser, TopStackFrame->ReturnValue, CValue, TRUE, NULL, 0, FALSE);
                     VariableStackPop(Parser, CValue);
+                }
+                else
+                {
+                    if (ExpressionParse(Parser, &CValue))
+                        ProgramFail(Parser, "value in return from a void function");                    
                 }
                 
                 Parser->Mode = RunModeReturn;
@@ -517,39 +568,19 @@ enum ParseResult ParseStatement(struct ParseState *Parser)
         
         case TokenDelete:
         {
-            /* first try to parse this as "delete a pointer from an expression" */
-            struct ParseState PreExpression = *Parser;
-            int WasPointer = FALSE;
-            
-            if (ExpressionParse(Parser, &CValue))
-            { /* found an expression */
-                if (Parser->Mode == RunModeRun)
-                {
-                    if (TopStackFrame->ReturnValue->Typ->Base == TypePointer)
-                    { /* this was a pointer to something - delete the object we're pointing to */
-                        /* XXX - now I'm having second thoughts about this */
-                        WasPointer = TRUE;
-                    }
-                    
-                    VariableStackPop(Parser, CValue);
-                }
-            }
-            
-            if (!WasPointer)
-            { /* go back and try it as a function or variable name to delete */
-                *Parser = PreExpression;
-                if (LexGetToken(Parser, &LexerValue, TRUE) != TokenIdentifier)
-                    ProgramFail(Parser, "identifier expected");
-                    
-                if (Parser->Mode == RunModeRun)
-                { /* delete this variable or function */
-                    CValue = TableDelete(&GlobalTable, LexerValue->Val->Identifier);
-    
-                    if (CValue == NULL)
-                        ProgramFail(Parser, "'%s' is not defined", LexerValue->Val->Identifier);
-                    
-                    VariableFree(CValue);
-                }
+            /* try it as a function or variable name to delete */
+            if (LexGetToken(Parser, &LexerValue, TRUE) != TokenIdentifier)
+                ProgramFail(Parser, "identifier expected");
+                
+            if (Parser->Mode == RunModeRun)
+            { 
+                /* delete this variable or function */
+                CValue = TableDelete(&GlobalTable, LexerValue->Val->Identifier);
+
+                if (CValue == NULL)
+                    ProgramFail(Parser, "'%s' is not defined", LexerValue->Val->Identifier);
+                
+                VariableFree(CValue);
             }
             break;
         }

@@ -17,14 +17,8 @@
 #define min(x,y) (((x)<(y))?(x):(y))
 #endif
 
-#define MEM_ALIGN(x) (((x) + ARCH_ALIGN_WORDSIZE - 1) & ~(ARCH_ALIGN_WORDSIZE-1))
+#define MEM_ALIGN(x) (((x) + sizeof(ALIGN_TYPE) - 1) & ~(sizeof(ALIGN_TYPE)-1))
 
-#define LOG10E 0.43429448190325182765
-#define INTERACTIVE_FILE_NAME "input"
-
-#ifndef PATH_MAX
-#define PATH_MAX 1024
-#endif
 #define GETS_BUF_MAX 256
 
 /* coercion of numeric types to other numeric types */
@@ -36,15 +30,11 @@
 #define FP_VAL(v) 0
 #endif
 
-#ifdef NATIVE_POINTERS
 #define IS_POINTER_COERCIBLE(v, ap) ((ap) ? ((v)->Typ->Base == TypePointer) : 0)
 #define POINTER_COERCE(v) ((int)(v)->Val->NativePointer)
-#else
-#define IS_POINTER_COERCIBLE(v, ap) 0
-#define POINTER_COERCE(v) 0
-#endif
 
-#define IS_INTEGER_NUMERIC(v) ((v)->Typ->Base == TypeInt || (v)->Typ->Base == TypeChar || (v)->Typ->Base == TypeShort)
+#define IS_INTEGER_NUMERIC_TYPE(t) ((t)->Base >= TypeInt && (t)->Base <= TypeUnsignedLong)
+#define IS_INTEGER_NUMERIC(v) IS_INTEGER_NUMERIC_TYPE((v)->Typ)
 #define IS_NUMERIC_COERCIBLE(v) (IS_INTEGER_NUMERIC(v) || IS_FP(v))
 #define IS_NUMERIC_COERCIBLE_PLUS_POINTERS(v,ap) (IS_NUMERIC_COERCIBLE(v) || IS_POINTER_COERCIBLE(v,ap))
 
@@ -120,10 +110,11 @@ enum BaseType
     TypeVoid,                   /* no type */
     TypeInt,                    /* integer */
     TypeShort,                  /* short integer */
-    TypeChar,                   /* a single character */
+    TypeChar,                   /* a single character (unsigned) */
+    TypeLong,                   /* long integer */
     TypeUnsignedInt,            /* unsigned integer */
     TypeUnsignedShort,          /* unsigned short integer */
-    TypeUnsignedChar,           /* a single unsigned character */
+    TypeUnsignedLong,           /* unsigned long integer */
 #ifndef NO_FP
     TypeFP,                     /* floating point */
 #endif
@@ -164,45 +155,24 @@ struct FuncDef
 };
 
 /* values */
-struct ArrayValue
-{
-#ifndef NATIVE_POINTERS
-    unsigned int Size;              /* the number of elements in the array */
-#endif
-    void *Data;                     /* pointer to the array data */
-};
-
-#ifndef NATIVE_POINTERS
-struct PointerValue
-{
-    struct Value *Segment;          /* array or basic value which this points to, NULL for machine memory access */
-    unsigned int Offset;            /* index into an array */
-};
-#endif
-
 union AnyValue
 {
-    char Character;
+    unsigned char Character;
     short ShortInteger;
     int Integer;
-    unsigned char UnsignedCharacter;
+    long LongInteger;
     unsigned short UnsignedShortInteger;
     unsigned int UnsignedInteger;
+    unsigned long UnsignedLongInteger;
     char *Identifier;
-    struct ArrayValue Array;
+    char ArrayMem[2];               /* placeholder for where the data starts, doesn't point to it */
     struct ParseState Parser;
     struct ValueType *Typ;
     struct FuncDef FuncDef;
-
 #ifndef NO_FP
     double FP;
 #endif
-
-#ifndef NATIVE_POINTERS
-    struct PointerValue Pointer;    /* safe pointers */
-#else
     void *NativePointer;            /* unsafe native pointers */
-#endif
 };
 
 struct Value
@@ -277,9 +247,6 @@ union OutputStreamInfo
     {
         struct ParseState *Parser;
         char *WritePos;
-#ifndef NATIVE_POINTERS
-        char *MaxPos;
-#endif
     } Str;
 };
 
@@ -298,12 +265,10 @@ enum ParseResult { ParseResultEOF, ParseResultError, ParseResultOk };
 
 /* globals */
 extern void *HeapStackTop;
-extern void *HeapMemStart;
 extern struct Table GlobalTable;
 extern struct StackFrame *TopStackFrame;
 extern struct ValueType UberType;
 extern struct ValueType IntType;
-extern struct ValueType ShortType;
 extern struct ValueType CharType;
 #ifndef NO_FP
 extern struct ValueType FPType;
@@ -354,10 +319,10 @@ void ParserCopyPos(struct ParseState *To, struct ParseState *From);
 
 /* expression.c */
 int ExpressionParse(struct ParseState *Parser, struct Value **Result);
-int ExpressionParseInt(struct ParseState *Parser);
+long ExpressionParseInt(struct ParseState *Parser);
 void ExpressionAssign(struct ParseState *Parser, struct Value *DestValue, struct Value *SourceValue, int Force, const char *FuncName, int ParamNo, int AllowPointerCoercion);
-int ExpressionCoerceInteger(struct Value *Val);
-unsigned int ExpressionCoerceUnsignedInteger(struct Value *Val);
+long ExpressionCoerceInteger(struct Value *Val);
+unsigned long ExpressionCoerceUnsignedInteger(struct Value *Val);
 #ifndef NO_FP
 double ExpressionCoerceFP(struct Value *Val);
 #endif
@@ -410,7 +375,7 @@ void *VariableDereferencePointer(struct ParseState *Parser, struct Value *Pointe
 void LibraryInit(struct Table *GlobalTable, const char *LibraryName, struct LibraryFunction (*FuncList)[]);
 void CLibraryInit();
 void PrintCh(char OutCh, struct OutputStream *Stream);
-void PrintInt(int Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream);
+void PrintInt(long Num, int FieldWidth, int ZeroPad, int LeftJustify, struct OutputStream *Stream);
 void PrintStr(const char *Str, struct OutputStream *Stream);
 void PrintFP(double Num, struct OutputStream *Stream);
 void PrintType(struct ValueType *Typ, struct OutputStream *Stream);

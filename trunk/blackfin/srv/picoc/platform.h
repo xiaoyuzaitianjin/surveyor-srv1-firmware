@@ -10,11 +10,12 @@
  * #define  UMON_HOST
  */
 
-#ifndef SURVEYOR_HOST
-#define HEAP_SIZE 16384                     /* default space for the heap and the stack */
-#endif
 #define LARGE_INT_POWER_OF_TEN 1000000000   /* the largest power of ten which fits in an int on this architecture */
-#define ARCH_ALIGN_WORDSIZE sizeof(int)     /* memory alignment boundary on this architecture */
+#ifdef __hppa__
+#define ALIGN_TYPE double                   /* the data type to use for alignment */
+#else
+#define ALIGN_TYPE void *                   /* the data type to use for alignment */
+#endif
 
 #define GLOBAL_TABLE_SIZE 97                /* global variable table */
 #define STRING_TABLE_SIZE 97                /* shared string table size */
@@ -37,6 +38,7 @@
 
 /* host platform includes */
 #ifdef UNIX_HOST
+# define HEAP_SIZE (128*1024)               /* space for the heap and the stack */
 # include <stdio.h>
 # include <stdlib.h>
 # include <ctype.h>
@@ -48,16 +50,20 @@
 # include <stdarg.h>
 # include <setjmp.h>
 # ifndef NO_FP
-# include <math.h>
-# define PICOC_MATH_LIBRARY
-# define NEED_MATH_LIBRARY
-# undef BIG_ENDIAN
-#endif
+#  include <math.h>
+#  define PICOC_MATH_LIBRARY
+/*#  define NEED_MATH_LIBRARY*/
+#  undef BIG_ENDIAN
+#  if defined(__powerpc__) || defined(__hppa__) || defined(__sparc__)
+#   define BIG_ENDIAN
+#  endif
+# endif
 
 extern jmp_buf ExitBuf;
 
 #else
 # ifdef FLYINGFOX_HOST
+#  define HEAP_SIZE (16*1024)               /* space for the heap and the stack */
 #  define NO_HASH_INCLUDE
 #  include <stdlib.h>
 #  include <ctype.h>
@@ -87,14 +93,19 @@ extern jmp_buf ExitBuf;
 #   include "../gps.h"
 #   include "../i2c.h"
 #   include "../jpeg.h"
+#   include "../malloc.h"
 #   define assert(x)
 #   undef INTERACTIVE_PROMPT_STATEMENT
 #   undef INTERACTIVE_PROMPT_LINE
 #   define INTERACTIVE_PROMPT_STATEMENT "> "
 #   define INTERACTIVE_PROMPT_LINE "- "
 #   undef BIG_ENDIAN
+#   define NO_CALLOC
+#   define NO_REALLOC
+#   define BROKEN_FLOAT_CASTS
 #  else
 #   ifdef UMON_HOST
+#    define HEAP_SIZE (128*1024)               /* space for the heap and the stack */
 #    define NO_FP
 #    include <stdlib.h>
 #    include <string.h>

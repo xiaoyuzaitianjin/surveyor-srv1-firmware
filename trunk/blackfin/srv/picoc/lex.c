@@ -306,23 +306,15 @@ enum LexToken LexGetStringConstant(struct LexState *Lexer, struct Value *Value)
     if (ArrayValue == NULL)
     {
         /* create and store this string literal */
-        ArrayValue = VariableAllocValueAndData(NULL, sizeof(struct ArrayValue), FALSE, NULL, TRUE);
+        ArrayValue = VariableAllocValueAndData(NULL, 0, FALSE, NULL, TRUE);
         ArrayValue->Typ = CharArrayType;
-#ifndef NATIVE_POINTERS
-        ArrayValue->Val->Array.Size = EscBufPos - EscBuf + 1;
-#endif
-        ArrayValue->Val->Array.Data = RegString;
+        ArrayValue->Val = (union AnyValue *)RegString;
         VariableStringLiteralDefine(RegString, ArrayValue);
     }
 
     /* create the the pointer for this char* */
     Value->Typ = CharPtrType;
-#ifndef NATIVE_POINTERS
-    Value->Val->Pointer.Segment = ArrayValue;
-    Value->Val->Pointer.Offset = 0;
-#else
     Value->Val->NativePointer = RegString;
-#endif    
     if (*Lexer->Pos == '"')
         LEXER_INC(Lexer);
     
@@ -490,15 +482,15 @@ void *LexTokenise(struct LexState *Lexer, int *TokenLen)
         if (ValueSize > 0)
         { 
             /* store a value as well */
-            memcpy(TokenPos, (void *)GotValue->Val, ValueSize);
+            memcpy((void *)TokenPos, (void *)GotValue->Val, ValueSize);
             TokenPos += ValueSize;
             MemUsed += ValueSize;
         }
-        
+    
 #ifdef FANCY_ERROR_REPORTING
         LastCharacterPos = Lexer->CharacterPos;
 #endif
-            
+                    
     } while (Token != TokenEOF);
     
     HeapMem = HeapAllocMem(MemUsed);
@@ -511,6 +503,7 @@ void *LexTokenise(struct LexState *Lexer, int *TokenLen)
 #ifdef DEBUG_LEXER
     {
         int Count;
+        printf("Tokens: ");
         for (Count = 0; Count < MemUsed; Count++)
             printf("%02x ", *((unsigned char *)HeapMem+Count));
         printf("\n");
@@ -535,6 +528,7 @@ void *LexAnalyse(const char *FileName, const char *Source, int SourceLen, int *T
     Lexer.CharacterPos = 1;
     Lexer.SourceText = Source;
 #endif
+    
     return LexTokenise(&Lexer, TokenLen);
 }
 
@@ -563,7 +557,7 @@ enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int I
         /* get the next token */
         if (Parser->Pos == NULL && InteractiveHead != NULL)
             Parser->Pos = InteractiveHead->Tokens;
-            
+        
         if (Parser->FileName != StrEmpty || InteractiveHead != NULL)
         { 
             /* skip leading newlines */
@@ -581,7 +575,7 @@ enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int I
             void *LineTokens;
             int LineBytes;
             struct TokenLine *LineNode;
-
+            
             if (InteractiveHead == NULL || (unsigned char *)Parser->Pos == &InteractiveTail->Tokens[InteractiveTail->NumBytes-TOKEN_DATA_OFFSET])
             { 
                 /* get interactive input */
@@ -622,10 +616,12 @@ enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int I
                 { 
                     /* scan for the line */
                     for (InteractiveCurrentLine = InteractiveHead; Parser->Pos != &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-TOKEN_DATA_OFFSET]; InteractiveCurrentLine = InteractiveCurrentLine->Next)
-                    {}
+                    { assert(InteractiveCurrentLine->Next != NULL); }
                 }
 
+                assert(InteractiveCurrentLine != NULL);
                 InteractiveCurrentLine = InteractiveCurrentLine->Next;
+                assert(InteractiveCurrentLine != NULL);
                 Parser->Pos = InteractiveCurrentLine->Tokens;
             }
 
@@ -645,11 +641,7 @@ enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int I
         { 
             switch (Token)
             {
-#ifndef NATIVE_POINTERS
-                case TokenStringConstant:       LexValue.Typ = CharPtrType; LexValue.Val->Pointer.Offset = 0; break;
-#else
                 case TokenStringConstant:       LexValue.Typ = CharPtrType; break;
-#endif
                 case TokenIdentifier:           LexValue.Typ = NULL; break;
                 case TokenIntegerConstant:      LexValue.Typ = &IntType; break;
                 case TokenCharacterConstant:    LexValue.Typ = &CharType; break;
@@ -679,6 +671,7 @@ enum LexToken LexGetToken(struct ParseState *Parser, struct Value **Value, int I
 #ifdef DEBUG_LEXER
     printf("Got token=%02x inc=%d pos=%d\n", Token, IncPos, Parser->CharacterPos);
 #endif
+    assert(Token >= TokenNone && Token <= TokenEndOfFunction);
     return Token;
 }
 
@@ -695,7 +688,7 @@ void LexToEndOfLine(struct ParseState *Parser)
     }
 }
 
-/* copy the tokens from StartParser to EndParser into new memory and terminate with a TokenEOF */
+/* copy the tokens from StartParser to EndParser into new memory, removing TokenEOFs and terminate with a TokenEndOfFunction */
 void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser)
 {
     int MemSize = 0;
@@ -728,21 +721,22 @@ void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser
         else
         { 
             /* it's spread across multiple lines */
-            MemSize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-1] - Pos;
+            MemSize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-TOKEN_DATA_OFFSET] - Pos;
+
             for (ILine = InteractiveCurrentLine->Next; ILine != NULL && (EndParser->Pos < &ILine->Tokens[0] || EndParser->Pos >= &ILine->Tokens[ILine->NumBytes]); ILine = ILine->Next)
-                MemSize += ILine->NumBytes - 1;
+                MemSize += ILine->NumBytes - TOKEN_DATA_OFFSET;
             
             assert(ILine != NULL);
             MemSize += EndParser->Pos - &ILine->Tokens[0];
             NewTokens = VariableAlloc(StartParser, MemSize + 1, TRUE);
             
-            CopySize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-1] - Pos;
+            CopySize = &InteractiveCurrentLine->Tokens[InteractiveCurrentLine->NumBytes-TOKEN_DATA_OFFSET] - Pos;
             memcpy(NewTokens, Pos, CopySize);
             NewTokenPos = NewTokens + CopySize;
             for (ILine = InteractiveCurrentLine->Next; ILine != NULL && (EndParser->Pos < &ILine->Tokens[0] || EndParser->Pos >= &ILine->Tokens[ILine->NumBytes]); ILine = ILine->Next)
             {
-                memcpy(NewTokenPos, &ILine->Tokens[0], ILine->NumBytes-1);
-                NewTokenPos += ILine->NumBytes-1;
+                memcpy(NewTokenPos, &ILine->Tokens[0], ILine->NumBytes - TOKEN_DATA_OFFSET);
+                NewTokenPos += ILine->NumBytes-TOKEN_DATA_OFFSET;
             }
             assert(ILine != NULL);
             memcpy(NewTokenPos, &ILine->Tokens[0], EndParser->Pos - &ILine->Tokens[0]);
@@ -750,6 +744,7 @@ void *LexCopyTokens(struct ParseState *StartParser, struct ParseState *EndParser
     }
     
     NewTokens[MemSize] = (unsigned char)TokenEndOfFunction;
+        
     return NewTokens;
 }
 

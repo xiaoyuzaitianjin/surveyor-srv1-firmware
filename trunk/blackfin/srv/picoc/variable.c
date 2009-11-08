@@ -88,8 +88,8 @@ void *VariableAlloc(struct ParseState *Parser, int Size, int OnHeap)
 /* allocate a value either on the heap or the stack using space dependent on what type we want */
 struct Value *VariableAllocValueAndData(struct ParseState *Parser, int DataSize, int IsLValue, struct Value *LValueFrom, int OnHeap)
 {
-    struct Value *NewValue = VariableAlloc(Parser, sizeof(struct Value) + DataSize, OnHeap);
-    NewValue->Val = (union AnyValue *)((char *)NewValue + sizeof(struct Value));
+    struct Value *NewValue = VariableAlloc(Parser, MEM_ALIGN(sizeof(struct Value)) + DataSize, OnHeap);
+    NewValue->Val = (union AnyValue *)((char *)NewValue + MEM_ALIGN(sizeof(struct Value)));
     NewValue->ValOnHeap = OnHeap;
     NewValue->ValOnStack = !OnHeap;
     NewValue->IsLValue = IsLValue;
@@ -105,13 +105,6 @@ struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct Value
     struct Value *NewValue = VariableAllocValueAndData(Parser, Size, IsLValue, LValueFrom, OnHeap);
     assert(Size > 0 || Typ == &VoidType);
     NewValue->Typ = Typ;
-    if (Typ->Base == TypeArray)
-    {
-#ifndef NATIVE_POINTERS
-        NewValue->Val->Array.Size = Typ->ArraySize;
-#endif
-        NewValue->Val->Array.Data = (void *)((char *)NewValue->Val + sizeof(struct ArrayValue));
-    }
     
     return NewValue;
 }
@@ -192,18 +185,10 @@ void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LV
 /* define a global variable shared with a platform global. Ident will be registered */
 void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct ValueType *Typ, union AnyValue *FromValue, int IsWritable)
 {
-    struct Value *SomeValue = VariableAllocValueAndData(NULL, (Typ->Base == TypeArray) ? sizeof(struct ArrayValue) : 0, IsWritable, NULL, TRUE);
+    struct Value *SomeValue = VariableAllocValueAndData(NULL, 0, IsWritable, NULL, TRUE);
     SomeValue->Typ = Typ;
     if (Typ->Base != TypeArray)
         SomeValue->Val = FromValue;
-    else
-    { 
-        /* define an array */
-#ifndef NATIVE_POINTERS
-        SomeValue->Val->Array.Size = Typ->ArraySize;
-#endif
-        SomeValue->Val->Array.Data = FromValue;
-    }
     
     if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, TableStrRegister(Ident), SomeValue))
         ProgramFail(Parser, "'%s' is already defined", Ident);
@@ -216,7 +201,7 @@ void VariableStackPop(struct ParseState *Parser, struct Value *Var)
     
 #ifdef DEBUG_HEAP
     if (Var->ValOnStack)
-        printf("popping %d at 0x%lx\n", sizeof(struct Value) + VariableSizeValue(Var), (unsigned long)Var);
+        printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof(struct Value) + TypeSizeValue(Var)), (unsigned long)Var);
 #endif
         
     if (Var->ValOnHeap)
@@ -283,38 +268,6 @@ void VariableStringLiteralDefine(char *Ident, struct Value *Val)
 /* check a pointer for validity and dereference it for use */
 void *VariableDereferencePointer(struct ParseState *Parser, struct Value *PointerValue, struct Value **DerefVal, int *DerefOffset, struct ValueType **DerefType, int *DerefIsLValue)
 {
-#ifndef NATIVE_POINTERS
-    struct Value *PointedToValue = PointerValue->Val->Pointer.Segment;
-
-    /* this is a pointer to picoc memory */
-    if (PointerValue->Typ->Base != TypePointer)
-        ProgramFail(Parser, "pointer expected");
-    
-    if (PointedToValue == NULL)
-        ProgramFail(Parser, "can't dereference NULL pointer");
-    
-    if (PointerValue->Val->Pointer.Offset < 0 || PointerValue->Val->Pointer.Offset > TypeLastAccessibleOffset(PointedToValue))
-        ProgramFail(Parser, "attempt to access invalid pointer");
-    
-    /* pass back the optional dereferenced pointer, offset and type */
-    if (DerefVal != NULL)
-        *DerefVal = PointedToValue;
-
-    if (DerefOffset != NULL)
-        *DerefOffset = PointerValue->Val->Pointer.Offset;
-    
-    if (DerefType != NULL)
-        *DerefType = PointerValue->Typ->FromType;
-    
-    if (DerefIsLValue != NULL)
-        *DerefIsLValue = PointedToValue->IsLValue;
-    
-    /* return a pointer to the data */
-    if (PointedToValue->Typ->Base == TypeArray)
-        return (void *)((char *)PointedToValue->Val->Array.Data + PointerValue->Val->Pointer.Offset);
-    else
-        return (void *)((char *)PointedToValue->Val + PointerValue->Val->Pointer.Offset);
-#else
     if (DerefVal != NULL)
         *DerefVal = NULL;
         
@@ -328,5 +281,5 @@ void *VariableDereferencePointer(struct ParseState *Parser, struct Value *Pointe
         *DerefIsLValue = TRUE;
 
     return PointerValue->Val->NativePointer;
-#endif
 }
+

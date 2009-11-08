@@ -5,9 +5,10 @@ struct ValueType UberType;
 struct ValueType IntType;
 struct ValueType ShortType;
 struct ValueType CharType;
+struct ValueType LongType;
 struct ValueType UnsignedIntType;
 struct ValueType UnsignedShortType;
-struct ValueType UnsignedCharType;
+struct ValueType UnsignedLongType;
 #ifndef NO_FP
 struct ValueType FPType;
 #endif
@@ -52,12 +53,8 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
         
     switch (Base)
     {
-#ifndef NATIVE_POINTERS
-        case TypePointer:   Sizeof = sizeof(struct PointerValue); break;
-#else
         case TypePointer:   Sizeof = sizeof(void *); break;
-#endif
-        case TypeArray:     Sizeof = sizeof(struct ArrayValue) + ArraySize * ParentType->Sizeof; break;
+        case TypeArray:     Sizeof = ArraySize * ParentType->Sizeof; break;
         case TypeEnum:      Sizeof = sizeof(int); break;
         default:            Sizeof = 0; break;      /* structs and unions will get bigger when we add members to them */
     }
@@ -69,7 +66,7 @@ struct ValueType *TypeGetMatching(struct ParseState *Parser, struct ValueType *P
 int TypeStackSizeValue(struct Value *Val)
 {
     if (Val != NULL && Val->ValOnStack)
-        return TypeSizeValue(Val); /* XXX - doesn't handle passing system-memory arrays by value correctly */
+        return TypeSizeValue(Val);
     else
         return 0;
 }
@@ -77,41 +74,30 @@ int TypeStackSizeValue(struct Value *Val)
 /* memory used by a value */
 int TypeSizeValue(struct Value *Val)
 {
-    if (Val->Typ->Base == TypeChar || Val->Typ->Base == TypeShort)
-        return sizeof(int);     /* allow some extra room for type extension to int */
+    if (IS_INTEGER_NUMERIC(Val))
+        return sizeof(ALIGN_TYPE);     /* allow some extra room for type extension */
     else if (Val->Typ->Base != TypeArray)
         return Val->Typ->Sizeof;
     else
-        return sizeof(struct ArrayValue) + Val->Typ->FromType->Sizeof * Val->Typ->ArraySize;
+        return Val->Typ->FromType->Sizeof * Val->Typ->ArraySize;
 }
-
-#ifndef NATIVE_POINTERS
-/* the last accessible offset of a value */
-int TypeLastAccessibleOffset(struct Value *Val)
-{
-    if (Val->Typ->Base != TypeArray)
-        return 0;
-    else
-        return Val->Typ->FromType->Sizeof * (Val->Val->Array.Size-1);
-}
-#endif
 
 /* memory used by a variable given its type and array size */
 int TypeSize(struct ValueType *Typ, int ArraySize, int Compact)
 {
-    if ( (Typ->Base == TypeChar || Typ->Base == TypeShort) && !Compact)
-        return sizeof(int);     /* allow some extra room for type extension to int */
+    if (IS_INTEGER_NUMERIC_TYPE(Typ) && !Compact)
+        return sizeof(ALIGN_TYPE);     /* allow some extra room for type extension */
     else if (Typ->Base != TypeArray)
         return Typ->Sizeof;
     else
-        return sizeof(struct ArrayValue) + Typ->FromType->Sizeof * ArraySize;
+        return Typ->FromType->Sizeof * ArraySize;
 }
 
 /* memory used by the base (non-array) type of a type. This is used for alignment. */
 int TypeSizeAlignment(struct ValueType *Typ)
 {
     if (Typ->Base == TypeArray)
-        return sizeof(unsigned int);
+        return sizeof(ALIGN_TYPE);
     else
         return Typ->Sizeof;
 }
@@ -137,10 +123,11 @@ void TypeInit()
     UberType.DerivedTypeList = NULL;
     TypeAddBaseType(&IntType, TypeInt, sizeof(int));
     TypeAddBaseType(&ShortType, TypeShort, sizeof(short));
-    TypeAddBaseType(&CharType, TypeChar, sizeof(char));
+    TypeAddBaseType(&CharType, TypeChar, sizeof(unsigned char));
+    TypeAddBaseType(&LongType, TypeLong, sizeof(long));
     TypeAddBaseType(&UnsignedIntType, TypeUnsignedInt, sizeof(unsigned int));
     TypeAddBaseType(&UnsignedShortType, TypeUnsignedShort, sizeof(unsigned short));
-    TypeAddBaseType(&UnsignedCharType, TypeUnsignedChar, sizeof(unsigned char));
+    TypeAddBaseType(&UnsignedLongType, TypeUnsignedLong, sizeof(unsigned long));
     TypeAddBaseType(&VoidType, TypeVoid, 0);
     TypeAddBaseType(&FunctionType, TypeFunction, sizeof(int));
     TypeAddBaseType(&MacroType, TypeMacro, sizeof(int));
@@ -151,13 +138,8 @@ void TypeInit()
     TypeAddBaseType(&TypeType, Type_Type, sizeof(struct ValueType *));
 #endif
     CharArrayType = TypeAdd(NULL, &CharType, TypeArray, 0, StrEmpty, sizeof(char));
-#ifndef NATIVE_POINTERS
-    CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
-    VoidPtrType = TypeAdd(NULL, &VoidType, TypePointer, 0, StrEmpty, sizeof(struct PointerValue));
-#else
     CharPtrType = TypeAdd(NULL, &CharType, TypePointer, 0, StrEmpty, sizeof(void *));
     VoidPtrType = TypeAdd(NULL, &VoidType, TypePointer, 0, StrEmpty, sizeof(void *));
-#endif
 }
 
 /* deallocate heap-allocated types */
@@ -342,9 +324,10 @@ int TypeParseFront(struct ParseState *Parser, struct ValueType **Typ)
     
     switch (Token)
     {
-        case TokenIntType: case TokenLongType: *Typ = Unsigned ? &UnsignedIntType : &IntType; break;
+        case TokenIntType: *Typ = Unsigned ? &UnsignedIntType : &IntType; break;
         case TokenShortType: *Typ = Unsigned ? &UnsignedShortType : &ShortType; break;
-        case TokenCharType: *Typ = Unsigned ? &UnsignedCharType : &CharType; break;
+        case TokenCharType: *Typ = &CharType; break;
+        case TokenLongType: *Typ = Unsigned ? &UnsignedLongType : &LongType; break;
 #ifndef NO_FP
         case TokenFloatType: case TokenDoubleType: *Typ = &FPType; break;
 #endif
