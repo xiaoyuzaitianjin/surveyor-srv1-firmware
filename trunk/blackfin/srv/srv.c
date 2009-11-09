@@ -246,6 +246,20 @@ void serial_out_flashbuffer () {
     }
 }
 
+/* Dump http buffer to serial
+   Serial protocol char: z-d */
+void serial_out_httpbuffer () {
+    printf("##zhttp: \r\n");
+    cp = (unsigned char *)HTTP_BUFFER;
+    for (i=0; i<0x10000; i++) {
+        if ((*cp == 0) && (*(cp+1) == 0)) // skips the 0's that were inserted by strtok()
+            return;
+        if (*cp == 0x0A)
+            putchar(0x0D);
+        putchar(*cp++);
+    }
+}
+
 /* Turn lasers on
    Serial protocol char: l */
 void lasers_on () {

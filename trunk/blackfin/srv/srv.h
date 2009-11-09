@@ -31,6 +31,8 @@
 #define C_HEAPSIZE   0x00080000
 #define SPI_BUFFER1  0x00280000  // 256kB buffer for transfer of data via SPI bus
 #define SPI_BUFFER2  0x002C0000  // 256kB buffer for transfer of data via SPI bus
+#define HTTP_BUFFER  0x002C0000  // 256kB buffer also used for receiving and sending HTTP messages
+#define HTTP_BUFFER_SIZE 0x00040000
 #define HEAPSTART    0x00300000  // put this above FLASH_BUFFER 
 #define HEAPSIZE     0x00C00000  // 12MB for now - leave 1MB for JPEG buffer
 #define DMA_BUF1     0x01000000  // address in SDRAM for DMA transfer of frames from camera
@@ -62,6 +64,7 @@ void check_for_autorun();
 void serial_out_version ();
 void serial_out_time ();
 void serial_out_flashbuffer ();
+void serial_out_httpbuffer ();
 
 /* I2C */
 void process_i2c();

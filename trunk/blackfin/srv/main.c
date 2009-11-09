@@ -211,7 +211,8 @@ int main() {
                                 // zw   - write buffer to sector 4
                                 // zWxx - write buffer to sector xx
                                 // zZ   - write buffer to boot flash sectors
-                                // zd   - display contents of buffer
+                                // zd   - display contents of flash buffer
+                                // zh   - display contents of http buffer
                                 // zc   - clear buffer
                                 // zC   - compute checksum of buffer contents 
                         case 'A':
@@ -249,6 +250,10 @@ int main() {
                         case 'd':
                               // dump flash buffer contents to console
                             serial_out_flashbuffer();
+                            break;
+                        case 'h':
+                              // dump HTTP buffer contents to console
+                            serial_out_httpbuffer();
                             break;
                         case 'c':
                               // clear flash buffer

@@ -24,7 +24,7 @@
 #include "stdlib.h"
 #include "stm_m25p32.h"
 
-#define REQBUF_SIZE             2048
+#define REQBUF_SIZE             4096
 #define INLINEIMGBUF_SIZE       (64 * 1024)
 
 #define FLASH_SECTOR_SIZE       (64 * 1024)
@@ -218,9 +218,9 @@ int *   contentLength)          // Out: length of response body
 
 void    httpd_request (char firstChar)
 {
-    static char reqBuf[REQBUF_SIZE+1]; 
+    char *reqBuf = (char *)HTTP_BUFFER; 
 
-    int ret, t0;
+    int ret, t0, ix;
     char ch;
 
     // request fields
@@ -240,38 +240,37 @@ void    httpd_request (char firstChar)
 
     // Receive the request and headers
     reqBuf[0] = firstChar;
-    ret = 1;
-    t0 = readRTC();
-    while (readRTC() - t0 < 1000  &&  ret < REQBUF_SIZE) {
-        if (getchar((unsigned char *) &ch))
-        {
-            char pch = reqBuf[ret - 1];     // ret always >= 1
-            reqBuf[ret++] = ch;
-                   // Read to the end of the headers: handle any permutation of empty line EOL sequences
-                   // Apparently some clients just terminate lines with LF
-            if ((ret >= 4  &&  strncmp (reqBuf + ret - 4, "\r\n\r\n", 4) == 0)  ||
-                (pch == 0x0d  &&  ch == 0x0d)  ||  (pch == 0x0a  &&  ch == 0x0a))
-                break;
-        }
-    }
-    reqBuf[ret] = 0;
 
-    // Parse the request fields
-    method = strtok(reqBuf, " ");
-    path = strtok(0, " ");
-    protocol = strtok(0, "\r\n");
-    headers = protocol + strlen (protocol) + 1;
-    while (*headers != 0  &&  (*headers == '\r'  ||  *headers == '\n'))
-        ++headers;        
-//DebugStr ("httpd_request enter: method="); DebugStr (method); DebugStr (" path="); DebugStr (path); DebugStr ("\r\n");
-// for POST, we can't sit here writing a debug message while the request body is coming in
-
-    if (!method || !path || !protocol) 
-        goto exit;
-
-    
     // GET method
-    if (strcmp (method, "GET") == 0) {
+    //if (strcmp (method, "GET") == 0) {
+    if (reqBuf[0] == 'G') {
+        ret = 1;
+        t0 = readRTC();
+        while (readRTC() - t0 < 1000  &&  ret < REQBUF_SIZE) {
+            if (getchar((unsigned char *) &ch))
+            {
+                char pch = reqBuf[ret - 1];     // ret always >= 1
+                reqBuf[ret++] = ch;
+                       // Read to the end of the headers: handle any permutation of empty line EOL sequences
+                       // Apparently some clients just terminate lines with LF
+                if ((ret >= 4  &&  strncmp (reqBuf + ret - 4, "\r\n\r\n", 4) == 0)  ||
+                    (pch == 0x0d  &&  ch == 0x0d)  ||  (pch == 0x0a  &&  ch == 0x0a))
+                    break;
+            }
+        }
+        reqBuf[ret] = 0;
+        reqBuf[ret+1] = 0;  // for benefit of serial_out_httpbuffer(), which has to handle nulls inserted by strtok()
+
+        // Parse the request fields
+        method = strtok(reqBuf, " ");
+        path = strtok(0, " ");
+        protocol = strtok(0, "\r\n");
+        headers = protocol + strlen (protocol) + 1;
+        while (*headers != 0  &&  (*headers == '\r'  ||  *headers == '\n'))
+            ++headers;        
+
+        if (!method || !path || !protocol) 
+            goto exit;
 
         // Camera image binary - robot.jpg
         if (strncmp(path, robotJpg, countof (robotJpg) - 1) == 0) {
@@ -379,8 +378,34 @@ void    httpd_request (char firstChar)
 
 
     // POST method
-    else if (strcmp (method, "POST") == 0) {
-        char * reqBody = (char *) FLASH_BUFFER;
+    //else if (strcmp (method, "POST") == 0) {
+    else if (reqBuf[0] == 'P') {
+        ret = 1;
+        t0 = readRTC();
+        while (readRTC() - t0 < 1000  &&  ret < HTTP_BUFFER_SIZE) {
+            if (getchar((unsigned char *) &ch)) {
+                reqBuf[ret++] = ch;
+                       // POST should end with a boundary terminated by "--"
+                //if (ret >= 4  &&  strncmp (reqBuf + ret - 4, "--\r\n", 4) == 0)
+                    //break;
+                t0 = readRTC();
+            }
+        }
+        reqBuf[ret] = 0;
+        reqBuf[ret+1] = 0;  // for benefit of serial_out_httpbuffer(), which has to handle nulls inserted by strtok()
+
+        // Parse the request fields
+        method = strtok(reqBuf, " ");
+        path = strtok(0, " ");
+        protocol = strtok(0, "\r\n");
+        headers = protocol + strlen (protocol) + 1;
+        while (*headers != 0  &&  (*headers == '\r'  ||  *headers == '\n'))
+            ++headers;        
+
+        if (!method || !path || !protocol) 
+            goto exit;
+
+        char *reqBody = (char *)HTTP_BUFFER;
         int reqBodyCount = 0;
         int reqContentLength = -1;  // assume no Content-Length header
         static char reqContentType[128];
@@ -393,17 +418,21 @@ void    httpd_request (char firstChar)
 
         // Receive the request body
         getHdrDecimal (headers, "Content-Length: ", &reqContentLength);   // get Content-Length
-        int lastCharTime = readRTC();
-        while (readRTC() - lastCharTime < 2000  &&  (reqContentLength == -1  ||  reqBodyCount < reqContentLength)) {
-            char c;
-            if (getchar ((unsigned char *) &c)) {
-                if (reqBodyCount < FLASH_BUFFER_SIZE)
-                    reqBody[reqBodyCount++] = c;
-                lastCharTime = readRTC();
+        getHdrString (headers, "Content-Type: ", reqContentType, countof (reqContentType));
+
+        for (ix=0; ix<ret; ix++) {
+            if ((reqBuf[ix] == '\r') &&
+              (reqBuf[ix+1] == '\n') &&
+              (reqBuf[ix+2] == '\r') &&
+              (reqBuf[ix+3] == '\n')) {
+                ix += 4;
+                while ((ix < ret) && (reqBuf[ix] != '-'))  // search for boundary start
+                    ix++;
+                reqBody = &reqBuf[ix];
+                reqBodyCount = ret - ix;
+                break;
             }
         }
-
-        getHdrString (headers, "Content-Type: ", reqContentType, countof (reqContentType));
 
         // admin -- Post to administration page
         if (strncmp(path, adminPath, countof(adminPath) - 1) == 0) {
@@ -423,8 +452,8 @@ void    httpd_request (char firstChar)
             boundaryLen = strlen (boundary);
 
             // If everything is in order for an upload,
-            if (reqBodyCount == reqContentLength  &&  strcmp (type, "multipart/form-data") == 0  &&  
-                    boundaryLen > 0  &&  contentLength <= FLASH_BUFFER_SIZE) {
+            if (reqContentLength  &&  strcmp (type, "multipart/form-data") == 0  &&  
+                    boundaryLen > 0  &&  contentLength <= 0x00020000) {   // currently a 128kB limit on transfers
 
                 // Init POST body fields
                 char *fileBodyStart = NULL;
@@ -432,17 +461,6 @@ void    httpd_request (char firstChar)
                 enum { undefined, toSectors, toBootLoader } uploadDest = undefined;
                 int sectorStart = -1;
                 BOOL confirmBootLoader = FALSE;
-
-#ifdef x_DEBUG
-static char msg[256];
-DebugStr ("reqContentType="); DebugStrLn (reqContentType);
-DebugStr ("type="); DebugStrLn (type);
-DebugStr ("boundary="); DebugStrLn (boundary);
-sprintf (msg, "reqBodyCount=%d reqContentLength=%d time=%d\r\n", reqBodyCount, reqContentLength, readRTC() - lastCharTime);
-DebugStr (msg);
-reqBody[reqBodyCount] = 0;
-//DebugStrLn (reqBody);
-#endif
 
                 // Parse sections of the body
                 if (strncmp (reqBody, boundary, boundaryLen) == 0)    // if boundary at start of body
@@ -514,7 +532,7 @@ reqBody[reqBodyCount] = 0;
                     } // while parsing request body
                 } // if first boundary
 
-                // Validate the upload, then flash the fugger
+                 // Validate the upload, then flash the fugger
                 static char resultMsg[128];
                 resultMsg[0] = 0;
                 char * resultColor = "#ffa0a0";     // assume error: red
@@ -594,7 +612,6 @@ reqBody[reqBodyCount] = 0;
         contentLength = countof (body501) - 1;
         resultCode = resultCode501;
     }
-
 
     // Send response headers
     printf ("%s\r\n"
