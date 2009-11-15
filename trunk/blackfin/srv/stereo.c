@@ -262,18 +262,21 @@ int svs_update_sums(
     unsigned char* rectified_frame_buf, /* image data */
     int segment) { /* if non zero update low contrast areas used for segmentation */
 
-    int j, x, y, idx, max, sum = 0, mean = 0;
+    int w, j, x, y, idx, max, sum = 0, mean = 0;
 
     if (cols == 0) {
         /* compute sums along the row */
         y = i;
         idx = (int)imgWidth * y;
         max = (int)imgWidth;
+        w = max*2;
 
         sum = rectified_frame_buf[idx];
         row_sum[0] = sum;
         for (x = 1; x < max; x++, idx++) {
-            sum += rectified_frame_buf[idx];
+            sum += rectified_frame_buf[idx] +
+                + rectified_frame_buf[idx - w] +
+                + rectified_frame_buf[idx + w];
             row_sum[x] = sum;
         }
     } else {
@@ -294,19 +297,23 @@ int svs_update_sums(
     mean = row_sum[max - 1] / (max * 2);
 
     /* compute peaks */
-    int p0, p1;
-    for (j = 4; j < max - 4; j++) {
+    int p0, p1, p2;
+    for (j = 5; j < max - 5; j++) {
         sum = row_sum[j];
         /* edge using 1 pixel radius */
         p0 = (sum - row_sum[j - 1]) - (row_sum[j + 1] - sum);
         if (p0 < 0) p0 = -p0;
 
-        /* edge using 2 pixel radius */
-        p1 = (sum - row_sum[j - 2]) - (row_sum[j + 2] - sum);
+        /* edge using 3 pixel radius */
+        p1 = (sum - row_sum[j - 3]) - (row_sum[j + 3] - sum);
         if (p1 < 0) p1 = -p1;
 
+        /* edge using 5 pixel radius */
+        p2 = (sum - row_sum[j - 5]) - (row_sum[j + 5] - sum);
+        if (p2 < 0) p2 = -p2;
+
         /* overall edge response */
-        row_peaks[j] = (p0 + p1) * 32;
+        row_peaks[j] = p0*8 + p1*2 + p2;
     }
 
     return (mean);
@@ -963,7 +970,7 @@ int svs_match(
     int no_of_possible_matches = 0, matches = 0;
     int itt, idx, prev_matches, row_offset, col_offset;
 	int grad_diff0, gradL0, grad_diff1=0, gradL1=0, grad_anti;
-    int p, pmax=3, prev_matches, prev_right_x, right_x;
+    int p, pmax=3, prev_matches_idx, prev_right_x, right_x;
 
     unsigned int meandescL, meandescR;
     short meandesc[SVS_DESCRIPTOR_PIXELS];
@@ -1045,7 +1052,7 @@ int svs_match(
                 meandescR |= n;
         }
 
-        prev_matches = no_of_possible_matches;
+        prev_matches_idx = no_of_possible_matches;
 
         /* features along the row in the left camera */
         for (L = 0; L < no_of_feats_left; L++)
@@ -1270,15 +1277,15 @@ int svs_match(
 
 		/* apply ordering constraint within the right image */
 		prev_right_x = 0;
-		for (int m = no_of_possible_matches-1; m >= prev_matches; m--) {
-			right_x = (int)svs_matches[m*5 + 1] + (int)svs_matches[m*5 + 3];
+		for (idx = no_of_possible_matches-1; idx >= prev_matches_idx; idx--) {
+			right_x = (int)svs_matches[idx*5 + 1] + (int)svs_matches[idx*5 + 3];
 			if (right_x < prev_right_x) {
 			    /* set probability to zero if rays cross (occlusion) */
-				if (svs_matches[(m+1) * 5] >= svs_matches[m * 5]) {
-				    svs_matches[m * 5] = 0;
+				if (svs_matches[(idx+1) * 5] >= svs_matches[idx * 5]) {
+				    svs_matches[idx * 5] = 0;
 				}
 				else {
-					svs_matches[(m+1) * 5] = 0;
+					svs_matches[(idx+1) * 5] = 0;
 					prev_right_x = right_x;
 				}
 			}
