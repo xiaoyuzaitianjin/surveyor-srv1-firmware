@@ -963,7 +963,7 @@ int svs_match(
     int no_of_possible_matches = 0, matches = 0;
     int itt, idx, prev_matches, row_offset, col_offset;
 	int grad_diff0, gradL0, grad_diff1=0, gradL1=0, grad_anti;
-    int p, pmax=3;
+    int p, pmax=3, prev_matches, prev_right_x, right_x;
 
     unsigned int meandescL, meandescR;
     short meandesc[SVS_DESCRIPTOR_PIXELS];
@@ -1044,6 +1044,8 @@ int svs_match(
             if (meandesc[bit] > 0)
                 meandescR |= n;
         }
+
+        prev_matches = no_of_possible_matches;
 
         /* features along the row in the left camera */
         for (L = 0; L < no_of_feats_left; L++)
@@ -1265,6 +1267,25 @@ int svs_match(
                 }
             }
         }
+
+		/* apply ordering constraint within the right image */
+		prev_right_x = 0;
+		for (int m = no_of_possible_matches-1; m >= prev_matches; m--) {
+			right_x = (int)svs_matches[m*5 + 1] + (int)svs_matches[m*5 + 3];
+			if (right_x < prev_right_x) {
+			    /* set probability to zero if rays cross (occlusion) */
+				if (svs_matches[(m+1) * 5] >= svs_matches[m * 5]) {
+				    svs_matches[m * 5] = 0;
+				}
+				else {
+					svs_matches[(m+1) * 5] = 0;
+					prev_right_x = right_x;
+				}
+			}
+			else {
+			    prev_right_x = right_x;
+			}
+		}
 
         /* increment feature indexes */
         fL += no_of_feats_left;
