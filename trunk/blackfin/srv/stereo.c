@@ -184,9 +184,6 @@ int* plane;
 /* maps raw image pixels to rectified pixels */
 int *calibration_map;
 
-/* priors used when processing a video stream */
-int* disparity_priors;
-
 /* array storing the number of features detected on each column */
 unsigned short int* features_per_col;
 
@@ -954,23 +951,24 @@ int svs_match(
     int learnDesc,                    /* descriptor match weight */
     int learnLuma,                    /* luminance match weight */
     int learnDisp,                    /* disparity weight */
-    int learnPrior,                   /* prior weight */
     int learnGrad,                    /* horizontal gradient weight */
     int groundPrior,                  /* prior weight for ground plane */
     int use_priors)                   /* if non-zero then use priors, assuming time between frames is small */
 {
     int x, xL=0, xR, L, R, y, no_of_feats=0, no_of_feats_left;
     int no_of_feats_right, row, col, bit, disp_diff=0;
-    int luma_diff, min_disp=0, max_disp=0, disp_prior=0, max_disp_pixels;
+    int luma_diff, min_disp=0, max_disp=0, max_disp_pixels;
     int meanL, meanR, disp, fL=0, fR=0, bestR=0;
     unsigned int descL, descLanti, descR, desc_match;
     unsigned int correlation, anticorrelation, total, n;
     unsigned int match_prob, best_prob;
     int max, curr_idx, search_idx, winner_idx=0;
     int no_of_possible_matches = 0, matches = 0;
-    int itt, idx, prev_matches, row_offset, col_offset;
+    int itt, idx, prev_matches;
 	int grad_diff0, gradL0, grad_diff1=0, gradL1=0, grad_anti;
     int p, pmax=3, prev_matches_idx, prev_right_x, right_x;
+	int min_left, min_right, disp_left=0, disp_left_x=0;
+	int disp_right=0, disp_right_x=0, dx, dy, x2, dist;
 
     unsigned int meandescL, meandescR;
     short meandesc[SVS_DESCRIPTOR_PIXELS];
@@ -1062,7 +1060,6 @@ int svs_match(
             xL = svs_data->feature_x[fL + L];
 
             if (use_priors != 0) {
-                disp_prior = disparity_priors[(row * imgWidth + xL) / 16];
                 if (svs_enable_ground_priors) {
                     /* Here svs_ground_slope_percent is a simple way of representing the
                        roll angle of the robot, without using any floating point maths.
@@ -1104,118 +1101,117 @@ int svs_match(
             /* features along the row in the right camera */
             for (R = 0; R < no_of_feats_right; R++)
             {
-
                 /* set matching score to zero */
                 row_peaks[R] = 0;
 
-                /* x coordinate of the feature in the right camera */
-                xR = svs_data_received->feature_x[fR + R];
+				if (((gradL0 >= 8) &&
+					((int)(svs_data_received->mean[fR + R] >> 4) >= 8)) ||
+					((gradL0 < 8) &&
+					((int)(svs_data_received->mean[fR + R] >> 4) < 8))) {
 
-                /* compute disparity */
-                disp = xL - xR;
+                    /* x coordinate of the feature in the right camera */
+                    xR = svs_data_received->feature_x[fR + R];
 
-                /* is the disparity within range? */
-                if ((disp >= min_disp) && (disp < max_disp))
-                {
-                    if (disp < 0)
-                        disp = 0;
+                    /* compute disparity */
+                    disp = xL - xR;
 
+                    /* is the disparity within range? */
+                    if ((disp >= min_disp) && (disp < max_disp))
+                    {
+                        if (disp < 0)
+                            disp = 0;
 
-                    /* mean luminance for the right camera feature */
-                    meanR = svs_data_received->mean[fR + R] & 15;
+                        /* mean luminance for the right camera feature */
+                        meanR = svs_data_received->mean[fR + R] & 15;
 
-                    /* is the mean luminance similar? */
-                    luma_diff = meanR - meanL;
+                        /* is the mean luminance similar? */
+                        luma_diff = meanR - meanL;
 
-                    /* right camera feature eigendescriptor */
-                    descR = svs_data_received->descriptor[fR + R] & meandescR;
+                        /* right camera feature eigendescriptor */
+                        descR = svs_data_received->descriptor[fR + R] & meandescR;
 
-                    /* bitwise descriptor correlation match */
-                    desc_match = descL & descR;
+                        /* bitwise descriptor correlation match */
+                        desc_match = descL & descR;
 
-                    /* count the number of correlation bits */
-                    correlation =
-                        BitsSetTable256[desc_match & 0xff] +
-                        BitsSetTable256[(desc_match >> 8) & 0xff] +
-                        BitsSetTable256[(desc_match >> 16) & 0xff] +
-                        BitsSetTable256[desc_match >> 24];
+                        /* count the number of correlation bits */
+                        correlation =
+                            BitsSetTable256[desc_match & 0xff] +
+                            BitsSetTable256[(desc_match >> 8) & 0xff] +
+                            BitsSetTable256[(desc_match >> 16) & 0xff] +
+                            BitsSetTable256[desc_match >> 24];
 
-                    /* bitwise descriptor anti-correlation match */
-                    desc_match = descLanti & descR;
+                        /* bitwise descriptor anti-correlation match */
+                        desc_match = descLanti & descR;
 
-                    /* count the number of anti-correlation bits */
-                    anticorrelation =
-                        BitsSetTable256[desc_match & 0xff] +
-                        BitsSetTable256[(desc_match >> 8) & 0xff] +
-                        BitsSetTable256[(desc_match >> 16) & 0xff] +
-                        BitsSetTable256[desc_match >> 24];
+                        /* count the number of anti-correlation bits */
+                        anticorrelation =
+                            BitsSetTable256[desc_match & 0xff] +
+                            BitsSetTable256[(desc_match >> 8) & 0xff] +
+                            BitsSetTable256[(desc_match >> 16) & 0xff] +
+                            BitsSetTable256[desc_match >> 24];
 
-					grad_anti = (15 - gradL0) - (int)(svs_data_received->mean[fR + R] >> 4);
-					if (grad_anti < 0) grad_anti = -grad_anti;
+    					grad_anti = (15 - gradL0) - (int)(svs_data_received->mean[fR + R] >> 4);
+    					if (grad_anti < 0) grad_anti = -grad_anti;
 
-					grad_diff0 = gradL0 - (int)(svs_data_received->mean[fR + R] >> 4);
-					if (grad_diff0 < 0) grad_diff0 = -grad_diff0;
-					grad_diff0 = (15 - grad_diff0) - (15 - grad_anti);
+    					grad_diff0 = gradL0 - (int)(svs_data_received->mean[fR + R] >> 4);
+    					if (grad_diff0 < 0) grad_diff0 = -grad_diff0;
+    					grad_diff0 = (15 - grad_diff0) - (15 - grad_anti);
 
-					if (R < no_of_feats_right - 1) {
-						grad_anti = (15 - gradL1) - (int)(svs_data_received->mean[fR + R + 1] >> 4);
-						if (grad_anti < 0) grad_anti = -grad_anti;
+    					if (R < no_of_feats_right - 1) {
+    						grad_anti = (15 - gradL1) - (int)(svs_data_received->mean[fR + R + 1] >> 4);
+    						if (grad_anti < 0) grad_anti = -grad_anti;
 
-						grad_diff1 = gradL1 - (int)(svs_data_received->mean[fR + R + 1] >> 4);
-					    if (grad_diff1 < 0) grad_diff1 = -grad_diff1;
-					    grad_diff1 = (15 - grad_diff1) - (15 - grad_anti);
-					}
+    						grad_diff1 = gradL1 - (int)(svs_data_received->mean[fR + R + 1] >> 4);
+    					    if (grad_diff1 < 0) grad_diff1 = -grad_diff1;
+    					    grad_diff1 = (15 - grad_diff1) - (15 - grad_anti);
+    					}
 
-                    if (luma_diff < 0)
-                        luma_diff = -luma_diff;
-                    int score =
-                        10000 +
-                        (max_disp * learnDisp) +
-						(grad_diff0 * learnGrad) +
-						(grad_diff1 * learnGrad) +
-                        (((int)correlation + (int)(SVS_DESCRIPTOR_PIXELS - anticorrelation)) * learnDesc) -
-                        (luma_diff * learnLuma) -
-                        (disp * learnDisp);
+                        if (luma_diff < 0)
+                            luma_diff = -luma_diff;
+                        int score =
+                            10000 +
+                            (max_disp * learnDisp) +
+    						(grad_diff0 * learnGrad) +
+    						(grad_diff1 * learnGrad) +
+                            (((int)correlation + (int)(SVS_DESCRIPTOR_PIXELS - anticorrelation)) * learnDesc) -
+                            (luma_diff * learnLuma) -
+                            (disp * learnDisp);
 
-                    if (use_priors) {
-                        disp_diff = disp - disp_prior;
-                        if (disp_diff < 0)
-                            disp_diff = -disp_diff;
-                        score -= disp_diff * learnPrior;
-
-                        /* bias for ground_plane */
-                        if (svs_enable_ground_priors) {
-                            if (y > footline_y) {
-                                /* below the footline - bias towards ground plane */
-                                disp_diff = disp - ((y - ground_y_sloped) * max_disp_pixels / ground_height_sloped);
-                                if (disp_diff < 0) disp_diff = -disp_diff;
-                                score -= disp_diff * groundPrior;
-                            }
-                            else {
-                                if (ground_prior > 0) {
-                                    /* above the footline - bias towards obstacle*/
-                                    disp_diff = disp - ground_prior;
+                        if (use_priors) {
+                            /* bias for ground_plane */
+                            if (svs_enable_ground_priors) {
+                                if (y > footline_y) {
+                                    /* below the footline - bias towards ground plane */
+                                    disp_diff = disp - ((y - ground_y_sloped) * max_disp_pixels / ground_height_sloped);
                                     if (disp_diff < 0) disp_diff = -disp_diff;
-                                    score -= disp_diff * obstaclePrior;
+                                    score -= disp_diff * groundPrior;
+                                }
+                                else {
+                                    if (ground_prior > 0) {
+                                        /* above the footline - bias towards obstacle*/
+                                        disp_diff = disp - ground_prior;
+                                        if (disp_diff < 0) disp_diff = -disp_diff;
+                                        score -= disp_diff * obstaclePrior;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (score < 0)
-                        score = 0;
+                        if (score < 0)
+                            score = 0;
 
-                    /* store overall matching score */
-                    row_peaks[R] = (unsigned int)score;
-                    total += row_peaks[R];
-                    
-                }
-                else
-                {
-                    if ((disp < min_disp) && (disp > -max_disp))
-                    {
-                        row_peaks[R] = (unsigned int)((max_disp - disp) * learnDisp);
+                        /* store overall matching score */
+                        row_peaks[R] = (unsigned int)score;
                         total += row_peaks[R];
+                    
+                    }
+                    else
+                    {
+                        if ((disp < min_disp) && (disp > -max_disp))
+                        {
+                            row_peaks[R] = (unsigned int)((max_disp - disp) * learnDisp);
+                            total += row_peaks[R];
+                        }
                     }
                 }
             }
@@ -1299,13 +1295,8 @@ int svs_match(
         fR += no_of_feats_right;
     }
 
-    // clear priors
-    int priors_length = (int)(imgWidth * imgHeight) / (16*SVS_VERTICAL_SAMPLING);
-
     if (no_of_possible_matches > 20)
     {
-        memset((void*)disparity_priors, '\0', priors_length*sizeof(int));
-
         /* filter the results */
         svs_filter_plane(no_of_possible_matches, max_disp);
 
@@ -1359,22 +1350,6 @@ int svs_match(
 				if (svs_matches[winner_idx + 1] >= imgWidth) {
 					svs_matches[winner_idx + 1] -= imgWidth;
 				}
-				else {
-                    if (best_prob > 1) {
-                        row = y / SVS_VERTICAL_SAMPLING;
-                        for (row_offset = -3; row_offset <= 3; row_offset++) {
-                            for (col_offset = -1; col_offset <= 1; col_offset++) {
-                                idx = (((row + row_offset) * (int)imgWidth + xL) / 16) + col_offset;
-                                if ((idx > -1) && (idx < priors_length)) {
-                                    if (disparity_priors[idx] == 0)
-                                        disparity_priors[idx] = disp;
-                                    else
-                                        disparity_priors[idx] = (disp+disparity_priors[idx])/2;
-                                }
-                            }
-                        }
-                    }
-                }
             }
 
             if (svs_matches[curr_idx] == 0)
@@ -1402,36 +1377,61 @@ int svs_match(
                         if (valid_quadrants[fL + L] == 0) {
                             // y coordinate of the feature in the left camera
                             y = feature_y[fL + L];
-
-                            // lookup disparity from priors
-
                             row = y / SVS_VERTICAL_SAMPLING;
-                            disp_prior = disparity_priors[(row * (int)imgWidth + x) / 16];
 
-                            if ((disp_prior > 0) &&
-                                    (matches < SVS_MAX_MATCHES)) {
-                                curr_idx = matches * 4;
-                                svs_matches[curr_idx] = 500;
-                                svs_matches[curr_idx + 1] = x;
-                                svs_matches[curr_idx + 2] = y;
-                                svs_matches[curr_idx + 3] = disp_prior;
-                                matches++;
+    						min_left = 99999;
+    						min_right = 99999;
+    						for (idx = prev_matches-1; idx >= 0; idx--) {
+    							if (svs_matches[idx*4] > 0) {
+    								x2 = (int)svs_matches[idx*4+1];
+    								dx = x - x2;
+    								dy = y - (int)svs_matches[idx*4+2];
+                                    if ((dy > -5) && (dy < 5)) {
+        								if (dy < 0)
+        									dist = -dy;
+        								else
+        									dist = dy;
 
-                                //printf("horizontal match\n");
-
-                                // update your priors
-                                for (row_offset = -3; row_offset <= 3; row_offset++) {
-                                    for (col_offset = -1; col_offset <= 1; col_offset++) {
-                                        idx = (((row + row_offset) * (int)imgWidth + x) / 16) + col_offset;
-                                        if ((idx > -1) && (idx < priors_length)) {
-                                            if (disparity_priors[idx] == 0) {
-                                                disparity_priors[idx] = disp_prior;
-                                            }
-                                        }
+        								if (dx > 0) {
+        									dist += dx;
+        									if ((dist < min_left) &&
+        										((int)svs_matches[idx*4+3] < max_disp_pixels)) {
+        										min_left = dist;
+        										disp_left = (int)svs_matches[idx*4+3];
+        										disp_left_x = x2;
+        									}
+        								}
+        								else {
+        									dist += -dx;
+        									if ((dist < min_right) &&
+        										((int)svs_matches[idx*4+3] < max_disp_pixels)) {
+        										min_right = dist;
+        										disp_right = (int)svs_matches[idx*4+3];
+        										disp_right_x = x2;
+        									}
+        								}
                                     }
-                                }
+    							}
+    						}
 
-                                valid_quadrants[fL + L] = 1;
+    						if ((min_left != 99999) &&
+    							(min_right != 99999)) {
+
+    							disp =
+    								disp_left + ((x - disp_left_x) * (disp_right - disp_left) /
+    							    (disp_right_x - disp_left_x));
+
+                                if ((disp > 0) &&
+                                        (matches < SVS_MAX_MATCHES)) {
+                                    curr_idx = matches * 4;
+                                    svs_matches[curr_idx] = 500;
+                                    svs_matches[curr_idx + 1] = x;
+                                    svs_matches[curr_idx + 2] = y;
+                                    svs_matches[curr_idx + 3] = disp;
+                                    matches++;
+
+                                    valid_quadrants[fL + L] = 1;
+                                }
                             }
                         }
                     }
@@ -1843,7 +1843,6 @@ void init_svs_matching_data() {
     disparity_histogram_plane = (int*)malloc((SVS_MAX_IMAGE_WIDTH/SVS_FILTER_SAMPLING)*(SVS_MAX_IMAGE_WIDTH / 2)*sizeof(int));
     disparity_plane_fit = (int*)malloc(SVS_MAX_IMAGE_WIDTH / SVS_FILTER_SAMPLING * sizeof(int));
     valid_quadrants = (unsigned char*)malloc(SVS_MAX_MATCHES);
-    disparity_priors = (int*)malloc((SVS_MAX_IMAGE_WIDTH*SVS_MAX_IMAGE_HEIGHT/(16*SVS_VERTICAL_SAMPLING))*4);
 
 }
 
@@ -2338,7 +2337,6 @@ void svs_stereo(int send_disparities)
             int learnDisp = 1;            
             /* priors*/
             int use_priors = 1;
-            int learnPrior = 4;
             int groundPrior = 200;
             /* gradient */
             int learnGrad = 10;
@@ -2352,7 +2350,6 @@ void svs_stereo(int send_disparities)
                           learnDesc,
                           learnLuma,
                           learnDisp,
-                          learnPrior,
                           learnGrad,
                           groundPrior,
                           use_priors);

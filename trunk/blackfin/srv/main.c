@@ -149,7 +149,7 @@ int main() {
                         case '3':
                             /* left camera */
                             if (svs_receive_features() > -1) {
-                                svs_match(200, 40, 18, 7, 3, 4, 10, 200, 0);
+                                svs_match(200, 40, 18, 7, 3, 10, 200, 0);
                             }                            
                             break;
                         case '4':

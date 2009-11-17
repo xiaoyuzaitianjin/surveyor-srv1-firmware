@@ -7,10 +7,9 @@
 #define SVS_MAX_MATCHES          2000
 #define SVS_MAX_IMAGE_WIDTH      1280
 #define SVS_MAX_IMAGE_HEIGHT     1024
-#define SVS_VERTICAL_SAMPLING    4
+#define SVS_VERTICAL_SAMPLING    2
 #define SVS_HORIZONTAL_SAMPLING  8
 #define SVS_DESCRIPTOR_PIXELS    30
-#define SVS_PEAKS_HISTORY        10
 #define SVS_STEER_DEADBAND       2
 //#define SVS_SHOW_STEERING
 #define SVS_SECTOR               3
@@ -67,7 +66,7 @@ extern int svs_get_features_vertical(unsigned char* rectified_frame_buf, int inh
 extern int svs_get_features_horizontal(unsigned char* rectified_frame_buf, int inhibition_radius, unsigned int minimum_response, int calibration_offset_x, int calibration_offset_y, int segment);
 void svs_send_features();
 int svs_receive_features();
-extern int svs_match(int ideal_no_of_matches, int max_disparity_percent, int learnDesc, int learnLuma, int learnDisp, int learnPrior, int learnGrad, int groundPrior, int use_priors);
+extern int svs_match(int ideal_no_of_matches, int max_disparity_percent, int learnDesc, int learnLuma, int learnDisp, int learnGrad, int groundPrior, int use_priors);
 
 extern void svs_filter_plane(int no_of_possible_matches, int max_disparity_pixels);
 extern void svs_rectify(unsigned char* raw_image, unsigned char* rectified_frame_buf);
