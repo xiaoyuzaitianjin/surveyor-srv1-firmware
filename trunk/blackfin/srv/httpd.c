@@ -220,7 +220,7 @@ void    httpd_request (char firstChar)
 {
     char *reqBuf = (char *)HTTP_BUFFER; 
 
-    int ret, t0, ix;
+    int ret, t0, ix, x1, x2;
     char ch;
 
     // request fields
@@ -286,23 +286,27 @@ void    httpd_request (char firstChar)
         // Robot control - robot.cgi
         else if (strncmp(path, robotCgi, countof(robotCgi) - 1) == 0) {
             char * params = path + countof (robotCgi) - 1;
-            char cmd = params[0];
-            switch (cmd) {
-                case 'l':
-                    *pPORTHIO |= 0x0280;
+            char dtype = params[0];  // drive options - m=SRV1, x=SRV-4WD, s=ESC, t=tilt, l=laser
+            char cmd1 = params[1];
+            char cmd2 = params[2];
+            switch (dtype) {
+                case '$':  // Blackfin reset
+                    if (cmd1 == '!')
+                        deferredReset = TRUE;   // defer until after we send the response
                     break;
-                case 'L':
-                    *pPORTHIO &= 0xFD7F;
+                case 'l':  // lasers
+                    switch (cmd2) {
+                        case '1':
+                            *pPORTHIO |= 0x0280;
+                            break;
+                        case '0':
+                            *pPORTHIO &= 0xFD7F;
+                            break;
+                    }
                     break;
-                case '4':
-                case '8':
-                case '6':
-                case '0':
-                case '5':
-                case '.':
-                case '1':
-                case '2':
-                case '3':
+                case 'm':  // SRV-1 Robot motor drive (PWM)
+                    if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
+                        break;
                     if (!pwm1_init) {
                         initPWM();
                         pwm1_init = 1;
@@ -310,25 +314,35 @@ void    httpd_request (char firstChar)
                         base_speed = 40;
                         lspeed = rspeed = 0;
                     }
-                    if (base_speed == 0)
-                        base_speed = 40;
-                    motor_set(cmd, base_speed, &lspeed, &rspeed);
+                    lspeed = ((int)cmd1 - 0x35) * 100;
+                    rspeed = ((int)cmd2 - 0x35) * 100;
+                    setPPM1(lspeed, rspeed);
                     break;
-                case '+':
-                    base_speed += 10;
-                    if (base_speed > 90)
-                        base_speed = 90;
-                    motor_set(cmd, base_speed, &lspeed, &rspeed);
+                case 'x':  // SRV-4WD motor controller
+                    if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
+                        break;
+                    if (xwd_init == 0) {
+                        xwd_init = 1;
+                        init_uart1(115200);
+                        delayMS(10);
+                    }
+                    x1 = ((int)cmd1 - 0x35) * 31 - 1;
+                    x2 = ((int)cmd2 - 0x35) * 31 - 1;
+                    uart1SendChar('x');
+                    uart1SendChar((char)x1);
+                    uart1SendChar((char)x2);
                     break;
-                case '-':
-                    base_speed -= 10;
-                    if (base_speed < 20)
-                        base_speed = 20;
-                    motor_set(cmd, base_speed, &lspeed, &rspeed);
-                    break;
-                case '$':
-                    if (params[1] == '!')
-                        deferredReset = TRUE;   // defer until after we send the response
+                case 's': // Sabertooth or equivalent PPM servo-based motor control
+                    if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
+                        break;
+                    if (!pwm1_init) {
+                        initPPM1();
+                        pwm1_init = 1;
+                        pwm1_mode = PWM_PPM;
+                    }
+                    x1 = ((int)cmd1 - 0x35) * 24 - 1;
+                    x2 = ((int)cmd2 - 0x35) * 24 - 1;
+                    setPPM1((char)x1, (char)x2);
                     break;
             }
 
@@ -363,7 +377,6 @@ void    httpd_request (char firstChar)
                 read_double_sector ((fileIndex*2) + 10, 1);  // set quiet flag
                 body = cp = (char *) FLASH_BUFFER;
                 flashContentLength = contentLength = clean_buffer(cp);  // last character of html file should be '>'.  clean out anything else
-    
             }
 
             // Not found - 404
@@ -372,7 +385,6 @@ void    httpd_request (char firstChar)
                 resultCode = resultCode404;
                 contentLength = countof (body404) - 1;
             }
-
         }
     } // if GET method
 

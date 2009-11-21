@@ -1,5 +1,18 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 21 November 2009 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* changed HTTP interface to support various motor drives, e.g. 
+    GET /robot.cgi?m55 HTTP/1.1  sets SRV-1 robot motors to stop.
+    GET /robot.cgi?m91 HTTP/1.1  causes SRV-1 to spin right at full
+  power.
+  '9' yields max forward power, '1' yields max reverse power.  
+  'm' indicates SRV-1q, 's' indicates ppm   ESC (servo signals), 
+  'x' indicates SRV-4WD controller
+
+============================================================================
+
 SRV-1 firmware build for Blackfin - 9 November 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
