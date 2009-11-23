@@ -314,9 +314,9 @@ void    httpd_request (char firstChar)
                         base_speed = 40;
                         lspeed = rspeed = 0;
                     }
-                    lspeed = ((int)cmd1 - 0x35) * 100;
-                    rspeed = ((int)cmd2 - 0x35) * 100;
-                    setPPM1(lspeed, rspeed);
+                    lspeed = ((int)cmd1 - 0x35) * 24 - 1;
+                    rspeed = ((int)cmd2 - 0x35) * 24 - 1;
+                    setPWM(lspeed, rspeed);
                     break;
                 case 'x':  // SRV-4WD motor controller
                     if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?

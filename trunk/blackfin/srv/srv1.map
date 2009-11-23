@@ -1160,39 +1160,39 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x000104a5      0x7cd picoc/platform.o
  .debug_info    0x00010c72      0x268 picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x40dc
+.debug_line     0x00000000     0x40df
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xd1 edit.o
- .debug_line    0x00000143      0x2cb httpd.o
- .debug_line    0x0000040e       0xa7 i2c.o
- .debug_line    0x000004b5      0x1ac stm_m25p32.o
- .debug_line    0x00000661       0xf8 printf.o
- .debug_line    0x00000759      0x139 xmodem.o
- .debug_line    0x00000892      0x30e float.o
- .debug_line    0x00000ba0      0x2a7 gps.o
- .debug_line    0x00000e47       0x3c myfunc.o
- .debug_line    0x00000e83      0x137 main.o
- .debug_line    0x00000fba       0xa6 malloc.o
- .debug_line    0x00001060      0x19d string.o
- .debug_line    0x000011fd      0xb5d srv.o
- .debug_line    0x00001d5a      0x12f uart.o
- .debug_line    0x00001e89      0x380 colors.o
- .debug_line    0x00002209      0x315 jpeg.o
- .debug_line    0x0000251e      0x11e neural.o
- .debug_line    0x0000263c       0x53 init.o
- .debug_line    0x0000268f      0x10b sdcard.o
- .debug_line    0x0000279a       0x92 picoc/picoc.o
- .debug_line    0x0000282c       0xe3 picoc/table.o
- .debug_line    0x0000290f      0x39d picoc/lex.o
- .debug_line    0x00002cac      0x2c0 picoc/parse.o
- .debug_line    0x00002f6c      0x549 picoc/expression.o
- .debug_line    0x000034b5       0xf0 picoc/heap.o
- .debug_line    0x000035a5      0x22b picoc/type.o
- .debug_line    0x000037d0      0x16a picoc/variable.o
- .debug_line    0x0000393a      0x234 picoc/clibrary.o
- .debug_line    0x00003b6e      0x3bc picoc/library_surveyor.o
- .debug_line    0x00003f2a      0x114 picoc/platform.o
- .debug_line    0x0000403e       0x9e picoc/platform_surveyor.o
+ .debug_line    0x00000143      0x2ce httpd.o
+ .debug_line    0x00000411       0xa7 i2c.o
+ .debug_line    0x000004b8      0x1ac stm_m25p32.o
+ .debug_line    0x00000664       0xf8 printf.o
+ .debug_line    0x0000075c      0x139 xmodem.o
+ .debug_line    0x00000895      0x30e float.o
+ .debug_line    0x00000ba3      0x2a7 gps.o
+ .debug_line    0x00000e4a       0x3c myfunc.o
+ .debug_line    0x00000e86      0x137 main.o
+ .debug_line    0x00000fbd       0xa6 malloc.o
+ .debug_line    0x00001063      0x19d string.o
+ .debug_line    0x00001200      0xb5d srv.o
+ .debug_line    0x00001d5d      0x12f uart.o
+ .debug_line    0x00001e8c      0x380 colors.o
+ .debug_line    0x0000220c      0x315 jpeg.o
+ .debug_line    0x00002521      0x11e neural.o
+ .debug_line    0x0000263f       0x53 init.o
+ .debug_line    0x00002692      0x10b sdcard.o
+ .debug_line    0x0000279d       0x92 picoc/picoc.o
+ .debug_line    0x0000282f       0xe3 picoc/table.o
+ .debug_line    0x00002912      0x39d picoc/lex.o
+ .debug_line    0x00002caf      0x2c0 picoc/parse.o
+ .debug_line    0x00002f6f      0x549 picoc/expression.o
+ .debug_line    0x000034b8       0xf0 picoc/heap.o
+ .debug_line    0x000035a8      0x22b picoc/type.o
+ .debug_line    0x000037d3      0x16a picoc/variable.o
+ .debug_line    0x0000393d      0x234 picoc/clibrary.o
+ .debug_line    0x00003b71      0x3bc picoc/library_surveyor.o
+ .debug_line    0x00003f2d      0x114 picoc/platform.o
+ .debug_line    0x00004041       0x9e picoc/platform_surveyor.o
 
 .debug_frame    0x00000000     0x3cd4
  .debug_frame   0x00000000       0x4c camera.o
