@@ -294,17 +294,14 @@ void    httpd_request (char firstChar)
                     if (cmd1 == '!')
                         deferredReset = TRUE;   // defer until after we send the response
                     break;
-                case 'l':  // lasers
-                    switch (cmd2) {
-                        case '1':
+                case 'm':  // SRV-1 Robot motor drive (PWM) with lasers
+                    if (cmd1 == 'l') {   // check for laser command
+                        if (cmd2 == '1')
                             *pPORTHIO |= 0x0280;
-                            break;
-                        case '0':
+                        else
                             *pPORTHIO &= 0xFD7F;
-                            break;
+                        break;
                     }
-                    break;
-                case 'm':  // SRV-1 Robot motor drive (PWM)
                     if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
                         break;
                     if (!pwm1_init) {

@@ -1,20 +1,3 @@
-/* Customized linker script 
- * 
- * Blackfin 'tiny' memory model
- *
- * (c) Unknown author
- * 2004, 2005, Martin Strubel <hackfin@section5.ch>
- *
- * $Id: bftiny.x,v 1.1 2005/08/17 13:36:08 strubi Exp $
- *
- * This linker script is for standalone "bare metal" code
- * that does neither depend on a newlib or uses a crt0.s.
- *
- * The user has to write supply his startup code in startup.o
- * and is thus supposed to have total control over the Blackfin :-)
- *
- */
-
 OUTPUT_FORMAT("elf32-bfin", "elf32-bfin", "elf32-bfin")
 OUTPUT_ARCH(bfin)
 
