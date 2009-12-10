@@ -14,6 +14,7 @@ CFLAGS = $(INCLUDES) -g -O2 -Wall -fomit-frame-pointer -fno-builtin-printf -fno-
 	-fno-builtin-memset -fno-builtin-memcpy -fno-builtin-isdigit -fno-builtin-cos -fno-builtin-sin \
 	-fno-builtin-tan -fno-builtin-acos -fno-builtin-asin -fno-builtin-atan
 CFLAGS += $(CPUDEFINES)
+CFLAGS += -mfast-fp
 
 OBJS = $(CSRCS:%.c=%.o) $(ASMSRCS:%.asm=%.o) 
 
@@ -28,7 +29,7 @@ LDR = bfin-elf-ldr
 all:  srv1.bin srv1.ldr
 
 srv1.bin: $(OBJS)
-	$(LD) -T srv1.x -Map srv1.map -O binary -o srv1.bin $(OBJS) 
+	$(LD) -T srv1.x -Map srv1.map -O binary -o srv1.bin $(OBJS) -lbffastfp
 
 main.o:  main.c srv.h ov9655.h uart.h xmodem.h i2c.h print.h config.h
 

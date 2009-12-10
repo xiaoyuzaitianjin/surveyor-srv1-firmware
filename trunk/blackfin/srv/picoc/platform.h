@@ -79,6 +79,8 @@ extern jmp_buf ExitBuf;
 # else
 #  ifdef SURVEYOR_HOST
 #   define NO_FP
+//#   define NEED_MATH_LIBRARY
+//#   define NO_SCALBN
 #   define NO_CTYPE
 #   define NO_HASH_INCLUDE
 #   define NO_MODULUS

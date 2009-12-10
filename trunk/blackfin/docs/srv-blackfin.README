@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 21 November 2009 
+SRV-1 firmware build for Blackfin - 10 December 2009 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed HTTP interface to support various motor drives, e.g. 
@@ -10,6 +10,8 @@ SRV-1 firmware build for Blackfin - 21 November 2009
   '9' yields max forward power, '1' yields max reverse power.  
   'm' indicates SRV-1q, 's' indicates ppm   ESC (servo signals), 
   'x' indicates SRV-4WD controller
+
+* added support for floats via libbffastfp and printf()
 
 ============================================================================
 
