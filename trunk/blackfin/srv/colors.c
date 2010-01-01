@@ -44,48 +44,32 @@ unsigned int vpix(unsigned char *frame_buf, unsigned int xx, unsigned int yy) {
                         (unsigned int)frame_buf[ix+3];
 }
 
-// merge blobs, changing any pixel in blob_buf[] in old_blob to new_blob
-void blob_merge(unsigned char *blob_buf, unsigned char old_blob, unsigned char new_blob) {
-    int ix;
-    for (ix=0; ix<(imgWidth*imgHeight); ix+=2)
-        if (blob_buf[ix] == old_blob)
-            blob_buf[ix] = new_blob;
-}
 
 // return number of blobs found that match the search color
-// algorithm derived from "Using a Particle Filter for Gesture Recognition", Alexander Gruenstein
-//    http://www.mit.edu/~alexgru/vision/
 unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned int ii) {
-    unsigned int ix, iy, xx, yy, y, u, v, tmp;
-    unsigned char *bbp, curBlob, vL, vTL, vT, vTR, vME;
-
-    register int y1, y2, u1, u2, v1, v2;
+    unsigned int jj, ix, xx, yy, y, u, v, count, bottom, top, tmp;
+    unsigned int maxx, maxy;
+    unsigned char *bbp, ctmp;
+    int itmp, jtmp;
+    int y1, y2, u1, u2, v1, v2;
+    
     y1 = ymin[ii];
     y2 = ymax[ii];
     u1 = umin[ii];
     u2 = umax[ii];
     v1 = vmin[ii];
     v2 = vmax[ii];
-
-    for (curBlob=0; curBlob<MAX_BLOBS; curBlob++) {
-        blobcnt[curBlob] = 0;
-        blobx1[curBlob] = imgWidth;
-        blobx2[curBlob] = 0;
-        bloby1[curBlob] = imgHeight;
-        bloby2[curBlob] = 0;
-        blobix[curBlob] = 0;
-    }
-
+    
     bbp = blob_buf;
     for (ix=0; ix<imgWidth*imgHeight; ix++)
         *bbp++ = 0;
 
-    // tag all pixels in blob_buf[]    
-    //     matching = 1  
-    //     no color match = 0
-    // thus all matching pixels will belong to blob #1
+    /* tag all pixels in blob_buf[]    
+         matching = 1  
+         no color match = 0
+       thus all matching pixels will belong to blob #1 */
     bbp = blob_buf;
-    for (ix=0; ix<(imgWidth*imgHeight*2); ix+=4){
+    for (ix=0; ix<(imgWidth*imgHeight*2); ix+=4) {
         y = (((unsigned int)frame_buf[ix+1] + (unsigned int)frame_buf[ix+3])) >> 1;
         u = (unsigned int)frame_buf[ix];
         v = (unsigned int)frame_buf[ix+2];
@@ -95,102 +79,111 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
         bbp += 2;
     }
 
-    curBlob = 2;
-    for (yy=1; yy<imgHeight-1; yy++) {   // don't go all the way to the image edge
-        for (xx=2; xx<(imgWidth-4); xx+=2) {
-            ix = xx + (yy * imgWidth);
-            vL = 0; vTL = 0; vT = 0; vTR = 0;
-            vME = 0;
-            if (blob_buf[ix] == 1) {
-                vL =  blob_buf[ix-2];    // left
-                vTL = blob_buf[(ix - imgWidth) - 2];   // top left
-                vT =  blob_buf[ix - imgWidth];  // top
-                vTR = blob_buf[(ix - imgWidth) + 2];   // top right
-                
-                if (vL)
-                    vME = vL;
-                if (vTL)
-                    vME = vTL;  // guaranteed same as vL by previous iteration
-                if (vT) {
-                    if ((vL != 0) && (vL != vT))      // we have a U connection
-                        blob_merge(blob_buf, vT, vL); // change all vT's to vL's
-                    else
-                        vME = vT;
-                }
-                if (vTR) {
-                    if ((vTL != 0) && (vTL != vTR))
-                        blob_merge(blob_buf, vTR, vTL); // change all vTR's to vTL's
-                    else
-                        vME = vTR;
-                }
-                if (vME == 0) {
-                    vME = curBlob;
-                    curBlob++;
-                    if (curBlob >= MAX_BLOBS) { // max blob limit exceeded
-                        printf("  vblob #%d: max blob limit exceeded\r\n", ii);
-                        return -1;
-                    }
-                }
-                blob_buf[ix] = vME;
-            }
-        }
+    ix = imgWidth * (imgHeight-1);
+    for (xx=0; xx<imgWidth; xx++) {
+        blob_buf[xx] = 0;
+        blob_buf[xx+ix] = 0;
     }
-
-    // measure the blobs
+    ix = imgWidth-1;
     for (yy=0; yy<imgHeight; yy++) {
-        for (xx=0; xx<imgWidth; xx+=2) {
-            ix = xx + (yy * imgWidth);
-            iy = blob_buf[ix];
-            if (iy) {
-                blobcnt[iy]++;
-                if (xx < blobx1[iy])
-                    blobx1[iy] = xx;
-                if (xx > blobx2[iy])
-                    blobx2[iy] = xx;
-                if (yy < bloby1[iy])
-                    bloby1[iy] = yy;
-                if (yy > bloby2[iy])
-                    bloby2[iy] = yy;
-            }
-        }
-    }
-
-    // compress the blob array
-    for (xx=0; xx<=curBlob; xx++)
-        if (blobcnt[xx] < MIN_BLOB_SIZE)
-            blobcnt[xx] = 0;
-            
-    for (xx=0; xx<(curBlob-1); xx++) {
-        if (blobcnt[xx] == 0) {
-            for (yy=xx+1; yy<=curBlob; yy++) {
-                if (blobcnt[yy]) {
-                    blobcnt[xx] = blobcnt[yy];
-                    blobx1[xx] = blobx1[yy];
-                    blobx2[xx] = blobx2[yy];
-                    bloby1[xx] = bloby1[yy];
-                    bloby2[xx] = bloby2[yy];
-                    blobix[xx] = yy;   // this tells us the index of this blob in blob_buf[]
-                    blobcnt[yy] = 0;
-                    break;
-                }
-            }
-        }
+        blob_buf[yy*imgWidth] = 0;
+        blob_buf[yy*imgWidth + ix] = 0;
     }
     
-    iy = 0;
-    for (xx=0; xx<=curBlob; xx++) {
-        if (blobcnt[xx])
-            iy++;
-        else
-            break;
+    /* clear out orphan pixels */
+    itmp = 0;
+    jtmp = 0;
+    for (ix=0; ix<(imgWidth*imgHeight); ix+=2) {
+        if (blob_buf[ix]) {
+            itmp++;
+            ctmp = 
+                blob_buf[(ix-imgWidth)-2] +
+                blob_buf[ix-imgWidth] +
+                blob_buf[(ix-imgWidth)+2] +
+                blob_buf[ix-2] +
+                blob_buf[ix+2] +
+                blob_buf[(ix+imgWidth)-2] +
+                blob_buf[ix+imgWidth] +
+                blob_buf[(ix+imgWidth)+2];
+            if (ctmp < 4) {
+                jtmp++;
+                blob_buf[ix] = 0;
+            }
+        }
     }
-    curBlob = iy;
+    //printf("cleared %d out of %d matching pixels\r\n", jtmp, itmp);
 
-    // sort blobs by size, largest to smallest pixel count
-    for (xx=0; xx<=curBlob; xx++) {
-        if (blobcnt[xx] == 0)  // no more blobs
-            break;
-        for (yy=xx+1; yy<=curBlob; yy++) {
+    /* clear out orphan pixels */
+    itmp = 0;
+    jtmp = 0;
+    for (ix=0; ix<(imgWidth*imgHeight); ix+=2) {
+        if (blob_buf[ix]) {
+            itmp++;
+            ctmp = 
+                blob_buf[(ix-imgWidth)-2] +
+                blob_buf[ix-imgWidth] +
+                blob_buf[(ix-imgWidth)+2] +
+                blob_buf[ix-2] +
+                blob_buf[ix+2] +
+                blob_buf[(ix+imgWidth)-2] +
+                blob_buf[ix+imgWidth] +
+                blob_buf[(ix+imgWidth)+2];
+            if (ctmp < 4) {
+                jtmp++;
+                blob_buf[ix] = 0;
+            }
+        }
+    }
+    //printf("cleared %d out of %d matching pixels\r\n", jtmp, itmp);
+
+    maxx = imgWidth;
+    maxy = imgHeight;
+
+    for (jj=0; jj<MAX_BLOBS; jj++) {
+        blobcnt[jj] = 0;
+        blobx1[jj] = maxx;
+        blobx2[jj] = 0;
+        bloby1[jj] = maxy;
+        bloby2[jj] = 0;
+    }
+        
+    jj = 0;    // jj indicates the current blob being processed
+    for (xx=0; xx<maxx; xx+=2) {
+        count = 0;
+        bottom = maxy;
+        top = 0;
+        for (yy=0; yy<maxy; yy++) {
+            ix = xx + yy*imgWidth;
+            if (blob_buf[ix]) {
+                count++;
+                if (bottom > yy)
+                    bottom = yy;
+                if (top < yy)
+                    top = yy;
+            }
+        }
+        if (count) {
+            if (bloby1[jj] > bottom)
+                bloby1[jj] = bottom;
+            if (bloby2[jj] < top)
+                bloby2[jj] = top;
+            if (blobx1[jj] > xx)
+                blobx1[jj] = xx;
+            if (blobx2[jj] < xx)
+                blobx2[jj] = xx;
+            blobcnt[jj] += count;
+        } else {
+            if (blobcnt[jj])    // move to next blob if a gap is found
+                jj++;
+            if (jj > (MAX_BLOBS-2))
+                goto blobbreak;
+        }
+    }
+blobbreak:     // now sort blobs by size, largest to smallest pixel count
+    for (xx=0; xx<=jj; xx++) {
+        if (blobcnt[xx] == 0)    // no more blobs, so exit
+            return xx;
+        for (yy=xx; yy<=jj; yy++) {
             if (blobcnt[yy] == 0)
                 break;
             if (blobcnt[xx] < blobcnt[yy]) {
@@ -209,13 +202,10 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
                 tmp = bloby2[xx];
                 bloby2[xx] = bloby2[yy];
                 bloby2[yy] = tmp;
-                tmp = blobix[xx];
-                blobix[xx] = blobix[yy];
-                blobix[yy] = tmp;
             }
         }
     }
-    return curBlob;
+    return xx;
 }
 
 // histogram function - 

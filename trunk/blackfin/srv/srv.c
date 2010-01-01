@@ -1837,8 +1837,10 @@ void process_colors() {
                 ch1 &= 0x0F;
             grab_frame();
             ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
-            if (ix == 0xFFFFFFFF)
+            if (ix == 0xFFFFFFFF) {
+                printf("##vb%c -1\r\n", ch2);
                 break;  // too many blobs found
+            }
             printf("##vb%c %d\r\n", ch2, ix);
             for (iy=0; iy<ix; iy++) {
                 printf(" %d - %d %d %d %d  \r\n", 

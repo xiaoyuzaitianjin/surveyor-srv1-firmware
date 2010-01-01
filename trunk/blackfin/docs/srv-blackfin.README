@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 10 December 2009 
+SRV-1 firmware build for Blackfin - 1 January 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed HTTP interface to support various motor drives, e.g. 
@@ -13,6 +13,10 @@ SRV-1 firmware build for Blackfin - 10 December 2009
 
 * added support for floats via libbffastfp and printf()
 
+* changed vblob() blob search back to original algorithm to eliminate
+  "max blobs exceeded" condition.  added 2 stages of preprocessing to 
+  eliminate orphan pixels and improve search accuracy
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 9 November 2009 
