@@ -567,3 +567,30 @@ void addline(unsigned char *outbuf, int slope, int intercept)
     }
 }
 
+/* display a box as red pixels (YUV = 72 84 255) or yellow pixels (YUV = 194 18 145) */
+void addbox(unsigned char *outbuf, unsigned int x1, unsigned int x2, unsigned int y1, unsigned int y2)
+{
+    unsigned int xx, yy, ix;
+
+    for (xx=x1; xx<=x2; xx+=2) {
+        ix = index(xx, y1);
+        outbuf[ix+1] =  outbuf[ix+3] = 194;
+        outbuf[ix] = 18;
+        outbuf[ix+2] = 145;
+        ix = index(xx, y2);
+        outbuf[ix+1] =  outbuf[ix+3] = 194;
+        outbuf[ix] = 18;
+        outbuf[ix+2] = 145;
+    }
+    for (yy=y1; yy<=y2; yy++) {
+        ix = index(x1, yy);
+        outbuf[ix+1] =  outbuf[ix+3] = 194;
+        outbuf[ix] = 18;
+        outbuf[ix+2] = 145;
+        ix = index(x2, yy);
+        outbuf[ix+1] =  outbuf[ix+3] = 194;
+        outbuf[ix] = 18;
+        outbuf[ix+2] = 145;
+    }
+}
+

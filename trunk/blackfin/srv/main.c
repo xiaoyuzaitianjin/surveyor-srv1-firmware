@@ -342,6 +342,8 @@ int main() {
                             // g2 = enable edge detection
                             // g3 = enable horizon detection
                             // g4 = enable obstacle detection
+                            // g5 = enable stereo processing (SVS only)
+                            // g6 = enable blob display
                             // g_ = anything else turns them all off
                     switch (getch()) {
                         case '0':
@@ -364,7 +366,10 @@ int main() {
                             enable_stereo_processing();
                             break;
                         #endif /* STEREO */
-                       default:  // no match - turn them all off
+                        case '6':
+                            enable_blob_display(); 
+                            break;
+                        default:  // no match - turn them all off
                             disable_frame_diff();
                             break;
                     }

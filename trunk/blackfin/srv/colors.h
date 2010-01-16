@@ -28,4 +28,5 @@ void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh);
 void svs_segview(unsigned char *inbuf, unsigned char *outbuf);
 void addvect(unsigned char *outbuf, unsigned int columns, unsigned int *vect);
 void addline(unsigned char *outbuf, int slope, int intercept);
+void addbox(unsigned char *outbuf, unsigned int x1, unsigned int x2, unsigned int y1, unsigned int y2);
 

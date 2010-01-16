@@ -109,6 +109,7 @@ void enable_edge_detect();
 void enable_horizon_detect();
 void enable_obstacle_detect();
 void enable_stereo_processing();
+void enable_blob_display();
 unsigned int check_stereo_sync();
 void set_edge_thresh();
 void grab_code_send();

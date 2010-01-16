@@ -80,6 +80,8 @@ unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
 unsigned int quality, framecount, ix, overlay_flag;
 unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag;
 unsigned int obstacle_detect_flag;
+unsigned int blob_display_flag;
+unsigned int blob_display_num;
 unsigned int edge_thresh;
 unsigned int invert_flag;
 unsigned char *output_start, *output_end; /* Framebuffer addresses */
@@ -145,6 +147,7 @@ void init_io() {
     edge_thresh = 3200;
     obstacle_detect_flag = 0;
     segmentation_flag = 0;
+    blob_display_flag = 0;
     invert_flag = 0;
     encoder_flag = 0;
     compass_init = 0;
@@ -660,6 +663,18 @@ void enable_obstacle_detect() {
     printf("##g4");
 }
 
+void enable_blob_display() {
+    unsigned int ix;
+    char cbuf[2];
+    
+    cbuf[0] = getch();
+    cbuf[1] = 0;
+    ix = atoi(cbuf);  // find out which color bin to use with vblob()
+    printf("##g6 bin# %x\r\n", ix);
+    blob_display_flag = 1;
+    blob_display_num = ix;
+}
+
 #ifdef STEREO
 void enable_stereo_processing() {
     if (master) {
@@ -686,6 +701,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
     obstacle_detect_flag = 0;
+    blob_display_flag = 0;
     #ifdef STEREO
     stereo_processing_flag = 0;
     #endif /* STEREO */
@@ -695,6 +711,7 @@ void disable_frame_diff() {  // disables frame differencing, edge detect and col
 void grab_frame () {
     unsigned int vect[16];
     int slope, intercept;
+    unsigned int ix, ii;
     
     #ifdef STEREO
     if (stereo_processing_flag != 0) {
@@ -724,6 +741,12 @@ void grab_frame () {
     } else if (obstacle_detect_flag) {
         vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, 16, &vect[0]);
         addvect((unsigned char *)FRAME_BUF, 16, &vect[0]);
+    } else if (blob_display_flag) {
+        ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, blob_display_num);
+        if (ix > 7)  // only show 8 largest blobs
+            ix = 7;
+        for (ii=0; ii<ix; ii++) 
+            addbox((unsigned char *)FRAME_BUF, blobx1[ii], blobx2[ii], bloby1[ii], bloby2[ii]);
     }
 }
 
