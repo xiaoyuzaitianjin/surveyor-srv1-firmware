@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 16 January 2010 
+SRV-1 firmware build for Blackfin - 23 January 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed HTTP interface to support various motor drives, e.g. 
@@ -20,6 +20,10 @@ SRV-1 firmware build for Blackfin - 16 January 2010
 * added 'g6x' command to graphically display vblob() search results, where
   'x' is the color bin to display, e.g. 'g63' displays blobs matching
   color bin 3.  'gx' disables this display.  
+
+* fixed global array access bug in picoC
+
+* updated the build of srv1.ldr.stereo to support the latest changes
 
 ============================================================================
 

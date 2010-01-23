@@ -1,20 +1,3 @@
-/* Customized linker script 
- * 
- * Blackfin 'tiny' memory model
- *
- * (c) Unknown author
- * 2004, 2005, Martin Strubel <hackfin@section5.ch>
- *
- * $Id: bftiny.x,v 1.1 2005/08/17 13:36:08 strubi Exp $
- *
- * This linker script is for standalone "bare metal" code
- * that does neither depend on a newlib or uses a crt0.s.
- *
- * The user has to write supply his startup code in startup.o
- * and is thus supposed to have total control over the Blackfin :-)
- *
- */
-
 OUTPUT_FORMAT("elf32-bfin", "elf32-bfin", "elf32-bfin")
 OUTPUT_ARCH(bfin)
 
@@ -29,7 +12,7 @@ MEMORY
 
 SECTIONS
 {
-    .sdram.text     : { camera.o(.sdram.text) edit.o(.sdram.text) malloc.o(.sdram.text) httpd.o(.sdram.text) i2c.o(.sdram.text) stm_m25p32.o(.sdram.text) printf.o(.sdram.text) xmodem.o(.sdram.text) float.o(.sdram.text) neural.o(.sdram.text) gps.o(.sdram.text) myfunc.o(.sdram.text) *(.gnu.warning) } > ram
+    .sdram.text     : { camera.o(.sdram.text) edit.o(.sdram.text) malloc.o(.sdram.text) httpd.o(.sdram.text) i2c.o(.sdram.text) stm_m25p32.o(.sdram.text) printf.o(.sdram.text) xmodem.o(.sdram.text) neural.o(.sdram.text) gps.o(.sdram.text) myfunc.o(.sdram.text) *(.gnu.warning) } > ram
     .l1code         : { main.o(.text) math.o(.text) string.o(.text) srv.o(.text) uart.o(.text) colors.o(.text) jpeg.o(.text) r8x8dct.o(.text) motionvect.o(.text) stereo.o(.text) setjmp.o(.text)} > l1code
     .l1data         :
     {
