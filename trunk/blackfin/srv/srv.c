@@ -70,7 +70,7 @@ int move_start_time, move_stop_time, move_time_mS;
 int robot_moving;
 
 /* Version */
-unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.93 "  __TIME__ " - " __DATE__ ;
+unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.93 "  __TIME__ " - " __DATE__;
 
 /* Frame count output string */
 unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
@@ -558,6 +558,39 @@ void read_analog()
     printf("##$A%d %4d\r\n", channel, analog(channel));
 }
 
+unsigned int analog_4wd(unsigned int ix)
+{
+    int t0, ii, val;
+    unsigned char ch;
+    
+    if (xwd_init == 0) {
+        xwd_init = 1;
+        init_uart1(115200);
+        delayMS(10);
+    }
+    uart1SendChar('a');
+    uart1SendChar((char)(ix + 0x30));
+
+    ii = 1000;
+    val = 0;
+    while (ii) {
+        t0 = readRTC();
+        while (!uart1GetChar(&ch))
+            if ((readRTC() - t0) > 100)  // 100msec timeout
+                return 0;
+        val += (unsigned int)(ch & 0x0F) * ii;        
+        ii /= 10;
+    }
+    return val;
+}
+
+void read_analog_4wd()
+{
+    unsigned int channel;
+    channel = (unsigned int)(getch() & 0x0F);
+    printf("##$a%d %4d\r\n", channel, analog_4wd(channel));
+}
+
 /* use GPIO H10 (pin 27), H11 (pin 28), H12 (pin 29), H13 (pin 30) as sonar inputs -
     GPIO H1 (pin 18) is used to trigger the sonar reading (low-to-high transition) */
 void init_sonar() {  
@@ -982,7 +1015,7 @@ void camera_reset (unsigned int width) {
         camera_stop();
         i2cwrite(0x21, ov7725_qqvga, sizeof(ov7725_qqvga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_qqvga, sizeof(ov9655_qqvga)>>1, SCCB_ON);
-        printf("#a");
+        //printf("#a");
     } else if (width == 320) {
         imgWidth = width;
         imgHeight = 240;
@@ -990,7 +1023,7 @@ void camera_reset (unsigned int width) {
         camera_stop();
         i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
-        printf("#b");
+        //printf("#b");
     } else if (width == 640) {
         imgWidth = width;
         imgHeight = 480;
@@ -998,14 +1031,14 @@ void camera_reset (unsigned int width) {
         camera_stop();
         i2cwrite(0x21, ov7725_vga, sizeof(ov7725_vga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_vga, sizeof(ov9655_vga)>>1, SCCB_ON);
-        printf("#c");
+        //printf("#c");
     } else if (width == 1280) {
         imgWidth = width;
         imgHeight = 1024;
         strcpy(imgHead, "##IMJ9    ");
         camera_stop();
         i2cwrite(0x30, ov9655_sxga, sizeof(ov9655_sxga)>>1, SCCB_ON);
-        printf("#A");
+        //printf("#A");
     }
     camera_init((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, imgWidth, imgHeight);
     camera_start();
@@ -1612,8 +1645,8 @@ void initPPM1() {
     *pTIMER3_CONFIG = PULSE_HI | PWM_OUT | PERIOD_CNT;
     *pTIMER2_PERIOD = PERIPHERAL_CLOCK / 50;                // 50Hz
     *pTIMER3_PERIOD = PERIPHERAL_CLOCK / 50;                // 50Hz
-    *pTIMER2_WIDTH = ((PERIPHERAL_CLOCK / 50) * 100) / 2000; // 1.0 millisec pulse
-    *pTIMER3_WIDTH = ((PERIPHERAL_CLOCK / 50) * 100) / 2000; // 1.0 millisec pulse
+    *pTIMER2_WIDTH = ((PERIPHERAL_CLOCK / 50) * 150) / 2000; // 1.5 millisec pulse
+    *pTIMER3_WIDTH = ((PERIPHERAL_CLOCK / 50) * 150) / 2000; // 1.5 millisec pulse
     *pTIMER_ENABLE |= TIMEN2 | TIMEN3;
 }
 
@@ -1906,7 +1939,7 @@ void process_colors() {
             printf("##vdump\r\n");
             for(ix=0; ix<256; ix++) {
                 i2c_data[0] = ix;
-                i2cread(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);
+                i2cread(0x21, (unsigned char *)i2c_data, 1, SCCB_ON);
                 printf("%x %x\r\n", ix, i2c_data[0]);
             }
             break;

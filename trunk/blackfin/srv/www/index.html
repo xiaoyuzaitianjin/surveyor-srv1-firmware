@@ -12,9 +12,6 @@
 var debugging = false;
 var frameRate = 15;
 
-// drive options - m=SRV1, y=yarb, s=ESC, x=SRV-4WD
-var drive = 'm';
-
 var reqPending = false;
 var reqTimeout = false;
 
@@ -79,7 +76,7 @@ dbg ("enterBtnClick");
     {
         reqPending = true;
         btnXhr = new XMLHttpRequest();
-        btnXhr.open ("GET", "robot.cgi?" + drive + btn + "&b=" + new Date().getTime(), true);
+        btnXhr.open ("GET", "robot.cgi?" + btn + "&b=" + new Date().getTime(), true);
         btnXhr.setRequestHeader ("Cache-Control", "no-cache");
         btnXhr.setRequestHeader ("Pragma", "no-cache");
         btnXhr.onreadystatechange = btnClickComplete;
@@ -175,17 +172,17 @@ function toggleBtnDisplay ()
 <div class="btn" style="left: 0px; top: 120px; width: 24px; height: 120px" onclick="btnClick('+')"><span class="btnText">&nbsp; + &nbsp;</span></div>
 <div class="btn" style="left: 296px; top: 120px; width: 24px; height: 120px" onclick="btnClick('-')"><span class="btnText">&nbsp; - &nbsp;</span></div>
 
-<div class="btn" style="left: 24px; top: 0px; width: 76px; height: 80px" onclick="btnClick('69')"><span class="btnText">&nbsp;&lt;--&nbsp;</span></div>
-<div class="btn" style="left: 100px; top: 0px; width: 120px; height: 80px" onclick="btnClick('88')"><span class="btnText">&nbsp;forward&nbsp;</span></div>
-<div class="btn" style="left: 220px; top: 0px; width: 76px; height: 80px" onclick="btnClick('96')"><span class="btnText">&nbsp;--&gt;&nbsp;</span></div>
+<div class="btn" style="left: 24px; top: 0px; width: 76px; height: 80px" onclick="btnClick('m6090')"><span class="btnText">&nbsp;&lt;--&nbsp;</span></div>
+<div class="btn" style="left: 100px; top: 0px; width: 120px; height: 80px" onclick="btnClick('m8080')"><span class="btnText">&nbsp;forward&nbsp;</span></div>
+<div class="btn" style="left: 220px; top: 0px; width: 76px; height: 80px" onclick="btnClick('m9060')"><span class="btnText">&nbsp;--&gt;&nbsp;</span></div>
 
-<div class="btn" style="left: 24px; top: 80px; width: 76px; height: 80px" onclick="btnClick('19')"><span class="btnText">&nbsp;spin left&nbsp;</span></div>
-<div class="btn" style="left: 100px; top: 80px; width: 120px; height: 80px" onclick="btnClick('55')"><span class="btnText">&nbsp;STOP&nbsp;</span></div>
-<div class="btn" style="left: 220px; top: 80px; width: 76px; height: 80px" onclick="btnClick('91')"><span class="btnText">&nbsp;spin right&nbsp;</span></div>
+<div class="btn" style="left: 24px; top: 80px; width: 76px; height: 80px" onclick="btnClick('m1090')"><span class="btnText">&nbsp;spin left&nbsp;</span></div>
+<div class="btn" style="left: 100px; top: 80px; width: 120px; height: 80px" onclick="btnClick('m5050')"><span class="btnText">&nbsp;STOP&nbsp;</span></div>
+<div class="btn" style="left: 220px; top: 80px; width: 76px; height: 80px" onclick="btnClick('m9010')"><span class="btnText">&nbsp;spin right&nbsp;</span></div>
 
-<div class="btn" style="left: 24px; top: 160px; width: 76px; height: 80px" onclick="btnClick('41')"><span class="btnText">&nbsp;back left&nbsp;</span></div>
-<div class="btn" style="left: 100px; top: 160px; width: 120px; height: 80px" onclick="btnClick('22')"><span class="btnText">&nbsp;back&nbsp;</span></div>
-<div class="btn" style="left: 220px; top: 160px; width: 76px; height: 80px" onclick="btnClick('14')"><span class="btnText">&nbsp;back right&nbsp;</span></div>
+<div class="btn" style="left: 24px; top: 160px; width: 76px; height: 80px" onclick="btnClick('m4010')"><span class="btnText">&nbsp;back left&nbsp;</span></div>
+<div class="btn" style="left: 100px; top: 160px; width: 120px; height: 80px" onclick="btnClick('m2020')"><span class="btnText">&nbsp;back&nbsp;</span></div>
+<div class="btn" style="left: 220px; top: 160px; width: 76px; height: 80px" onclick="btnClick('m1040')"><span class="btnText">&nbsp;back right&nbsp;</span></div>
 
 <input type="button" id="toggleBtnBtn" value="&#216;" style="position: absolute; left: 328px; top: 105; width: 30px; height: 30px"
     onclick="toggleBtnDisplay()">

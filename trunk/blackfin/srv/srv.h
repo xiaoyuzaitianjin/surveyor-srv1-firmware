@@ -31,8 +31,10 @@
 #define C_HEAPSIZE   0x00080000
 #define SPI_BUFFER1  0x00280000  // 256kB buffer for transfer of data via SPI bus
 #define SPI_BUFFER2  0x002C0000  // 256kB buffer for transfer of data via SPI bus
-#define HTTP_BUFFER  0x002C0000  // 256kB buffer also used for receiving and sending HTTP messages
+#define HTTP_BUFFER  0x00280000  // 256kB buffer also used for receiving and sending HTTP messages
 #define HTTP_BUFFER_SIZE 0x00040000
+#define HTTP_BUFFER2 0x002C0000  // additional 256kB buffer for HTTP content
+#define HTTP_BUFFER2_SIZE 0x00040000
 #define HEAPSTART    0x00300000  // put this above FLASH_BUFFER 
 #define HEAPSIZE     0x00C00000  // 12MB for now - leave 1MB for JPEG buffer
 #define DMA_BUF1     0x01000000  // address in SDRAM for DMA transfer of frames from camera
@@ -73,6 +75,8 @@ void process_i2c();
 void init_analog();
 unsigned int analog(unsigned int);
 void read_analog();
+void read_analog_4wd();
+unsigned int analog_4wd(unsigned int);
 
 /* Tilt */
 void init_tilt();
@@ -202,6 +206,11 @@ extern int move_start_time, move_stop_time, move_time_mS, robot_moving;
 extern int sonar_data[];
 extern unsigned int imgWidth, imgHeight, frame_diff_flag, horizon_detect_flag, invert_flag, quality;
 extern unsigned int uart1_flag, thumbnail_flag;
+extern unsigned int segmentation_flag, edge_detect_flag, frame_diff_flag, horizon_detect_flag;
+extern unsigned int obstacle_detect_flag;
+extern unsigned int blob_display_flag;
+extern unsigned int blob_display_num;
+extern unsigned int edge_thresh;
 extern unsigned int master;  // SVS master or slave ?
 extern unsigned int stereo_sync_flag;
 extern unsigned int stereo_processing_flag;

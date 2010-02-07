@@ -23,6 +23,9 @@
 #include "debug.h"
 #include "stdlib.h"
 #include "stm_m25p32.h"
+#include "gps.h"
+#include "colors.h"
+#include "i2c.h"
 
 #define REQBUF_SIZE             4096
 #define INLINEIMGBUF_SIZE       (64 * 1024)
@@ -58,7 +61,7 @@ static char *fileNames[] = {  // index from file name to flash sector:
 
 #define CONNECTION_HEADER   "Connection: Close\r\n"       // better in IE, Safari
 
-static char cgiBody[] = "0\r\n";
+static char cgiBody[] = "ok\r\n";
 static char body404[] = "File not found\r\n";
 static char body501[] = "Request format not supported\r\n";
 static char resultCode404[] = "HTTP/1.1 404 File not found";
@@ -219,9 +222,10 @@ int *   contentLength)          // Out: length of response body
 void    httpd_request (char firstChar)
 {
     char *reqBuf = (char *)HTTP_BUFFER; 
+    char *cgiResponse = (char *)HTTP_BUFFER2; 
 
-    int ret, t0, ix, x1, x2;
-    char ch;
+    int ret, t0;
+    char ch, *cp;
 
     // request fields
     char * method;
@@ -234,10 +238,19 @@ void    httpd_request (char firstChar)
     BOOL freeBody = FALSE;
     char * resultCode = "HTTP/1.1 200 OK";
     char * contentType = "text/html";
-    int contentLength = 0, flashContentLength = 0;
+    int contentLength = 0, flashContentLength = 0, new_content = 0;
 
     BOOL deferredReset = FALSE;
 
+    // command variables
+    unsigned int channel;
+    unsigned char i2c_device, i2c_data[16];
+    unsigned char ch1, ch2, ch3, ch4;
+    unsigned int x1, x2;
+    unsigned int ix, iy, i1, i2;
+    unsigned int ulo[4], uhi[4], vlo[4], vhi[4];
+    int vect[16];  // used by vscan()
+    
     // Receive the request and headers
     reqBuf[0] = firstChar;
 
@@ -283,26 +296,385 @@ void    httpd_request (char firstChar)
             contentType = "image/jpeg";
         }
 
-        // Robot control - robot.cgi
+        // Robot control - robot.cgi  
+        // drive options - m=SRV1, x=SRV-4WD, s=ESC, t=tilt, l=laser
         else if (strncmp(path, robotCgi, countof(robotCgi) - 1) == 0) {
             char * params = path + countof (robotCgi) - 1;
-            char dtype = params[0];  // drive options - m=SRV1, x=SRV-4WD, s=ESC, t=tilt, l=laser
-            char cmd1 = params[1];
-            char cmd2 = params[2];
-            switch (dtype) {
-                case '$':  // Blackfin reset
-                    if (cmd1 == '!')
-                        deferredReset = TRUE;   // defer until after we send the response
+            new_content = 0;
+            cp = (char *)HTTP_BUFFER2;  // clear the response buffer
+            for (ix=0; ix<HTTP_BUFFER2_SIZE; ix++)
+                *cp++ = 0;
+            switch (params[0]) {
+                case 'V':  // version string
+                    body = cgiResponse;  // use HTTP_BUFFER2
+                    sprintf(body, "%s\r\n", version_string);
+                    contentLength = strlen((char *)body);
+                    contentType = "text/plain";
+                    new_content = 1;
                     break;
-                case 'm':  // SRV-1 Robot motor drive (PWM) with lasers
-                    if (cmd1 == 'l') {   // check for laser command
-                        if (cmd2 == '1')
-                            *pPORTHIO |= 0x0280;
-                        else
-                            *pPORTHIO &= 0xFD7F;
-                        break;
+                case '$': 
+                    switch (params[1]) {
+                        case '!':   // Blackfin reset
+                            deferredReset = TRUE;   // defer until after we send the response
+                            break;
+                        case 'A':  // SRV-NAV or RCM A/D
+                            channel = ((unsigned int)(params[2] & 0x0F) * 10) + (unsigned int)(params[3] & 0x0F);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "%04d\r\n", analog(channel));
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'a':  // SRV-4WD A/D
+                            channel = (unsigned int)(params[2] & 0x0F);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "%04d\r\n", analog_4wd(channel));
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'g':  // gps
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            gps_parse();
+                            sprintf(body, "gps lat: %d\r\ngps lon: %d\r\ngps alt: %d\r\ngps fix: %d\r\ngps sat: %d\r\ngps utc: %d\r\n", 
+                                gps_gga.lat, gps_gga.lon, gps_gga.alt, gps_gga.fix, gps_gga.sat, gps_gga.utc);
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                       case 'T':  // SRV-NAV tilt
+                            ch1 = 0;
+                            switch((unsigned int)(params[2] & 0x0F)) {  // channel 1 = x, 2 = y, 3 = z 
+                                case 1:  // x axis
+                                    ch1 = 0x28;
+                                    break;  
+                                case 2:  // y axis
+                                    ch1 = 0x2A;
+                                    break;  
+                                case 3:  // z axis
+                                    ch1 = 0x2C;
+                                    break;  
+                            }
+                            if (ch1) {
+                                i2c_data[0] = ch1;
+                                i2cread(0x1D, (unsigned char *)i2c_data, 1, SCCB_ON);
+                                ix = (unsigned int)i2c_data[0];
+                                i2c_data[0] = ch1 + 1;
+                                delayUS(1000);
+                                i2cread(0x1D, (unsigned char *)i2c_data, 1, SCCB_ON);
+                                ix += (unsigned int)i2c_data[0] << 8;
+                                body = cgiResponse;  // use HTTP_BUFFER2
+                                sprintf(body, "%04d\r\n", ix);
+                                contentLength = strlen((char *)body);
+                                contentType = "text/plain";
+                                new_content = 1;
+                            }
+                            break;
                     }
-                    if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
+                    break;
+                case 'a':
+                    camera_reset(160);
+                    break; 
+                case 'b':
+                    camera_reset(320);
+                    break; 
+                case 'c':
+                    camera_reset(640);
+                    break; 
+                case 'd':
+                    camera_reset(1280);
+                    break; 
+                case 'g':  
+                    switch (params[1]) {
+                        case '0':
+                            frame_diff_flag = 1;
+                            grab_reference_frame();
+                            break;
+                        case '1':
+                            segmentation_flag = 1;
+                            break;
+                        case '2':
+                            edge_detect_flag = 1;
+                            edge_thresh = 3200;
+                            break;
+                        case '3':
+                            horizon_detect_flag = 1;
+                            edge_thresh = 3200;
+                            break;
+                        case '4':
+                            obstacle_detect_flag = 1;
+                            edge_thresh = 3200;
+                            break;
+                        #ifdef STEREO
+                        case '5':
+                            if (master)
+                                stereo_processing_flag = 1;
+                            break;
+                        #endif /* STEREO */
+                        case '6':
+                            blob_display_flag = 1;
+                            blob_display_num = params[2] & 0x0F;
+                            break;
+                        default:  // no match - turn them all off
+                            frame_diff_flag = 0;
+                            segmentation_flag = 0;
+                            edge_detect_flag = 0;
+                            horizon_detect_flag = 0;
+                            obstacle_detect_flag = 0;
+                            blob_display_flag = 0;
+                            #ifdef STEREO
+                            stereo_processing_flag = 0;
+                            #endif /* STEREO */
+                            break;
+                    }
+                    break;
+                case 'q':  // set JPEG quality 1 - 8 (1 is highest)
+                    if ((params[1]<'1') || (params[1]>'8'))  // command out of range ?
+                        break;
+                    quality = params[1] & 0x0F;
+                    break; 
+                case 'i': 
+                    switch (params[1]) {
+                        case 'r':
+                            i2c_device = (unsigned char)atoi_b16(&params[2]);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
+                            i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "%02x\r\n", i2c_data[0]);
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'R':
+                            i2c_device = (unsigned char)atoi_b16(&params[2]);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
+                            i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "%04x\r\n", ((i2c_data[0] << 8) + i2c_data[1]));
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'w':
+                            i2c_device = (unsigned char)atoi_b16(&params[2]);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
+                            i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
+                            i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+                            break;
+                        case 'W':  // multi-write
+                            i2c_device = (unsigned char)atoi_b16(&params[2]);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
+                            i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
+                            i2c_data[2] = (unsigned char)atoi_b16(&params[8]);
+                            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
+                            break;
+                    }
+                    break;
+                case 'v':  // process colors
+                    //    va = enable/disable AGC / AWB / AEC camera controls
+                    //    vb = find blobs matching color bin 
+                    //    vc = set color bin ranges
+                    //    vm = mean colors
+                    //    vp = sample individual pixel
+                    //    vr = recall color bin ranges
+                    //    vs = scan for edges
+                    //    vt = set edge detect threshold (0000-9999, default is 3200)
+                    //    vz = zero all color settings
+                    switch (params[1]) {
+                        case 'a':  //    va = enable/disable AGC(4) / AWB(2) / AEC(1) camera controls
+                                   //    va7 = AGC+AWB+AEC on   va0 = AGC+AWB+AEC off
+                            ix = params[2] & 0x07;
+                            i2c_data[0] = 0x13;
+                            i2c_data[1] = 0xC0 + ix;
+                            i2cwrite(0x30, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV9655
+                            i2cwrite(0x21, (unsigned char *)i2c_data, 1, SCCB_ON);  // OV7725
+                            break;
+                        case 'b':  //    vb = find blobs for a given color
+                            ch1 = params[2];
+                            ch2 = ch1;
+                            if (ch1 > '9')
+                                ch1 = (ch1 & 0x0F) + 9;
+                            else
+                                ch1 &= 0x0F;
+                            grab_frame();
+                            ix = vblob((unsigned char *)FRAME_BUF, (unsigned char *)FRAME_BUF3, ch1);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            if (ix == 0xFFFFFFFF) {
+                                sprintf(body, "##vb%c -1\r\n", ch2);
+                                contentLength = strlen((char *)body);
+                                break;  // too many blobs found
+                            }
+                            for (iy=0; iy<ix; iy++) {
+                                sprintf(&body[strlen((char *)body)], " %d - %d %d %d %d  \r\n", 
+                                    blobcnt[iy], blobx1[iy], blobx2[iy], bloby1[iy], bloby2[iy]);
+                            }
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'c':  //    vc = set colors
+                            ix = (unsigned int)params[2];
+                            if (ix > '9')
+                                ix = (ix & 0x0F) + 9;
+                            else
+                                ix &= 0x0F;
+                            ch1 = params[3] & 0x0F;
+                            ch2 = params[4] & 0x0F;
+                            ch3 = params[4] & 0x0F;
+                            ymin[ix] = ch1 * 100 + ch2 * 10  + ch3;
+                            ch1 = params[6] & 0x0F;
+                            ch2 = params[7] & 0x0F;
+                            ch3 = params[8] & 0x0F;
+                            ymax[ix] = ch1 * 100 + ch2 * 10  + ch3;
+                            ch1 = params[9] & 0x0F;
+                            ch2 = params[10] & 0x0F;
+                            ch3 = params[11] & 0x0F;
+                            umin[ix] = ch1 * 100 + ch2 * 10  + ch3;
+                            ch1 = params[12] & 0x0F;
+                            ch2 = params[13] & 0x0F;
+                            ch3 = params[14] & 0x0F;
+                            umax[ix] = ch1 * 100 + ch2 * 10  + ch3;
+                            ch1 = params[15] & 0x0F;
+                            ch2 = params[16] & 0x0F;
+                            ch3 = params[17] & 0x0F;
+                            vmin[ix] = ch1 * 100 + ch2 * 10  + ch3;
+                            ch1 = params[18] & 0x0F;
+                            ch2 = params[19] & 0x0F;
+                            ch3 = params[20] & 0x0F;
+                            vmax[ix] = ch1 * 100 + ch2 * 10  + ch3;
+                            break;
+                        case 'm':  //    vm = mean colors
+                            grab_frame();
+                            vmean((unsigned char *)FRAME_BUF);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "vmean %d %d %d\r\n", mean[0], mean[1], mean[2]);
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'p':  //    vp = sample individual pixel, print YUV value
+                            ch1 = params[2] & 0x0F;
+                            ch2 = params[3] & 0x0F;
+                            ch3 = params[4] & 0x0F;
+                            ch4 = params[5] & 0x0F;
+                            i1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+                            ch1 = params[6] & 0x0F;
+                            ch2 = params[7] & 0x0F;
+                            ch3 = params[8] & 0x0F;
+                            ch4 = params[9] & 0x0F;
+                            i2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+                            grab_frame();
+                            ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "pix %d %d %d\r\n",
+                                ((ix>>16) & 0x000000FF),  // Y1
+                                ((ix>>24) & 0x000000FF),  // U
+                                ((ix>>8) & 0x000000FF));   // V
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'r':  //    vr = recall colors
+                            ix = (unsigned int)params[2];
+                            if (ix > '9')
+                                ix = (ix & 0x0F) + 9;
+                            else
+                                ix &= 0x0F;
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "vr %d %d %d %d %d %d %d\r\n",
+                               ix, ymin[ix], ymax[ix], umin[ix], umax[ix], vmin[ix], vmax[ix]);
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 's':  //    vs = scan for edges 
+                            x1 = (unsigned int)params[2] & 0x0F;  // get number of columns to use
+                            grab_frame();
+                            ix = vscan((unsigned char *)SPI_BUFFER1, (unsigned char *)FRAME_BUF, edge_thresh, (unsigned int)x1, (unsigned int *)&vect[0]);
+                            printf("vscan = %d ", ix);
+                            for (i1=0; i1<x1; i1++)
+                                printf("%4d ", vect[i1]);
+                            printf("\r\n");
+                            break;
+                        case 't':  //    vt = set edge detect threshold (0000-9999, default is 3200)
+                            ch1 = params[2] & 0x0F;
+                            ch2 = params[3] & 0x0F;
+                            ch3 = params[4] & 0x0F;
+                            ch4 = params[5] & 0x0F;
+                            edge_thresh = ch1*1000 + ch2*100 + ch3*10 + ch4;
+                            break;
+                        case 'z':  //    vz = clear or segment colors
+                            switch (params[2] & 0x0F) {
+                                case 0:
+                                    for(ix = 0; ix<MAX_COLORS; ix++) 
+                                        ymin[ix] = ymax[ix] = umin[ix] = umax[ix] = vmin[ix] = vmax[ix] = 0;
+                                    break;
+                                case 1:
+                                    for(ix = 0; ix<MAX_COLORS; ix++) {
+                                        ymin[ix] = (ix / 4) * 64;
+                                        ymax[ix] = ymin[ix] + 63;
+                                        umin[ix] = (ix & 0x02) * 64;
+                                        umax[ix] = umin[ix] + 127;
+                                        vmin[ix] = (ix & 0x01) * 128;
+                                        vmax[ix] = vmin[ix] + 127;
+                                    }
+                                    break;
+                                case 2:
+                                    for(ix = 0; ix<MAX_COLORS; ix++) {
+                                        ymin[ix] = 0;
+                                        ymax[ix] = 255;
+                                        umin[ix] = (ix >> 2) * 64;
+                                        umax[ix] = umin[ix] + 63;
+                                        vmin[ix] = (ix & 0x03) * 64;
+                                        vmax[ix] = vmin[ix] + 63;
+                                    }
+                                    break;
+                                case 3:
+                                    ulo[0]=0; ulo[1]=96; ulo[2]=128; ulo[3]=160;
+                                    uhi[0]=ulo[1]-1; uhi[1]=ulo[2]-1; uhi[2]=ulo[3]-1; uhi[3]=255;
+                                    vlo[0]=0; vlo[1]=96; vlo[2]=128; vlo[3]=160;
+                                    vhi[0]=vlo[1]-1; vhi[1]=vlo[2]-1; vhi[2]=vlo[3]-1; vhi[3]=255;
+                                    for(ix = 0; ix<MAX_COLORS; ix++) {
+                                        i1 = ix >> 2;
+                                        i2 = ix & 0x03;
+                                        ymin[ix] = 0;
+                                        ymax[ix] = 255;
+                                        umin[ix] = ulo[i1];
+                                        umax[ix] = uhi[i1];
+                                        vmin[ix] = vlo[i2];
+                                        vmax[ix] = vhi[i2];
+                                    }
+                                    break;
+                                case 4:
+                                    for(ix = 0; ix<MAX_COLORS; ix++) {
+                                        ymin[ix] = ix << 4;
+                                        ymax[ix] = ymin[ix] + 15;
+                                        umin[ix] = 0;
+                                        umax[ix] = 255;
+                                        vmin[ix] = 0;
+                                        vmax[ix] = 255;
+                                    }
+                                    break;
+                            }
+                            break;
+                    }
+                    break;
+                case 't':  // time in millisecs since last reset
+                    body = cgiResponse;  // use HTTP_BUFFER2
+                    sprintf(body, "%08d\r\n", readRTC());
+                    contentLength = strlen((char *)body);
+                    contentType = "text/plain";
+                    new_content = 1;
+                    break;
+                case 'l':  // l1 = lasers on, l0 = lasers off
+                    if (params[1] == '1')
+                        *pPORTHIO |= 0x0280;
+                    else
+                        *pPORTHIO &= 0xFD7F;
+                    break;
+                case 'm':  // SRV-1 Robot motor drive (PWM)
+                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range 
+                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
                         break;
                     if (!pwm1_init) {
                         initPWM();
@@ -311,41 +683,58 @@ void    httpd_request (char firstChar)
                         base_speed = 40;
                         lspeed = rspeed = 0;
                     }
-                    lspeed = ((int)cmd1 - 0x35) * 24 - 1;
-                    rspeed = ((int)cmd2 - 0x35) * 24 - 1;
+                    lspeed = ((int)atoi_b10(&params[1]) * 2) - 100;
+                    rspeed = ((int)atoi_b10(&params[3]) * 2) - 100;
                     setPWM(lspeed, rspeed);
                     break;
                 case 'x':  // SRV-4WD motor controller
-                    if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
+                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
+                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9')) 
                         break;
                     if (xwd_init == 0) {
                         xwd_init = 1;
                         init_uart1(115200);
                         delayMS(10);
                     }
-                    x1 = ((int)cmd1 - 0x35) * 31 - 1;
-                    x2 = ((int)cmd2 - 0x35) * 31 - 1;
+                    x1 = (((int)atoi_b10(&params[1]) * 5) / 2) - 125;
+                    x2 = (((int)atoi_b10(&params[3]) * 5) / 2) - 125;
                     uart1SendChar('x');
                     uart1SendChar((char)x1);
                     uart1SendChar((char)x2);
                     break;
-                case 's': // Sabertooth or equivalent PPM servo-based motor control
-                    if ((cmd1<'1') || (cmd1>'9') || (cmd2<'1') || (cmd2>'9'))  // command out of range ?
+                case 'S': // Sabertooth or equivalent PPM servo-based motor control
+                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
+                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
                         break;
                     if (!pwm1_init) {
                         initPPM1();
                         pwm1_init = 1;
                         pwm1_mode = PWM_PPM;
                     }
-                    x1 = ((int)cmd1 - 0x35) * 24 - 1;
-                    x2 = ((int)cmd2 - 0x35) * 24 - 1;
+                    x1 = (int)atoi_b10(&params[1]);
+                    x2 = (int)atoi_b10(&params[3]);
                     setPPM1((char)x1, (char)x2);
                     break;
+                case 's': // servo controls for timers 6 / 7
+                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
+                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
+                        break;
+                    if (!pwm2_init) {
+                        initPPM2();
+                        pwm2_init = 1;
+                        pwm2_mode = PWM_PPM;
+                    }
+                    x1 = (int)atoi_b10(&params[1]);
+                    x2 = (int)atoi_b10(&params[3]);
+                    setPPM2((char)x1, (char)x2);
+                    break;
             }
-
-            body = cgiBody;
-            contentLength = countof (cgiBody) - 1;
-            contentType = "text/plain";
+            
+            if (new_content == 0) {  // if command processing didn't generate new content
+                body = cgiBody;
+                contentLength = countof (cgiBody) - 1;
+                contentType = "text/plain";
+            }
         }
 
         // admin - built-in administration page

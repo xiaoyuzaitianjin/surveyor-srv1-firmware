@@ -231,122 +231,133 @@ unsigned int ctoi(unsigned char c) {
 }
 
 unsigned int atoi_b16(char *s) {
-	// Convert two hex characters to a int8
-	unsigned int result = 0;
-	int i;
-	for(i = 0; i < 2; i++,s++)  {
-		if (*s >= 'A')
-			result = 16 * result + (*s) - 'A' + 10;
-		else
-			result = 16 * result + (*s) - '0';
-	}
-	return result;
+    // Convert two ascii hex characters to an int
+    unsigned int result = 0;
+    int i;
+    for(i = 0; i < 2; i++,s++)  {
+        if (*s >= 'a')
+            result = 16 * result + (*s) - 'a' + 10;
+        else if (*s >= 'A')
+            result = 16 * result + (*s) - 'A' + 10;
+        else
+            result = 16 * result + (*s) - '0';
+    }
+    return result;
+}
+
+unsigned int atoi_b10(char *s) {
+    // Convert two ascii decimal characters to an int
+    unsigned int result = 0;
+    int i;
+    for(i = 0; i < 2; i++,s++)
+        result = 10 * result + (*s) - '0';
+    return result;
 }
 
 char *strpbrk(const char *str, const char *set) {
-	while (*str != '\0')
-		if (strchr(set, *str) == 0)
-			++str;
-		else
-			return (char *) str;
+    while (*str != '\0')
+        if (strchr(set, *str) == 0)
+            ++str;
+        else
+            return (char *) str;
 
-	return 0;
+    return 0;
 }
 
 char *strtok(char *s, const char *delim)
 {
-	char *spanp;
-	int c, sc;
-	char *tok;
-	static char *last;
+    char *spanp;
+    int c, sc;
+    char *tok;
+    static char *last;
 
 
-	if (s == 0 && (s = last) == 0)
-		return (0);
+    if (s == 0 && (s = last) == 0)
+        return (0);
 
-	/*
-	 * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
-	 */
+    /*
+     * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
+     */
 cont:
-	c = *s++;
-	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
-		if (c == sc)
-			goto cont;
-	}
+    c = *s++;
+    for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
+        if (c == sc)
+            goto cont;
+    }
 
-	if (c == 0) {		/* no non-delimiter characters */
-		last = 0;
-		return (0);
-	}
-	tok = s - 1;
+    if (c == 0) {        /* no non-delimiter characters */
+        last = 0;
+        return (0);
+    }
+    tok = s - 1;
 
-	/*
-	 * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
-	 * Note that delim must have one NUL; we stop if we see that, too.
-	 */
-	for (;;) {
-		c = *s++;
-		spanp = (char *)delim;
-		do {
-			if ((sc = *spanp++) == c) {
-				if (c == 0)
-					s = 0;
-				else
-					s[-1] = 0;
-				last = s;
-				return (tok);
-			}
-		} while (sc != 0);
-	}
-	/* NOTREACHED */
+    /*
+     * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
+     * Note that delim must have one NUL; we stop if we see that, too.
+     */
+    for (;;) {
+        c = *s++;
+        spanp = (char *)delim;
+        do {
+            if ((sc = *spanp++) == c) {
+                if (c == 0)
+                    s = 0;
+                else
+                    s[-1] = 0;
+                last = s;
+                return (tok);
+            }
+        } while (sc != 0);
+    }
+    /* NOTREACHED */
 }
 
 
 
 char *strtoksafe(char *s, const char *delim, char **last)
 {
-	char *spanp;
-	int c, sc;
-	char *tok;
+    char *spanp;
+    int c, sc;
+    char *tok;
 
-	if (s == 0 && (s = *last) == 0)
-		return (0);
+    if (s == 0 && (s = *last) == 0)
+        return (0);
 
-	/*
-	 * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
-	 */
+    /*
+     * Skip (span) leading delimiters (s += strspn(s, delim), sort of).
+     */
 cont:
-	c = *s++;
-	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
-		if (c == sc)
-			goto cont;
-	}
+    c = *s++;
+    for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
+        if (c == sc)
+            goto cont;
+    }
 
-	if (c == 0) {		/* no non-delimiter characters */
-		*last = 0;
-		return (0);
-	}
-	tok = s - 1;
+    if (c == 0) {        /* no non-delimiter characters */
+        *last = 0;
+        return (0);
+    }
+    tok = s - 1;
 
-	/*
-	 * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
-	 * Note that delim must have one NUL; we stop if we see that, too.
-	 */
-	for (;;) {
-		c = *s++;
-		spanp = (char *)delim;
-		do {
-			if ((sc = *spanp++) == c) {
-				if (c == 0)
-					s = 0;
-				else
-					s[-1] = 0;
-				*last = s;
-				return (tok);
-			}
-		} while (sc != 0);
-	}
-	/* NOTREACHED */
+    /*
+     * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
+     * Note that delim must have one NUL; we stop if we see that, too.
+     */
+    for (;;) {
+        c = *s++;
+        spanp = (char *)delim;
+        do {
+            if ((sc = *spanp++) == c) {
+                if (c == 0)
+                    s = 0;
+                else
+                    s[-1] = 0;
+                *last = s;
+                return (tok);
+            }
+        } while (sc != 0);
+    }
+    /* NOTREACHED */
 }
 
 

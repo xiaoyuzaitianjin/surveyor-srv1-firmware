@@ -147,7 +147,7 @@ int gps_parse() {
                 break;
             }
         }
-        printf("$GPGGA,%s\r\n", buf);
+        //printf("$GPGGA,%s\r\n", buf);
 
         // i1 = start of search, i2 = end of search (comma), ilast = end of buffer
 

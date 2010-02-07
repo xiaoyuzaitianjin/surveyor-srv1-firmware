@@ -1,6 +1,61 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 23 January 2010 
+SRV-1 firmware build for Blackfin - 7 February 2010 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* major extension to HTTPD functionality.  Added support for the following 
+  "robot.cgi?" functions:
+    V    version string
+    t    show time in millisecs since last reboot
+    $!   Blackfin reset
+
+    mxxyy    PWM motor control  xx or yy = 01 - 99, 50 = stop, 
+                 01 = max rev, 99 = max fwd
+    xxxyy    SRV-4WD motor control, same xx and yy
+    Sxxyy    channel 2/3 servos
+    sxxyy    channel 6/7 servos
+
+    $Axx    RCM analog read
+    $ax    SRV-4WD analog read
+    $g    gps
+    $Tx   SRV-NAV tilt read
+
+    l1   lasers on
+    l0   lasers off
+
+    a    160x120 capture
+    b    320x240 capture
+    c    640x480 capture
+    d    1280x1024 capture (OV9655 only)
+    qx    set jpeg quality 1-8 (1 is highest, 4 is default)
+
+    irxx    I2c commands
+    iRxx
+    iwxxyy
+    iWxxyyyy
+
+    g0   set frame differencing
+    g1   enable color segmentation display
+    g2   enable edge display
+    g3   enable horizon detect display
+    g4   enable obstacle detect display
+    g5   enable stereo disparity display (SVS only)
+    g6   enable blob detect display
+    gx   disable all special displays
+
+    va = enable/disable AGC / AWB / AEC camera controls
+    vb = find blobs matching color bin 
+    vc = set color bin ranges
+    vm = mean colors
+    vp = sample individual pixel
+    vr = recall color bin ranges
+    vs = scan for edges
+    vt = set edge detect threshold (0000-9999, default is 3200)
+    vz = zero all color settings
+
+============================================================================
+
+SRV-1 firmware build for Blackfin - 31 January 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * changed HTTP interface to support various motor drives, e.g. 
@@ -24,6 +79,10 @@ SRV-1 firmware build for Blackfin - 23 January 2010
 * fixed global array access bug in picoC
 
 * updated the build of srv1.ldr.stereo to support the latest changes
+
+* added $a function to read SRV-4WD analog channels.  $a1 = 5v gyro, 
+  $a2 = 3.3v gyro, $a3 = IR1, $a4 = IR2, $a6 = IR3, $a7 = IR4, 
+  $a8 = battery
 
 ============================================================================
 

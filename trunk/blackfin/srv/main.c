@@ -176,6 +176,9 @@ int main() {
                         case 'A':  // read analog channel 1-8, 11-18 or 21-28
                             read_analog();
                             break;
+                        case 'a':  // read analog channels from SRV_4WD
+                            read_analog_4wd();
+                            break;
                         case 'C':  // read HMC6352 compass on i2c port 0x22
                             read_compass2x();
                             break;
@@ -287,9 +290,6 @@ int main() {
                         delayMS(10);
                     }
                     putchar('x');
-                    //suartPutChar('x');
-                    //suartPutChar(getch());
-                    //suartPutChar(getch());
                     uart1SendChar('x');
                     uart1SendChar(getch());
                     uart1SendChar(getch());
