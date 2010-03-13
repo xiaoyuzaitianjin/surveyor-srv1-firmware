@@ -249,6 +249,7 @@ void    httpd_request (char firstChar)
     unsigned int x1, x2;
     unsigned int ix, iy, i1, i2;
     unsigned int ulo[4], uhi[4], vlo[4], vhi[4];
+    short x, y, z;
     int vect[16];  // used by vscan()
     
     // Receive the request and headers
@@ -329,6 +330,21 @@ void    httpd_request (char firstChar)
                             channel = (unsigned int)(params[2] & 0x0F);
                             body = cgiResponse;  // use HTTP_BUFFER2
                             sprintf(body, "%04d\r\n", analog_4wd(channel));
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'c':  // SRV-NAV compass
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "%04d\r\n", read_compass3x(&x, &y, &z));
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
+                        case 'e':  // SRV-4WD motor encoder
+                            channel = (unsigned int)(params[2] & 0x0F);
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            sprintf(body, "%04d\r\n", encoder_4wd(channel));
                             contentLength = strlen((char *)body);
                             contentType = "text/plain";
                             new_content = 1;
