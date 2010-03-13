@@ -20,6 +20,7 @@ extern unsigned int ctoi(unsigned char);
 #define xmemcpy memcpy
 extern unsigned int atoi_b16(char *s);
 extern unsigned int atoi_b10(char *s);
+extern float atof(char *s);
 extern char *strpbrk(const char *str, const char *set);
 extern char *strtok(char *s, const char *delim);
 extern char *strstr (const char * str1,const char * str2);

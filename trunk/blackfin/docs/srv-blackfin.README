@@ -1,6 +1,22 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 7 February 2010 
+SRV-1 firmware build for Blackfin - 12 March 2010 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* updated picoC to version 1.0 code base
+
+* added motorx(), analogx(), compassx() and encoderx() functions to picoC 
+  to support SRV-4WD motor controller
+
+* added $e_ console function to reach cummulative pulse count from the
+  SRV-4WD encoders by channel
+
+* added firmware support for HMC5843 via console '$c' command and picoC 
+  compassx() function
+  
+============================================================================
+
+SRV-1 firmware build for Blackfin - 11 February 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
 * major extension to HTTPD functionality.  Added support for the following 
@@ -53,6 +69,12 @@ SRV-1 firmware build for Blackfin - 7 February 2010
     vt = set edge detect threshold (0000-9999, default is 3200)
     vz = zero all color settings
 
+* added /robot.cgi?idaabbccddee and iDaabbccccddeeee commands to output i2C
+  writes to two different registers in the same I2C write cycle.  this is
+  mainly useful for the SRV-RCM SD20 servo controller in setting a pair of
+  motor speeds simultaneously.  aa = device ID (hex), bb / dd = register (hex), 
+  cc / ee = 8-bit output values (hex), cccc / eeee = 16-bit output values (hex)
+   
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 31 January 2010 

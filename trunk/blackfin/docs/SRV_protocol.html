@@ -2,7 +2,8 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>Definition of the SRV-1 Control Protocol (Blackfin Version)</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 16 January 2010</h3>
+<h3>Definition of the SRV-1 Control Protocol (Blackfin Version) - as of 12 March
+ 2010</h3>
 
 <table width="720">
 <tbody><tr><td>All commands from the host to the SRV-1 robot are
@@ -161,13 +162,14 @@ a=left servo setting (0x00-0x64), b=right servo setting (0x00-0x64)
 </th></tr><tr><th>Special Commands</th><th></th><th>
 </th></tr><tr><th></th><th></th><th>
 </th></tr><tr><td>'$!'</td><td></td><td>reset Blackfin
-</th></tr><tr><td>'$e'</td><td></td><td>read optional wheel encoders on GPIO-H14 and H15
+</th></tr><tr><td>'$E'</td><td></td><td>read optional wheel encoders on GPIO-H14 and H15
+</th></tr><tr><td>'$ex'</td><td></td><td>x = motor # (1-4);  read cummulative pulse count from wheel encoder on SRV-4WD
 </th></tr><tr><td>'$g'</td><td></td><td>parse GPS input
 </th></tr><tr><td>'$R'</td><td></td><td>SVS command - configures slave Blackfin to receive SPI transfer to flash buffer
 </th></tr><tr><td>'$X'</td><td></td><td>SVS command - configures master Blackfin to transfer contents of flash buffer via SPI
 </th></tr><tr><td>'$Axx'</td><td>'##$Axx yyyy\r\n'</td><td>read AD7998 A/D channel xx (01-08, 11-18 or 21-28)
-</th></tr><tr><td>'$c'</td><td>'##$c x = xxx y = yyy z = zzz\r\n'</td><td>read HMC5843 compass
 </th></tr><tr><td>'$C'</td><td>'##$C xxx\r\n'</td><td>read HMC6352 compass
+</th></tr><tr><td>'$c'</td><td>'##c heading=344  x=-505 y=-110 z=447  xmin=-1032 xmax=-228 ymin=-970 ymax=-89\r\n'</td><td>read HMC5843 compass
 </th></tr><tr><td>'$Ta'</td><td>'##$Tx yyyy\r\n'</td><td>read LIS3LV02DQ tilt sensor channel a (1 = x axis, 2 = y axis, 3 = z axis)
 </th></tr><tr><th></th><th></th><th>
 </td></tr><tr><th></th><th></th><th>
@@ -246,7 +248,7 @@ See <a href="http://www.surveyor.com/C.html">www.surveyor.com/C.html</a>
 for full C interpreter documentation<br>
 </th></tr></tbody></table>
 <br><br>
-last updated 16 January 2010 - 23:50 GMT
+last updated 12 March 2010 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

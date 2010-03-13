@@ -11,7 +11,7 @@
  */
 
 #define LARGE_INT_POWER_OF_TEN 1000000000   /* the largest power of ten which fits in an int on this architecture */
-#ifdef __hppa__
+#if defined(__hppa__) || defined(__sparc__)
 #define ALIGN_TYPE double                   /* the data type to use for alignment */
 #else
 #define ALIGN_TYPE void *                   /* the data type to use for alignment */
@@ -79,8 +79,6 @@ extern jmp_buf ExitBuf;
 # else
 #  ifdef SURVEYOR_HOST
 #   define NO_FP
-//#   define NEED_MATH_LIBRARY
-//#   define NO_SCALBN
 #   define NO_CTYPE
 #   define NO_HASH_INCLUDE
 #   define NO_MODULUS
@@ -117,6 +115,10 @@ extern jmp_buf ExitBuf;
 #    include <math.h>
 #    include "monlib.h"
 #    define assert(x)
+#	 define malloc mon_malloc
+#	 define calloc(a,b) mon_malloc(a*b)
+#	 define realloc mon_realloc
+#	 define free mon_free
 #    undef PlatformSetExitPoint
 #    define PlatformSetExitPoint()
 #   endif

@@ -435,7 +435,7 @@ void    httpd_request (char firstChar)
                     break; 
                 case 'i': 
                     switch (params[1]) {
-                        case 'r':
+                        case 'r':  // single byte I2C read
                             i2c_device = (unsigned char)atoi_b16(&params[2]);
                             i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
                             i2cread(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
@@ -445,7 +445,7 @@ void    httpd_request (char firstChar)
                             contentType = "text/plain";
                             new_content = 1;
                             break;
-                        case 'R':
+                        case 'R':  // double byte (short) I2C read
                             i2c_device = (unsigned char)atoi_b16(&params[2]);
                             i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
                             i2cread(i2c_device, (unsigned char *)i2c_data, 2, SCCB_ON);
@@ -455,17 +455,39 @@ void    httpd_request (char firstChar)
                             contentType = "text/plain";
                             new_content = 1;
                             break;
-                        case 'w':
+                        case 'w':  // single byte I2C write
                             i2c_device = (unsigned char)atoi_b16(&params[2]);
                             i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
                             i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
                             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
                             break;
-                        case 'W':  // multi-write
+                        case 'W':  // double byte (short) I2C write
                             i2c_device = (unsigned char)atoi_b16(&params[2]);
                             i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
                             i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
                             i2c_data[2] = (unsigned char)atoi_b16(&params[8]);
+                            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
+                            break;
+                        case 'd':  // dual channel single byte I2C write
+                            i2c_device = (unsigned char)atoi_b16(&params[2]);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
+                            i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
+                            i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+                            delayUS(1000);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[8]);
+                            i2c_data[1] = (unsigned char)atoi_b16(&params[10]);
+                            i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+                            break;
+                        case 'D':  // dual channel double byte (short) I2C write
+                            i2c_device = (unsigned char)atoi_b16(&params[2]);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
+                            i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
+                            i2c_data[2] = (unsigned char)atoi_b16(&params[8]);
+                            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
+                            delayUS(1000);
+                            i2c_data[0] = (unsigned char)atoi_b16(&params[10]);
+                            i2c_data[1] = (unsigned char)atoi_b16(&params[12]);
+                            i2c_data[2] = (unsigned char)atoi_b16(&params[14]);
                             i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
                             break;
                     }
@@ -701,6 +723,8 @@ void    httpd_request (char firstChar)
                     uart1SendChar('x');
                     uart1SendChar((char)x1);
                     uart1SendChar((char)x2);
+                    while (uart1GetChar(&ch))  // flush the receive buffer
+                        continue;
                     break;
                 case 'S': // Sabertooth or equivalent PPM servo-based motor control
                     if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?

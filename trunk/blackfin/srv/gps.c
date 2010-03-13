@@ -77,7 +77,7 @@ unsigned char read_ublox() {
 
     for (ix=0; ix<10; ix++) {  
         idat[0] = 0;  
-        i2cread(0x42, (unsigned char *)idat, 1, SCCB_ON);
+        i2cslowread(0x42, (unsigned char *)idat, 1, SCCB_ON);
         if (idat[0] != 0xff)   // if there's no data, i2cread() reads 0xff
             return idat[0];
         delayUS(100);

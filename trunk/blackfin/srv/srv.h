@@ -84,8 +84,9 @@ unsigned int tilt(unsigned int);
 void read_tilt();
 
 /* Compass */
-void read_compass2x();
-void read_compass3x();
+void show_compass2x();
+void show_compass3x();
+short read_compass3x(short *, short *, short *);
 
 /* Lasers */
 void lasers_on ();
@@ -167,6 +168,8 @@ void init_servos();
 void init_encoders();
 void read_encoders();
 unsigned int encoders();
+void read_encoder_4wd();
+unsigned int encoder_4wd(unsigned int);
 void update_servos();
 void motor_command(), motor2_command();
 void motor_increase_base_speed ();
@@ -189,6 +192,9 @@ int check_bounds_0_100(int ix);
 
 /* Misc */
 unsigned int rand();
+
+/* Compass */
+short cxmin, cxmax, cymin, cymax;
 
 /* Clock */
 void initRTC ();

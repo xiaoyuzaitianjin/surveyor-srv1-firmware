@@ -32,6 +32,7 @@
 #include "string.h"
 #include "neural.h"
 #include "sdcard.h"
+#include "gps.h"
 
 #ifdef STEREO
 #include "stereo.h"
@@ -70,7 +71,7 @@ int move_start_time, move_stop_time, move_time_mS;
 int robot_moving;
 
 /* Version */
-unsigned char version_string[] = "SRV-1 Blackfin w/picoC 0.93 "  __TIME__ " - " __DATE__;
+unsigned char version_string[] = "SRV-1 Blackfin w/picoC 1.0 "  __TIME__ " - " __DATE__;
 
 /* Frame count output string */
 unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
@@ -97,6 +98,7 @@ int encoder_flag;
 int x_acc, x_acc0, x_center;
 int y_acc, y_acc0, y_center;
 int compass_init;
+short cxmin, cymin, cxmax, cymax, czmin, czmax;
 
 /* Failsafe globals */
 int failsafe_mode = 0;
@@ -150,8 +152,12 @@ void init_io() {
     blob_display_flag = 0;
     invert_flag = 0;
     encoder_flag = 0;
-    compass_init = 0;
 
+    /* compass calibration */
+    cxmin = cymin = 9999;
+    cxmax = cymax = -9999;
+    compass_init = 0;
+    
     #ifdef STEREO
     stereo_processing_flag = 0;
     #endif /* STEREO */
@@ -434,7 +440,7 @@ void read_tilt()
     printf("##$T%d %4d\r\n", channel, tilt(channel));
 }
 
-void read_compass2x()
+void show_compass2x()
 {
     unsigned char i2c_data[3];
     unsigned int ix;
@@ -448,11 +454,20 @@ void read_compass2x()
     printf("##$C %3d\r\n", ix);
 }
 
-void read_compass3x() {
+void show_compass3x() {
+    short x, y, z, head;
+    
+    head = read_compass3x(&x, &y, &z);
+    printf("##c heading=%d  x=%d y=%d z=%d  xmin=%d xmax=%d ymin=%d ymax=%d\r\n", 
+       head, x, y, z, cxmin, cxmax, cymin, cymax);
+}
+
+short read_compass3x(short *x, short *y, short *z) {
     unsigned char i2c_data[12];
-    short i, head, pitch, roll;
+    short i;
     unsigned char addr;
- 
+    short xx, yy, sy, sx, ang;
+    
     // HMC5843
     addr = 0x1E;
     if (compass_init == 0) {
@@ -465,11 +480,37 @@ void read_compass3x() {
     for(i = 0; i < 6; i++) i2c_data[i] = 0x00;
     i2c_data[0] = 0x03;
     i2cread(addr, (unsigned char *)i2c_data, 6, SCCB_ON);
-    head = ((short) (i2c_data[0] * 256 + i2c_data[1]));
-    pitch = ((short) (i2c_data[2] * 256 + i2c_data[3]));
-    roll = ((short) (i2c_data[4] * 256 + i2c_data[5]));
-    printf("##c x=%d y=%d z=%d [%d %d %d %d %d %d]\r\n", head, pitch, roll,
-             i2c_data[0], i2c_data[1], i2c_data[2], i2c_data[3], i2c_data[4], i2c_data[5]);
+    *x = ((short) (i2c_data[0] * 256 + i2c_data[1]));
+    *y = ((short) (i2c_data[2] * 256 + i2c_data[3]));
+    *z = ((short) (i2c_data[4] * 256 + i2c_data[5]));
+    if (cxmin > *x)
+        cxmin = *x;
+    if (cymin > *y)
+        cymin = *y;
+    if (cxmax < *x)
+        cxmax = *x;
+    if (cymax < *y)
+        cymax = *y;
+
+    /* now compute heading */
+    sx = sy = 0;  // sign bits
+
+    yy = *y - (cymax + cymin) / 2;
+    if (yy < 0) { sy = 1; yy = -yy; }
+
+    xx = *x - (cxmax + cxmin) / 2;
+    if (xx < 0) { sx = 1; xx = -xx; }
+    
+    ang = (short)atan((int)yy, (int)xx);
+    if ((sx==0) && (sy==0))
+        ang = 90 - ang;
+    if ((sx==0) && (sy==1))
+        ang = 90 + ang;
+    if ((sx==1) && (sy==1))
+        ang = 270 - ang;
+    if ((sx==1) && (sy==0))
+        ang = 270 + ang;
+    return (360 - ang);  // compass angles go in opposite direction of trig angles
 }
 
 /* init all 3 possible AD7998 A/D's */
@@ -555,7 +596,7 @@ void read_analog()
 {
     unsigned int channel;
     channel = ((unsigned int)(getch() & 0x0F) * 10) + (unsigned int)(getch() & 0x0F);
-    printf("##$A%d %4d\r\n", channel, analog(channel));
+    printf("##$A%d %04d\r\n", channel, analog(channel));
 }
 
 unsigned int analog_4wd(unsigned int ix)
@@ -576,10 +617,20 @@ unsigned int analog_4wd(unsigned int ix)
     while (ii) {
         t0 = readRTC();
         while (!uart1GetChar(&ch))
-            if ((readRTC() - t0) > 100)  // 100msec timeout
+            if ((readRTC() - t0) > 10)  // 10msec timeout
                 return 0;
+        if ((ch < '0') || (ch > '9'))
+            continue;
         val += (unsigned int)(ch & 0x0F) * ii;        
         ii /= 10;
+    }
+    while (1) {  // flush the UART1 receive buffer
+        t0 = readRTC();
+        while (!uart1GetChar(&ch))
+            if ((readRTC() - t0) > 10)  // 10msec timeout
+                return 0;
+        if (ch == '\n')
+            break;
     }
     return val;
 }
@@ -588,7 +639,7 @@ void read_analog_4wd()
 {
     unsigned int channel;
     channel = (unsigned int)(getch() & 0x0F);
-    printf("##$a%d %4d\r\n", channel, analog_4wd(channel));
+    printf("##$a%d %04d\r\n", channel, analog_4wd(channel));
 }
 
 /* use GPIO H10 (pin 27), H11 (pin 28), H12 (pin 29), H13 (pin 30) as sonar inputs -
@@ -1015,7 +1066,7 @@ void camera_reset (unsigned int width) {
         camera_stop();
         i2cwrite(0x21, ov7725_qqvga, sizeof(ov7725_qqvga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_qqvga, sizeof(ov9655_qqvga)>>1, SCCB_ON);
-        //printf("#a");
+        printf("#a");
     } else if (width == 320) {
         imgWidth = width;
         imgHeight = 240;
@@ -1023,7 +1074,7 @@ void camera_reset (unsigned int width) {
         camera_stop();
         i2cwrite(0x21, ov7725_qvga, sizeof(ov7725_qvga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_qvga, sizeof(ov9655_qvga)>>1, SCCB_ON);
-        //printf("#b");
+        printf("#b");
     } else if (width == 640) {
         imgWidth = width;
         imgHeight = 480;
@@ -1031,14 +1082,14 @@ void camera_reset (unsigned int width) {
         camera_stop();
         i2cwrite(0x21, ov7725_vga, sizeof(ov7725_vga)>>1, SCCB_ON);
         i2cwrite(0x30, ov9655_vga, sizeof(ov9655_vga)>>1, SCCB_ON);
-        //printf("#c");
+        printf("#c");
     } else if (width == 1280) {
         imgWidth = width;
         imgHeight = 1024;
         strcpy(imgHead, "##IMJ9    ");
         camera_stop();
         i2cwrite(0x30, ov9655_sxga, sizeof(ov9655_sxga)>>1, SCCB_ON);
-        //printf("#A");
+        printf("#d");
     }
     camera_init((unsigned char *)DMA_BUF1, (unsigned char *)DMA_BUF2, imgWidth, imgHeight);
     camera_start();
@@ -2225,7 +2276,7 @@ void init_encoders() {
 void read_encoders()
 {
     encoders();
-    printf("##$encoders:  left = %d  right = %d\r\n", lcount, rcount);
+    printf("##$Encoders:  left = %d  right = %d\r\n", lcount, rcount);
 }
 
 /* read encoder pulses from GPIO-H14 and H15.  compute pulses per second, and
@@ -2282,6 +2333,49 @@ unsigned int encoders() {
         rcount = 0;
     
     return ((unsigned int)lcount << 16) + (unsigned int)rcount;
+}
+
+unsigned int encoder_4wd(unsigned int ix)
+{
+    int t0, ii, val;
+    unsigned char ch;
+    
+    if (xwd_init == 0) {
+        xwd_init = 1;
+        init_uart1(115200);
+        delayMS(10);
+    }
+    uart1SendChar('e');
+    uart1SendChar((char)(ix + 0x30));
+
+    ii = 10000;  // range is 0 - 65535
+    val = 0;
+    while (ii) {
+        t0 = readRTC();
+        while (!uart1GetChar(&ch))
+            if ((readRTC() - t0) > 10)  // 10msec timeout
+                return 0;
+        if ((ch < '0') || (ch > '9'))
+            continue;
+        val += (unsigned int)(ch & 0x0F) * ii;        
+        ii /= 10;
+    }
+    while (1) {  // flush the UART1 receive buffer
+        t0 = readRTC();
+        while (!uart1GetChar(&ch))
+            if ((readRTC() - t0) > 10)  // 10msec timeout
+                return 0;
+        if (ch == '\n')
+            break;
+    }
+    return val;
+}
+
+void read_encoder_4wd()
+{
+    unsigned int channel;
+    channel = (unsigned int)(getch() & 0x0F);
+    printf("##$e%d %05d\r\n", channel, encoder_4wd(channel));
 }
 
 void testSD() {

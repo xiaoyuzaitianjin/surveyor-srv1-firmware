@@ -55,7 +55,6 @@ int main() {
     check_for_autorun();
     #endif /* STEREO */
     
-        
     while (1) {
         if (getchar(&ch)) {
             switch (ch) {
@@ -163,9 +162,6 @@ int main() {
                         case 'g':  // gps test
                             gps_show();
                             break;
-                        case 'e':  // read motor encoders
-                            read_encoders();
-                            break;
                         case 'm':  // 80x64 motion vect test
                             motion_vect80x64();
                             break;
@@ -180,10 +176,16 @@ int main() {
                             read_analog_4wd();
                             break;
                         case 'C':  // read HMC6352 compass on i2c port 0x22
-                            read_compass2x();
+                            show_compass2x();
                             break;
                         case 'c':  // read HMC5843 compass on i2c port 0x1E
-                            read_compass3x();
+                            show_compass3x();
+                            break;
+                        case 'E':  // read motor encoders on GPIO-H14 / H15
+                            read_encoders();
+                            break;
+                        case 'e':  // read motor encoders on SRV-4WD
+                            read_encoder_4wd();
                             break;
                         case 'T':  // read tilt sensor channel 1-3 (x, y or z axis)
                             read_tilt();
@@ -289,10 +291,12 @@ int main() {
                         init_uart1(115200);
                         delayMS(10);
                     }
-                    putchar('x');
+                    printf("#x");
                     uart1SendChar('x');
                     uart1SendChar(getch());
                     uart1SendChar(getch());
+                    while (uart1GetChar(&ch))  // flush the receive buffer
+                        continue;
                     break;
                 case '+':   // increase base motor speed
                     motor_increase_base_speed();

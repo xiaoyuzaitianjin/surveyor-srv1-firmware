@@ -153,6 +153,16 @@ void Cencoders(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
    Ercount = ix & 0x0000FFFF; 
 }
 
+void Cencoderx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC6352 I2C compass
+{
+    int ix;
+    
+    ix = (unsigned char)Param[0]->Val->Integer;
+    if ((ix<0) || (ix>7))  
+        ProgramFail(NULL, "encoderx():  invalid channel");
+    ReturnValue->Val->Integer = encoder_4wd(ix);
+}
+
 void Cmotors(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
     lspeed = Param[0]->Val->Integer;
@@ -185,6 +195,29 @@ void Cmotors2(struct ParseState *Parser, struct Value *ReturnValue, struct Value
         base_speed2 = 50;
     }
     setPWM2(lspeed2, rspeed2);
+}
+
+/* motor control for SRV-4WD controller */
+void Cmotorx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
+{
+    unsigned char ch;
+    
+    lspeed = Param[0]->Val->Integer;
+    if ((lspeed < -125) || (lspeed > 125))
+        ProgramFail(NULL, "motors():  left motor value out of range");
+    rspeed = Param[1]->Val->Integer;
+    if ((rspeed < -125) || (rspeed > 125))
+        ProgramFail(NULL, "motors():  right motor value out of range");
+    if (xwd_init == 0) {
+        xwd_init = 1;
+        init_uart1(115200);
+        delayMS(10);
+    }
+    uart1SendChar('x');
+    uart1SendChar((char)lspeed);
+    uart1SendChar((char)rspeed);
+    while (uart1GetChar(&ch))  // flush the receive buffer
+        continue;
 }
 
 void Cservos(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
@@ -422,6 +455,22 @@ void Ccompass(struct ParseState *Parser, struct Value *ReturnValue, struct Value
     ReturnValue->Val->Integer = ix;
 }
 
+void Ccompassx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC5843 I2C compass
+{
+    short x, y, z;
+    
+    ReturnValue->Val->Integer = (int)read_compass3x(&x, &y, &z);
+}
+
+void Ccompassxcal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC5843 I2C compass
+{
+    /* cxmin, cxmax, cymin, cymax */
+    cxmin = Param[0]->Val->Integer;
+    cxmax = Param[1]->Val->Integer;
+    cymin = Param[2]->Val->Integer;
+    cymax = Param[3]->Val->Integer;
+}
+
 void Ctilt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC6352 I2C compass
 {
     unsigned int ix;
@@ -479,6 +528,27 @@ void Canalog(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
     ix = (((i2c_data[0] & 0x0F) << 8) + i2c_data[1]);
     ReturnValue->Val->Integer = ix;
 }
+
+
+/* read analog channel 0-7 from SRV-4WD (
+    channel 0 = battery level
+    channel 1 = 5V gyro
+    channel 2 = 3.3V gyro
+    channel 3 = IR1
+    channel 4 = IR2
+    channel 6 = IR3
+    channel 7 = IR4
+    */
+void Canalogx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC6352 I2C compass
+{
+    int ix;
+    
+    ix = (unsigned char)Param[0]->Val->Integer;
+    if ((ix<0) || (ix>7))  
+        ProgramFail(NULL, "analogx():  invalid channel");
+    ReturnValue->Val->Integer = analog_4wd(ix);
+}
+
 
 void Cgps(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
@@ -724,64 +794,80 @@ void Cautorun (struct ParseState *Parser, struct Value *ReturnValue, struct Valu
     }
 }
 
+void Clineno (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    ReturnValue->Val->Integer = Parser->Line;
+}
+
+void Cerrormsg (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+    PlatformErrorPrefix(Parser);
+    LibPrintf(Parser, ReturnValue, Param, NumArgs);
+}
+
 /* list of all library functions and their prototypes */
 struct LibraryFunction PlatformLibrary[] =
 {
-    { Csignal,      "int signal()" },
-    { Cinput,       "int input()" },
-    { Cdelay,       "void delay(int)" },
-    { Crand,        "int rand(int)" },
-    { Ctime,        "int time()" },
-    { Ciodir,       "void iodir(int)" },
-    { Cioread,      "int ioread()" },
-    { Ciowrite,     "void iowrite(int)" },
-    { Cpeek,        "int peek(int, int)" },
-    { Cpoke,        "void poke(int, int, int)" },
-    { Cmotors,      "void motors(int, int)" },
-    { Cmotors2,     "void motors2(int, int)" },
-    { Cservos,      "void servos(int, int)" },
-    { Cservos2,     "void servos2(int, int)" },
-    { Cencoders,    "void encoders()" },
-    { Claser,       "void laser(int)" },
-    { Csonar,       "int sonar(int)" },
-    { Crange,       "int range()" },
-    { Cbattery,     "int battery()" },
-    { Cvcolor,      "void vcolor(int, int, int, int, int, int, int)" },
-    { Cvfind,       "int vfind(int, int, int, int, int)" },
-    { Cvcam,        "void vcam(int)" },
-    { Cvcap,        "void vcap()" },
-    { Cvrcap,       "void vrcap()" },
-    { Cvdiff,       "void vdiff(int)" },
-    { Cvpix,        "void vpix(int, int)" },
-    { Cvscan,       "int vscan(int, int)" },
-    { Cvmean,       "void vmean()" },
-    { Cvblob,       "int vblob(int, int)" },
-    { Cvjpeg,       "int vjpeg(int)" },
-    { Cvsend,       "void vsend(int)" },
-    { Ccompass,     "int compass()" },
-    { Canalog,      "int analog(int)" },
-    { Ctilt,        "int tilt(int)" },
-    { Cgps,         "void gps()" },
-    { Creadi2c,     "int readi2c(int, int)" },
-    { Creadi2c2,    "int readi2c2(int, int)" },
-    { Cwritei2c,    "void writei2c(int, int, int)" },
-    { Csin,         "int sin(int)" },
-    { Ccos,         "int cos(int)" },
-    { Ctan,         "int tan(int)" },
-    { Casin,        "int asin(int, int)" },
-    { Cacos,        "int acos(int, int)" },
-    { Catan,        "int atan(int, int)" },
-    { Cgps_head,    "int gps_head(int, int, int, int)" },
-    { Cgps_dist,    "int gps_dist(int, int, int, int)" },
-    { Csqrt,        "int sqrt(int)" },
-    { Cnnshow,      "void nnshow(int)" },
-    { Cnnset,       "void nnset(int, int, int, int, int, int, int, int, int)" },
-    { Cnninit,      "void nninit()" },
-    { Cnntrain,     "void nntrain()" },
-    { Cnntest,      "int nntest(int, int, int, int, int, int, int, int)" },
-    { Cnnmatchblob, "int nnmatchblob(int)" },
-    { Cnnlearnblob, "void nnlearnblob(int)" },
-    { Cautorun,     "void autorun(int)" },
+    { Csignal,      "int signal();" },
+    { Cinput,       "int input();" },
+    { Cdelay,       "void delay(int);" },
+    { Crand,        "int rand(int);" },
+    { Ctime,        "int time();" },
+    { Ciodir,       "void iodir(int);" },
+    { Cioread,      "int ioread();" },
+    { Ciowrite,     "void iowrite(int);" },
+    { Cpeek,        "int peek(int, int);" },
+    { Cpoke,        "void poke(int, int, int);" },
+    { Cmotors,      "void motors(int, int);" },
+    { Cmotors2,     "void motors2(int, int);" },
+    { Cmotorx,      "void motorx(int, int);" },
+    { Cservos,      "void servos(int, int);" },
+    { Cservos2,     "void servos2(int, int);" },
+    { Cencoders,    "void encoders();" },
+    { Cencoderx,    "int encoderx(int);" },
+    { Claser,       "void laser(int);" },
+    { Csonar,       "int sonar(int);" },
+    { Crange,       "int range();" },
+    { Cbattery,     "int battery();" },
+    { Cvcolor,      "void vcolor(int, int, int, int, int, int, int);" },
+    { Cvfind,       "int vfind(int, int, int, int, int);" },
+    { Cvcam,        "void vcam(int);" },
+    { Cvcap,        "void vcap();" },
+    { Cvrcap,       "void vrcap();" },
+    { Cvdiff,       "void vdiff(int);" },
+    { Cvpix,        "void vpix(int, int);" },
+    { Cvscan,       "int vscan(int, int);" },
+    { Cvmean,       "void vmean();" },
+    { Cvblob,       "int vblob(int, int);" },
+    { Cvjpeg,       "int vjpeg(int);" },
+    { Cvsend,       "void vsend(int);" },
+    { Ccompass,     "int compass();" },
+    { Ccompassx,    "int compassx();" },
+    { Ccompassxcal, "void compassxcal(int, int, int, int);" },
+    { Canalog,      "int analog(int);" },
+    { Canalogx,     "int analogx(int);" },
+    { Ctilt,        "int tilt(int);" },
+    { Cgps,         "void gps();" },
+    { Creadi2c,     "int readi2c(int, int);" },
+    { Creadi2c2,    "int readi2c2(int, int);" },
+    { Cwritei2c,    "void writei2c(int, int, int);" },
+    { Csin,         "int sin(int);" },
+    { Ccos,         "int cos(int);" },
+    { Ctan,         "int tan(int);" },
+    { Casin,        "int asin(int, int);" },
+    { Cacos,        "int acos(int, int);" },
+    { Catan,        "int atan(int, int);" },
+    { Cgps_head,    "int gps_head(int, int, int, int);" },
+    { Cgps_dist,    "int gps_dist(int, int, int, int);" },
+    { Csqrt,        "int sqrt(int);" },
+    { Cnnshow,      "void nnshow(int);" },
+    { Cnnset,       "void nnset(int, int, int, int, int, int, int, int, int);" },
+    { Cnninit,      "void nninit();" },
+    { Cnntrain,     "void nntrain();" },
+    { Cnntest,      "int nntest(int, int, int, int, int, int, int, int);" },
+    { Cnnmatchblob, "int nnmatchblob(int);" },
+    { Cnnlearnblob, "void nnlearnblob(int);" },
+    { Cautorun,     "void autorun(int);" },
+    { Clineno,      "int lineno();" },
+    { Cerrormsg,    "void errormsg(char *);" },
     { NULL,         NULL }
 };
 

@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 16 October 2009</h3>
+<h3>SRV-1 C Interpreter - as of 12 March 2010</h3>
 
 <table width="700">
 <tbody>
@@ -48,22 +48,42 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
      &nbsp;&nbsp;- channels 1-8 correspond to i2c device 0x20<br>
      &nbsp;&nbsp;- channels 11-18 correspond to i2c device 0x23<br>
      &nbsp;&nbsp;- channels 21-28 correspond to i2c device 0x24<br><br>
+<li>int analogx(int channel): read analog channel from SRV-4WD<br>
+     &nbsp;&nbsp;- channel 0 = battery<br>
+     &nbsp;&nbsp;- channel 1 = 5V gyro<br>
+     &nbsp;&nbsp;- channel 2 = 3.3V gyro<br>
+     &nbsp;&nbsp;- channel 3 = IR 1<br>
+     &nbsp;&nbsp;- channel 4 = IR 2<br>
+     &nbsp;&nbsp;- channel 6 = IR 3<br>
+     &nbsp;&nbsp;- channel 7 = IR 4<br><br>
 <li>int asin(int opposite, int hypotenuse): arcsin(opposite, hypotenuse)<br><br>
 <li>int atan(int opposite, int adjacent): arctan(opposite, adjacent)<br><br>
 <li>int battery(): check SVS battery detector ... 1=okay, 0=low battery<br><br>
 <li>int compass(): read HMC6352 compass<br><br>
+<li>int compassx(): read HMC5843 compass on SRV-NAV<br><br>
+<li>void compassxcal(xmin, xmax, ymin, ymax): set calibration data for HMC5843 (use $c console command to gather data)<br><br>
 <li>int cos(int angle): cos(angle) * 1000<br><br>
 <li>void delay(int milliseconds):  delay xxx milliseconds<br><br>
 <li>void encoders():  compute pulses/second from wheel encoders<br>
      &nbsp;&nbsp;- data returned in globals lcount and rcount<br><br>
+<li>int encoderx(channel): read cummulative pulse count from specific motor encoder 1-4 on SRV-4WD<br>
+     &nbsp;&nbsp;- count cycles after 65535 pulses<br>
+     &nbsp;&nbsp;- depends on wheel size, but 1000 pulses on 4.5" wheel is approximately 1 foot of travel<br><br>
 <li>void exit():  leave picoC on completion of stored program, bypassing the interactive mode<br><br>
 <li>void gps(): parse $GPGGA string from gps<br>
     &nbsp;&nbsp;- data returned in globals gpslat, gpslon, <br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gpsalt, gpsfix, gpssat, gpsutc<br><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gpsalt, gpsfix, gpssat, gpsutc<br>
+    &nbsp;&nbsp;36.5deg is represented as 36500000<br>
+    &nbsp;&nbsp;100.5W deg is represented as -100500000<br><br>
 <li>int gps_dist(int lat1, int lon1, int lat2, int lon2): compute distance in meters <br>
-    &nbsp;&nbsp;between two gps coordinates<br><br>
+    &nbsp;&nbsp;between two gps coordinates<br>
+    &nbsp;&nbsp;format of coordinates is deg*1000000<br>
+    &nbsp;&nbsp;36.5deg is represented as 36500000<br>
+    &nbsp;&nbsp;100.5W deg is represented as -100500000<br><br>
 <li>int gps_head(int lat1, int lon1, int lat2, int lon2): compute heading in degrees <br>
-    &nbsp;&nbsp;between two gps coordinates (N == 0-deg)<br><br>
+    &nbsp;&nbsp;between two gps coordinates (N == 0-deg)<br>
+    &nbsp;&nbsp;36.5deg is represented as 36500000<br>
+    &nbsp;&nbsp;100.5W deg is represented as -100500000<br><br>
 <li>int input():  return single character from read of serial channel (same as getch())<br><br>
 <li>void iodir(int iopins):  set GPIO-H15/14/13/12/11/10 as inputs or outputs<br>
     &nbsp;&nbsp;&nbsp;&nbsp;0 = input, 1 = output<br>
@@ -80,6 +100,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>void laser(int which_laser): 0=off, 1=left, 2=right, 3=both<br><br>
 <li>void motors(int left, int right): set left and right PWM motor power -100 to 100<br><br>
 <li>void motors2(int left, int right): set left and right PWM2 motor power (tmr6/7) -100 to 100<br><br>
+<li>void motorsx(int left, int right): set left and right SRV-4WD motor power -127 to 127<br><br>
 <li>void nninit(): initialize neural net<br><br>
 <li>void nnlearnblob(int pattern_number): scale and save blob to 8x8 pattern<br><br>
 <li>int nnmatchblob(int blob_number): see which pattern is best match to selected blob<br>
@@ -146,7 +167,7 @@ returned value is size of jpeg image.  input parameter is quality of jpeg image 
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 15 October 2009 - 23:50 GMT
+last updated 12 March 2010 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>
