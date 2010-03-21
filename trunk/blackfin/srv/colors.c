@@ -464,7 +464,7 @@ unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh,
         *slope = sx / filter;
         *intercept = sy / filter;
     }
-    printf("vhorizon:  slope = %d   intercept = %d\r\n", *slope, *intercept);
+    //printf("vhorizon:  slope = %d   intercept = %d\r\n", *slope, *intercept);
     return hits;
 }
 

@@ -174,7 +174,7 @@ Linker script and memory map
  myfunc.o(.sdram.text)
  *(.gnu.warning)
 
-.l1code         0xffa00000     0x8bb0
+.l1code         0xffa00000     0x8b98
  main.o(.text)
  .text          0xffa00000      0x3a8 main.o
                 0xffa00000                main
@@ -353,64 +353,64 @@ Linker script and memory map
                 0xffa058f8                uart1Signal
                 0xffa05710                init_uart1
  colors.o(.text)
- .text          0xffa05b2c     0x115c colors.o
+ .text          0xffa05b2c     0x1144 colors.o
                 0xffa06064                vmean
                 0xffa063d8                edge_detect
                 0xffa062d8                vfind
                 0xffa06570                svs_segcode
-                0xffa06a08                vhorizon
+                0xffa066c0                vhorizon
                 0xffa06128                color_segment
-                0xffa06810                addvect
+                0xffa06a78                addvect
                 0xffa05bb0                vblob
-                0xffa0694c                addbox
-                0xffa06778                svs_segview
+                0xffa06bb4                addbox
+                0xffa069e0                svs_segview
                 0xffa05b2c                init_colors
-                0xffa066c0                vscan
+                0xffa06928                vscan
                 0xffa05f98                vhist
-                0xffa0689c                addline
+                0xffa06b04                addline
                 0xffa05b7c                vpix
  jpeg.o(.text)
- .text          0xffa06c88      0xd9c jpeg.o
-                0xffa07834                DCT
-                0xffa0722c                close_bitstream
-                0xffa07848                encodeMCU
-                0xffa06d74                huffman
-                0xffa072a0                write_markers
-                0xffa07944                encode_image
-                0xffa074c0                initialize_quantization_tables
-                0xffa07680                read_422_format
-                0xffa06c88                initialization
-                0xffa06d54                levelshift
-                0xffa075b0                quantization
-                0xffa07600                read_400_format
+ .text          0xffa06c70      0xd9c jpeg.o
+                0xffa0781c                DCT
+                0xffa07214                close_bitstream
+                0xffa07830                encodeMCU
+                0xffa06d5c                huffman
+                0xffa07288                write_markers
+                0xffa0792c                encode_image
+                0xffa074a8                initialize_quantization_tables
+                0xffa07668                read_422_format
+                0xffa06c70                initialization
+                0xffa06d3c                levelshift
+                0xffa07598                quantization
+                0xffa075e8                read_400_format
  r8x8dct.o(.text)
- *fill*         0xffa07a24        0x4 00
- .text          0xffa07a28       0xf0 r8x8dct.o
-                0xffa07a28                _r8x8dct
+ *fill*         0xffa07a0c        0x4 00
+ .text          0xffa07a10       0xf0 r8x8dct.o
+                0xffa07a10                _r8x8dct
  motionvect.o(.text)
- .text          0xffa07b18      0x950 motionvect.o
-                0xffa07f80                hpel
-                0xffa082e0                _mve_core
-                0xffa08190                _hpel_core2
-                0xffa08070                _hpel_core1
-                0xffa07b18                _motionvect
+ .text          0xffa07b00      0x950 motionvect.o
+                0xffa07f68                hpel
+                0xffa082c8                _mve_core
+                0xffa08178                _hpel_core2
+                0xffa08058                _hpel_core1
+                0xffa07b00                _motionvect
  uart.o(.text)
  setjmp.o(.text)
- .text          0xffa08468      0x184 setjmp.o
-                0xffa08468                longjmp
-                0xffa08530                setjmp
+ .text          0xffa08450      0x184 setjmp.o
+                0xffa08450                longjmp
+                0xffa08518                setjmp
  neural.o(.text)
- .text          0xffa085ec      0x5c4 neural.o
-                0xffa0898c                nnpack8x8
-                0xffa08b78                nninit_network
-                0xffa08a08                nndisplay
-                0xffa08684                f_logic
-                0xffa086e4                nncalculate_network
-                0xffa087cc                nncalculate_errors
-                0xffa08a9c                nntrain_network
-                0xffa08a88                nninit_pattern
-                0xffa085ec                nnset_pattern
-                0xffa08880                nnscale8x8
+ .text          0xffa085d4      0x5c4 neural.o
+                0xffa08974                nnpack8x8
+                0xffa08b60                nninit_network
+                0xffa089f0                nndisplay
+                0xffa0866c                f_logic
+                0xffa086cc                nncalculate_network
+                0xffa087b4                nncalculate_errors
+                0xffa08a84                nntrain_network
+                0xffa08a70                nninit_pattern
+                0xffa085d4                nnset_pattern
+                0xffa08868                nnscale8x8
 
 .text           0x00000000     0xbc74
  .text          0x00000000       0xf0 camera.o
@@ -822,7 +822,7 @@ Linker script and memory map
 .l1data.b
  *(.l1data.b)
 
-.rodata         0xff80288c     0x38d0
+.rodata         0xff80288c     0x38a4
  *(.rodata .rodata.* .gnu.linkonce.r.*)
  .rodata.str1.4
                 0xff80288c       0xb6 edit.o
@@ -859,55 +859,51 @@ Linker script and memory map
  *fill*         0xff80444d        0x3 00
  .rodata        0xff804450       0x10 uart.o
  .rodata.str1.4
-                0xff804460       0x29 colors.o
-                                 0x2c (size before relaxing)
- *fill*         0xff804489        0x3 00
- .rodata.str1.4
-                0xff80448c        0x4 neural.o
+                0xff804460        0x4 neural.o
                                   0xc (size before relaxing)
  .rodata.str1.4
-                0xff804490       0x37 picoc/picoc.o
+                0xff804464       0x37 picoc/picoc.o
                                  0x38 (size before relaxing)
- *fill*         0xff8044c7        0x1 00
+ *fill*         0xff80449b        0x1 00
  .rodata.str1.4
-                0xff8044c8        0xe picoc/table.o
+                0xff80449c        0xe picoc/table.o
                                  0x14 (size before relaxing)
- *fill*         0xff8044d6        0x2 00
- .rodata        0xff8044d8      0x2e8 picoc/lex.o
+ *fill*         0xff8044aa        0x2 00
+ .rodata        0xff8044ac      0x2e8 picoc/lex.o
  .rodata.str1.4
-                0xff8047c0       0xf6 picoc/lex.o
+                0xff804794       0xf6 picoc/lex.o
                                 0x110 (size before relaxing)
- *fill*         0xff8048b6        0x2 00
+ *fill*         0xff80488a        0x2 00
  .rodata.str1.4
-                0xff8048b8      0x1f4 picoc/parse.o
+                0xff80488c      0x1f4 picoc/parse.o
                                 0x1f8 (size before relaxing)
- .rodata        0xff804aac      0x100 picoc/parse.o
- .rodata        0xff804bac      0x31c picoc/expression.o
+ .rodata        0xff804a80      0x100 picoc/parse.o
+ .rodata        0xff804b80      0x31c picoc/expression.o
  .rodata.str1.4
-                0xff804ec8      0x3da picoc/expression.o
+                0xff804e9c      0x3da picoc/expression.o
                                 0x430 (size before relaxing)
- *fill*         0xff8052a2        0x2 00
+ *fill*         0xff805276        0x2 00
  .rodata.str1.4
-                0xff8052a4      0x12d picoc/type.o
+                0xff805278      0x12d picoc/type.o
                                 0x164 (size before relaxing)
- *fill*         0xff8053d1        0x3 00
- .rodata        0xff8053d4       0x2c picoc/type.o
+ *fill*         0xff8053a5        0x3 00
+ .rodata        0xff8053a8       0x2c picoc/type.o
  .rodata.str1.4
-                0xff805400       0x2f picoc/variable.o
+                0xff8053d4       0x2f picoc/variable.o
                                  0x6c (size before relaxing)
- *fill*         0xff80542f        0x1 00
+ *fill*         0xff805403        0x1 00
  .rodata.str1.4
-                0xff805430      0x257 picoc/clibrary.o
+                0xff805404      0x257 picoc/clibrary.o
                                 0x294 (size before relaxing)
- *fill*         0xff805687        0x1 00
- .rodata        0xff805688       0x9c picoc/clibrary.o
+ *fill*         0xff80565b        0x1 00
+ .rodata        0xff80565c       0x9c picoc/clibrary.o
  .rodata.str1.4
-                0xff805724      0x9e3 picoc/library_surveyor.o
+                0xff8056f8      0x9e3 picoc/library_surveyor.o
                                 0x9f8 (size before relaxing)
- .rodata        0xff806107       0x10 picoc/library_surveyor.o
- *fill*         0xff806117        0x1 00
+ .rodata        0xff8060db       0x10 picoc/library_surveyor.o
+ *fill*         0xff8060eb        0x1 00
  .rodata.str1.4
-                0xff806118       0x44 picoc/platform.o
+                0xff8060ec       0x44 picoc/platform.o
                                  0x50 (size before relaxing)
  .rodata.str1.4
                 0x00000000       0x10 picoc/platform_surveyor.o
@@ -1236,7 +1232,7 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_info    0x00010db3      0x83e picoc/platform.o
  .debug_info    0x000115f1      0x2b0 picoc/platform_surveyor.o
 
-.debug_line     0x00000000     0x42ff
+.debug_line     0x00000000     0x42fd
  .debug_line    0x00000000       0x72 camera.o
  .debug_line    0x00000072       0xda edit.o
  .debug_line    0x0000014c      0x4b1 httpd.o
@@ -1251,23 +1247,23 @@ OUTPUT(srv1.bin elf32-bfin)
  .debug_line    0x00001037      0x1eb string.o
  .debug_line    0x00001222      0xc1b srv.o
  .debug_line    0x00001e3d      0x138 uart.o
- .debug_line    0x00001f75      0x3a1 colors.o
- .debug_line    0x00002316      0x315 jpeg.o
- .debug_line    0x0000262b      0x127 neural.o
- .debug_line    0x00002752       0x53 init.o
- .debug_line    0x000027a5      0x114 sdcard.o
- .debug_line    0x000028b9       0xa4 picoc/picoc.o
- .debug_line    0x0000295d       0xf5 picoc/table.o
- .debug_line    0x00002a52      0x3b1 picoc/lex.o
- .debug_line    0x00002e03      0x2e3 picoc/parse.o
- .debug_line    0x000030e6      0x55e picoc/expression.o
- .debug_line    0x00003644      0x102 picoc/heap.o
- .debug_line    0x00003746      0x22f picoc/type.o
- .debug_line    0x00003975      0x177 picoc/variable.o
- .debug_line    0x00003aec      0x23d picoc/clibrary.o
- .debug_line    0x00003d29      0x409 picoc/library_surveyor.o
- .debug_line    0x00004132      0x11d picoc/platform.o
- .debug_line    0x0000424f       0xb0 picoc/platform_surveyor.o
+ .debug_line    0x00001f75      0x39f colors.o
+ .debug_line    0x00002314      0x315 jpeg.o
+ .debug_line    0x00002629      0x127 neural.o
+ .debug_line    0x00002750       0x53 init.o
+ .debug_line    0x000027a3      0x114 sdcard.o
+ .debug_line    0x000028b7       0xa4 picoc/picoc.o
+ .debug_line    0x0000295b       0xf5 picoc/table.o
+ .debug_line    0x00002a50      0x3b1 picoc/lex.o
+ .debug_line    0x00002e01      0x2e3 picoc/parse.o
+ .debug_line    0x000030e4      0x55e picoc/expression.o
+ .debug_line    0x00003642      0x102 picoc/heap.o
+ .debug_line    0x00003744      0x22f picoc/type.o
+ .debug_line    0x00003973      0x177 picoc/variable.o
+ .debug_line    0x00003aea      0x23d picoc/clibrary.o
+ .debug_line    0x00003d27      0x409 picoc/library_surveyor.o
+ .debug_line    0x00004130      0x11d picoc/platform.o
+ .debug_line    0x0000424d       0xb0 picoc/platform_surveyor.o
 
 .debug_frame    0x00000000     0x3cd8
  .debug_frame   0x00000000       0x4c camera.o
