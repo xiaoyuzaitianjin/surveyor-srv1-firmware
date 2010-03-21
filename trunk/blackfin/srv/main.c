@@ -381,9 +381,12 @@ int main() {
                 case 'i':   // i2c read / write
                     process_i2c();
                     break;
+                default:
+                    printf("#?");  // unknown command
             }
             reset_failsafe_clock();
-            while (getchar(&ch)) // flush recv buffer
+            delayUS(12000000/UART0_BAUDRATE);  // flush recv buffer
+            while (getchar(&ch)) 
                 delayUS(12000000/UART0_BAUDRATE);  // allow enough time for characters to flow in
         }
         #ifdef STEREO

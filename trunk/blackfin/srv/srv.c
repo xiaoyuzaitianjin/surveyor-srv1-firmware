@@ -510,7 +510,11 @@ short read_compass3x(short *x, short *y, short *z) {
         ang = 270 - ang;
     if ((sx==1) && (sy==0))
         ang = 270 + ang;
-    return (360 - ang);  // compass angles go in opposite direction of trig angles
+    i = 360 - ang;  // compass angles go in opposite direction of trig angles
+    i += 90;  // shift by 90-deg for compass placement
+    if (i >= 360)
+        i -= 360;
+    return (i); 
 }
 
 /* init all 3 possible AD7998 A/D's */

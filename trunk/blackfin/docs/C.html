@@ -96,7 +96,6 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>void iowrite(int iopins):  set GPIO pins H15-H10<br>
     &nbsp;&nbsp;&nbsp;&nbsp;iowrite(0x31) or iowrite(0b110001) would set<br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; H15=1 H14=1 H13=0 H12=0 H11=0 H10=1<br><br>
-<li>int sqrt(int value): compute integer square root<br><br>
 <li>void laser(int which_laser): 0=off, 1=left, 2=right, 3=both<br><br>
 <li>void motors(int left, int right): set left and right PWM motor power -100 to 100<br><br>
 <li>void motors2(int left, int right): set left and right PWM2 motor power (tmr6/7) -100 to 100<br><br>
@@ -125,6 +124,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>int signal():  non-blocking check for input on serial channel - non-zero return indicates an input<br><br>
 <li>int sin(int angle): sin(angle) * 1000<br><br>
 <li>int sonar(int which_channel): ping modules 1, 2, 3 or 4<br><br>
+<li>int sqrt(int value): compute integer square root<br><br>
 <li>int tan(int angle): tan(angle) * 1000<br><br>
 <li>int tilt(int axis):  return tilt sensor reading from channel 1 (x axis), 2 (y axis) or 3 (z axis)<br>
      &nbsp;&nbsp;- int x = tilt(1);  int y = tilt(2);  int z = tilt(3);<br><br>
