@@ -97,7 +97,7 @@ int encoder_flag;
 /* IMU globals */
 int x_acc, x_acc0, x_center;
 int y_acc, y_acc0, y_center;
-int compass_init;
+int compass_init, compass_continuous_calibration, analog_init, tilt_init;
 short cxmin, cymin, cxmax, cymax, czmin, czmax;
 
 /* Failsafe globals */
@@ -143,6 +143,8 @@ void init_io() {
     pwm1_init = 0;
     pwm2_init = 0;
     xwd_init = 0;
+    analog_init = 0;
+    tilt_init = 0;
     sonar_flag = 0;
     edge_detect_flag = 0;
     horizon_detect_flag = 0;
@@ -157,6 +159,7 @@ void init_io() {
     cxmin = cymin = 9999;
     cxmax = cymax = -9999;
     compass_init = 0;
+    compass_continuous_calibration = 1;
     
     #ifdef STEREO
     stereo_processing_flag = 0;
@@ -403,6 +406,7 @@ void init_tilt()
     i2c_data[1] = 0x87;
     i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
     delayMS(10);
+    tilt_init = 1;
 }
 
 unsigned int tilt(unsigned int channel)
@@ -410,6 +414,8 @@ unsigned int tilt(unsigned int channel)
     unsigned char i2c_data[2], ch1;
     unsigned int ix;
     
+    if (!tilt_init)
+        init_tilt();
     switch(channel) {
         case 1:  // x axis
             ch1 = 0x28;
@@ -462,6 +468,42 @@ void show_compass3x() {
        head, x, y, z, cxmin, cxmax, cymin, cymax);
 }
 
+void calibrate_compassx() {
+    short x, y, z;
+    int t0;
+    
+    cxmin = cymin = 9999;
+    cxmax = cymax = -9999;
+    if (xwd_init == 0) {
+        xwd_init = 1;
+        init_uart1(115200);
+        delayMS(10);
+    }
+    t0 = readRTC();
+    while (readRTC() < (t0+15000)) {
+        uart1SendChar('x');  // spin for 5 seconds with ramp up/down
+        uart1SendChar(0xC0);
+        uart1SendChar(0x40);
+        delayMS(30);
+        uart1SendChar('x');  
+        uart1SendChar(0x81);
+        uart1SendChar(0x7F);
+        delayMS(160);
+        uart1SendChar('x');  
+        uart1SendChar(0xC0);
+        uart1SendChar(0x40);
+        delayMS(30);
+        read_compass3x(&x, &y, &z);
+        uart1SendChar('x');  // stop motors
+        uart1SendChar(0x00);
+        uart1SendChar(0x00);
+        delayMS(180);
+        read_compass3x(&x, &y, &z);
+        delayMS(180);
+        read_compass3x(&x, &y, &z);
+    }
+}
+
 short read_compass3x(short *x, short *y, short *z) {
     unsigned char i2c_data[12];
     short i;
@@ -483,14 +525,16 @@ short read_compass3x(short *x, short *y, short *z) {
     *x = ((short) (i2c_data[0] * 256 + i2c_data[1]));
     *y = ((short) (i2c_data[2] * 256 + i2c_data[3]));
     *z = ((short) (i2c_data[4] * 256 + i2c_data[5]));
-    if (cxmin > *x)
-        cxmin = *x;
-    if (cymin > *y)
-        cymin = *y;
-    if (cxmax < *x)
-        cxmax = *x;
-    if (cymax < *y)
-        cymax = *y;
+    if (compass_continuous_calibration) {  // this is turned off by compassxcal() C function or $y console function
+        if (cxmin > *x)
+            cxmin = *x;
+        if (cymin > *y)
+            cymin = *y;
+        if (cxmax < *x)
+            cxmax = *x;
+        if (cymax < *y)
+            cymax = *y;
+    }
 
     /* now compute heading */
     sx = sy = 0;  // sign bits
@@ -546,6 +590,7 @@ void init_analog() {
         i2cwritex(device_id, (unsigned char *)i2c_data, 3, SCCB_ON);
         delayMS(10);
     }
+    analog_init = 1;
 }
 
 /* read AD7998 - channels 01-08, 11-17 or 21-27 */
@@ -556,6 +601,8 @@ unsigned int analog(unsigned int ix)
     unsigned char mask1[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x04, 0x08 };
     unsigned char mask2[] = { 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00 };
     
+    if (!analog_init)
+        init_analog();
     // decide which i2c device based on channel range
     if ((ix<1) || (ix>28))
         return 0xFFFF;  // invalid channel

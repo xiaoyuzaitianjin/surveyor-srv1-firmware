@@ -27,6 +27,8 @@
 #include "colors.h"
 #include "i2c.h"
 
+extern int picoc(char *);
+
 #define REQBUF_SIZE             4096
 #define INLINEIMGBUF_SIZE       (64 * 1024)
 
@@ -386,6 +388,14 @@ void    httpd_request (char firstChar)
                                 new_content = 1;
                             }
                             break;
+                        case 'y':  // calibrate_compassx()
+                            body = cgiResponse;  // use HTTP_BUFFER2
+                            calibrate_compassx();
+                            sprintf(body, "compass calibration complete\r\n");
+                            contentLength = strlen((char *)body);
+                            contentType = "text/plain";
+                            new_content = 1;
+                            break;
                     }
                     break;
                 case 'a':
@@ -711,8 +721,8 @@ void    httpd_request (char firstChar)
                         *pPORTHIO &= 0xFD7F;
                     break;
                 case 'm':  // SRV-1 Robot motor drive (PWM)
-                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range 
-                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
+                    if ((params[1]<'0') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range 
+                            || (params[3]<'0') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
                         break;
                     if (!pwm1_init) {
                         initPWM();
@@ -726,8 +736,8 @@ void    httpd_request (char firstChar)
                     setPWM(lspeed, rspeed);
                     break;
                 case 'x':  // SRV-4WD motor controller
-                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
-                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9')) 
+                    if ((params[1]<'0') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
+                            || (params[3]<'0') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9')) 
                         break;
                     if (xwd_init == 0) {
                         xwd_init = 1;
@@ -743,8 +753,8 @@ void    httpd_request (char firstChar)
                         continue;
                     break;
                 case 'S': // Sabertooth or equivalent PPM servo-based motor control
-                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
-                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
+                    if ((params[1]<'0') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
+                            || (params[3]<'0') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
                         break;
                     if (!pwm1_init) {
                         initPPM1();
@@ -756,8 +766,8 @@ void    httpd_request (char firstChar)
                     setPPM1((char)x1, (char)x2);
                     break;
                 case 's': // servo controls for timers 6 / 7
-                    if ((params[1]<'1') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
-                            || (params[3]<'1') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
+                    if ((params[1]<'0') || (params[1]>'9') || (params[2]<'0') || (params[2]>'9')  // out of range ?
+                            || (params[3]<'0') || (params[3]>'9') || (params[4]<'0') || (params[4]>'9'))  
                         break;
                     if (!pwm2_init) {
                         initPPM2();

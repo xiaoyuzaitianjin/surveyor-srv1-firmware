@@ -1,8 +1,8 @@
 <html><head>
 
-<link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
+<link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV_httpd HTTP Interface</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV_httpd HTTP Interface - as of 18 March 2010</h3>
+<h3>SRV_httpd HTTP Interface - as of 23 March 2010</h3>
 
 <table width="700">
 <tbody>
@@ -23,24 +23,21 @@ http://robot-ip:10001/robot.cgi? - robot control functions:<br>
     /robot.cgi?t     - show time in millisecs since last reboot<br>
     /robot.cgi?$!    - Blackfin reset<br>
 <br>
-    /robot.cgi?mxxyy     - PWM motor control  xx or yy = 01 - 99, 50 = stop, 01 = max rev, 99 = max fwd<br>
-    /robot.cgi?xxxyy     - SRV-4WD motor control, same xx and yy<br>
-    /robot.cgi?Sxxyy     - channel 2/3 servos<br>
-    /robot.cgi?sxxyy     - channel 6/7 servos<br>
+    /robot.cgi?m____     - PWM motor control  e.g. m5050 to stop both motors<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;range is 01 - 99, 50 = stop, 01 = max rev, 99 = max fwd<br>
+    /robot.cgi?x____     - SRV-4WD motor control, e.g. x5050 to stop both motors<br>
+    /robot.cgi?S____     - channel 2/3 servos, e.g. S5050 to center both servos<br>
+    /robot.cgi?s____     - channel 6/7 servos, e.g. s5050 to center both servos<br>
 <br>
-    /robot.cgi?$Axx     - RCM analog read<br>
-    /robot.cgi?$ax     - SRV-4WD analog read<br>
-    /robot.cgi?$g     - gps<br>
-    /robot.cgi?$Tx   SRV-NAV tilt read<br>
+    /robot.cgi?$A__     - RCM analog read channel 01-08, 11-18, 21-28<br>
+    /robot.cgi?l1   - lasers on<br>
+    /robot.cgi?l0   - lasers off<br>
 <br>
-    /robot.cgi?l1   lasers on<br>
-    /robot.cgi?l0   lasers off<br>
-<br>
-    /robot.cgi?a    160x120 capture<br>
-    /robot.cgi? b    320x240 capture<br>
-    /robot.cgi?c    640x480 capture<br>
-    /robot.cgi?d    1280x1024 capture (OV9655 only)<br>
-    /robot.cgi?qx    set jpeg quality 1-8 (1 is highest, 4 is default)<br>
+    /robot.cgi?a    - 160x120 capture<br>
+    /robot.cgi? b   - 320x240 capture<br>
+    /robot.cgi?c    - 640x480 capture<br>
+    /robot.cgi?d    - 1280x1024 capture (OV9655 only)<br>
+    /robot.cgi?qx   - set jpeg quality 1-8 (1 is highest, 4 is default)<br>
 <br>
     /robot.cgi?irxx     - I2c commands<br>
     /robot.cgi?iRxx<br>
@@ -68,7 +65,7 @@ http://robot-ip:10001/robot.cgi? - robot control functions:<br>
 <br>
 </td></tr>
 </tbody></table>
-last updated 18 March 2010 - 23:50 GMT
+last updated 23 March 2010 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

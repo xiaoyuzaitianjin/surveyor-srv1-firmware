@@ -201,21 +201,24 @@ void Cmotors2(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 void Cmotorx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
     unsigned char ch;
+    int ls, rs;
     
-    lspeed = Param[0]->Val->Integer;
-    if ((lspeed < -125) || (lspeed > 125))
+    ls = Param[0]->Val->Integer;
+    if ((ls < -100) || (ls > 100))
         ProgramFail(NULL, "motors():  left motor value out of range");
-    rspeed = Param[1]->Val->Integer;
-    if ((rspeed < -125) || (rspeed > 125))
+    ls = (ls * 127) / 100;  // scale to full +/-127 range
+    rs = Param[1]->Val->Integer;
+    if ((rs < -100) || (rs > 100))
         ProgramFail(NULL, "motors():  right motor value out of range");
+    rs = (rs * 127) / 100;  // scale to full +/-127 range
     if (xwd_init == 0) {
         xwd_init = 1;
         init_uart1(115200);
         delayMS(10);
     }
     uart1SendChar('x');
-    uart1SendChar((char)lspeed);
-    uart1SendChar((char)rspeed);
+    uart1SendChar((char)ls);
+    uart1SendChar((char)rs);
     while (uart1GetChar(&ch))  // flush the receive buffer
         continue;
 }
@@ -469,6 +472,13 @@ void Ccompassxcal(struct ParseState *Parser, struct Value *ReturnValue, struct V
     cxmax = Param[1]->Val->Integer;
     cymin = Param[2]->Val->Integer;
     cymax = Param[3]->Val->Integer;
+    compass_continuous_calibration = 0;  // turn off continuous calibration
+}
+
+void Ccompassxauto(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC5843 I2C compass
+{
+    calibrate_compassx();  // $y function from console
+    compass_continuous_calibration = 0;  // turn off continuous calibration
 }
 
 void Ctilt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC6352 I2C compass
@@ -592,6 +602,16 @@ void Cwritei2c(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
     i2c_data[1] = (unsigned char)Param[2]->Val->Integer;
     
     i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_OFF);
+}
+
+void Cabs(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // abs(int)
+{
+    int ix;
+    
+    ix = Param[0]->Val->Integer;  // return absolute value of int
+    if (ix < 0)
+        ix = -ix;
+    ReturnValue->Val->Integer = ix;
 }
 
 void Csin(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // sin(angle)
@@ -842,6 +862,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Ccompass,     "int compass();" },
     { Ccompassx,    "int compassx();" },
     { Ccompassxcal, "void compassxcal(int, int, int, int);" },
+    { Ccompassxauto,"void compassxauto();" },
     { Canalog,      "int analog(int);" },
     { Canalogx,     "int analogx(int);" },
     { Ctilt,        "int tilt(int);" },
@@ -849,6 +870,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Creadi2c,     "int readi2c(int, int);" },
     { Creadi2c2,    "int readi2c2(int, int);" },
     { Cwritei2c,    "void writei2c(int, int, int);" },
+    { Cabs,         "int abs(int);" },
     { Csin,         "int sin(int);" },
     { Ccos,         "int cos(int);" },
     { Ctan,         "int tan(int);" },

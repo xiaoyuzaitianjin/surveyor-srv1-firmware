@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 12 March 2010</h3>
+<h3>SRV-1 C Interpreter - as of 1 April 2010</h3>
 
 <table width="700">
 <tbody>
@@ -43,6 +43,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>void autorun(int seconds): leave picoC if ESC character is received in (int) seconds,<br>
      &nbsp;&nbsp;- e.g. autorun(5);<br>
      &nbsp;&nbsp;- only used at beginning of C program<br><br>
+<li>int abs(int data): returns absolute value of int data<br><br>
 <li>int acos(int adjacent, int hypotenuse): arccos(adjacent, hypotenuse)<br><br>
 <li>int analog(int channel): read AD7998 8-channel 12-bit A/D<br>
      &nbsp;&nbsp;- channels 1-8 correspond to i2c device 0x20<br>
@@ -62,6 +63,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>int compass(): read HMC6352 compass<br><br>
 <li>int compassx(): read HMC5843 compass on SRV-NAV<br><br>
 <li>void compassxcal(xmin, xmax, ymin, ymax): set calibration data for HMC5843 (use $c console command to gather data)<br><br>
+<li>void compassxauto(): auto-calibrator for HMC5843 using SRV-4WD motors<br><br>
 <li>int cos(int angle): cos(angle) * 1000<br><br>
 <li>void delay(int milliseconds):  delay xxx milliseconds<br><br>
 <li>void encoders():  compute pulses/second from wheel encoders<br>
@@ -99,7 +101,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>void laser(int which_laser): 0=off, 1=left, 2=right, 3=both<br><br>
 <li>void motors(int left, int right): set left and right PWM motor power -100 to 100<br><br>
 <li>void motors2(int left, int right): set left and right PWM2 motor power (tmr6/7) -100 to 100<br><br>
-<li>void motorsx(int left, int right): set left and right SRV-4WD motor power -127 to 127<br><br>
+<li>void motorx(int left, int right): set left and right SRV-4WD motor power -100 to 100<br><br>
 <li>void nninit(): initialize neural net<br><br>
 <li>void nnlearnblob(int pattern_number): scale and save blob to 8x8 pattern<br><br>
 <li>int nnmatchblob(int blob_number): see which pattern is best match to selected blob<br>
@@ -167,7 +169,7 @@ returned value is size of jpeg image.  input parameter is quality of jpeg image 
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 12 March 2010 - 23:50 GMT
+last updated 1 April 2010 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

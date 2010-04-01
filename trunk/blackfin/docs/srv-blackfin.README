@@ -1,5 +1,16 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 1 April 2010 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+    
+* added $y automatic compass calibration function and corresponding
+  compassxcal() picoC fnction for systems with SRV_4WD and SRV-NAV
+
+* created test4wd.c picoC script to exercise SRV-4WD drive, encoders, 
+  compass and IR
+
+============================================================================
+
 SRV-1 firmware build for Blackfin - 20 March 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 

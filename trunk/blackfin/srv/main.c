@@ -37,8 +37,6 @@ int main() {
     initTMR4();
     init_uart0(UART0_BAUDRATE);
     init_colors();
-    init_analog();
-    init_tilt();
     disable_failsafe();
     clear_sdram(); // Clears from 0x00100000 to 0x02000000
     camera_setup(); // Sets up the camera to 320x240
@@ -192,6 +190,11 @@ int main() {
                             break;
                         case 'S':  // test SD card interface on RCM
                             testSD();
+                            break;
+                        case 'y':  // recalibrate compass
+                            calibrate_compassx();
+                            compass_continuous_calibration = 0;
+                            printf("#$y");
                             break;
                     }
                     break;
