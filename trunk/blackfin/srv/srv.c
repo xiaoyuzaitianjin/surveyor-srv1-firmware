@@ -468,42 +468,6 @@ void show_compass3x() {
        head, x, y, z, cxmin, cxmax, cymin, cymax);
 }
 
-void calibrate_compassx() {
-    short x, y, z;
-    int t0;
-    
-    cxmin = cymin = 9999;
-    cxmax = cymax = -9999;
-    if (xwd_init == 0) {
-        xwd_init = 1;
-        init_uart1(115200);
-        delayMS(10);
-    }
-    t0 = readRTC();
-    while (readRTC() < (t0+15000)) {
-        uart1SendChar('x');  // spin for 5 seconds with ramp up/down
-        uart1SendChar(0xC0);
-        uart1SendChar(0x40);
-        delayMS(30);
-        uart1SendChar('x');  
-        uart1SendChar(0x81);
-        uart1SendChar(0x7F);
-        delayMS(160);
-        uart1SendChar('x');  
-        uart1SendChar(0xC0);
-        uart1SendChar(0x40);
-        delayMS(30);
-        read_compass3x(&x, &y, &z);
-        uart1SendChar('x');  // stop motors
-        uart1SendChar(0x00);
-        uart1SendChar(0x00);
-        delayMS(180);
-        read_compass3x(&x, &y, &z);
-        delayMS(180);
-        read_compass3x(&x, &y, &z);
-    }
-}
-
 short read_compass3x(short *x, short *y, short *z) {
     unsigned char i2c_data[12];
     short i;

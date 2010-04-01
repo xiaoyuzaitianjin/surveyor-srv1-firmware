@@ -388,14 +388,6 @@ void    httpd_request (char firstChar)
                                 new_content = 1;
                             }
                             break;
-                        case 'y':  // calibrate_compassx()
-                            body = cgiResponse;  // use HTTP_BUFFER2
-                            calibrate_compassx();
-                            sprintf(body, "compass calibration complete\r\n");
-                            contentLength = strlen((char *)body);
-                            contentType = "text/plain";
-                            new_content = 1;
-                            break;
                     }
                     break;
                 case 'a':

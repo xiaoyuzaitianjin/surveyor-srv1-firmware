@@ -1,6 +1,7 @@
 #include "picoc.h"
 
 static int Blobcnt, Blobx1, Blobx2, Bloby1, Bloby2, Iy1, Iy2, Iu1, Iu2, Iv1, Iv2;
+static int Cxmin, Cxmax, Cymin, Cymax;
 static int GPSlat, GPSlon, GPSalt, GPSfix, GPSsat, GPSutc, Elcount, Ercount;
 static int ScanVect[16], NNVect[NUM_OUTPUT];
 
@@ -30,6 +31,10 @@ void PlatformLibraryInit()
     VariableDefinePlatformVar(NULL, "gpsfix", &IntType, (union AnyValue *)&GPSfix, FALSE);
     VariableDefinePlatformVar(NULL, "gpssat", &IntType, (union AnyValue *)&GPSsat, FALSE);
     VariableDefinePlatformVar(NULL, "gpsutc", &IntType, (union AnyValue *)&GPSutc, FALSE);
+    VariableDefinePlatformVar(NULL, "cxmin", &IntType, (union AnyValue *)&Cxmin, FALSE);
+    VariableDefinePlatformVar(NULL, "cxmax", &IntType, (union AnyValue *)&Cxmax, FALSE);
+    VariableDefinePlatformVar(NULL, "cymin", &IntType, (union AnyValue *)&Cymin, FALSE);
+    VariableDefinePlatformVar(NULL, "cymax", &IntType, (union AnyValue *)&Cymax, FALSE);
 }
 
 void Csignal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // check for kbhit, return t or nil
@@ -461,8 +466,14 @@ void Ccompass(struct ParseState *Parser, struct Value *ReturnValue, struct Value
 void Ccompassx(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC5843 I2C compass
 {
     short x, y, z;
+    int ix;
     
-    ReturnValue->Val->Integer = (int)read_compass3x(&x, &y, &z);
+    ix = (int)read_compass3x(&x, &y, &z);
+    Cxmin = cxmin;
+    Cxmax = cxmax;
+    Cymin = cymin;
+    Cymax = cymax;
+    ReturnValue->Val->Integer = ix;
 }
 
 void Ccompassxcal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC5843 I2C compass
@@ -472,13 +483,7 @@ void Ccompassxcal(struct ParseState *Parser, struct Value *ReturnValue, struct V
     cxmax = Param[1]->Val->Integer;
     cymin = Param[2]->Val->Integer;
     cymax = Param[3]->Val->Integer;
-    compass_continuous_calibration = 0;  // turn off continuous calibration
-}
-
-void Ccompassxauto(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC5843 I2C compass
-{
-    calibrate_compassx();  // $y function from console
-    compass_continuous_calibration = 0;  // turn off continuous calibration
+    compass_continuous_calibration = Param[4]->Val->Integer;  // continuous calibration:  off = 0, on = 1
 }
 
 void Ctilt(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return reading from HMC6352 I2C compass
@@ -861,8 +866,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Cvsend,       "void vsend(int);" },
     { Ccompass,     "int compass();" },
     { Ccompassx,    "int compassx();" },
-    { Ccompassxcal, "void compassxcal(int, int, int, int);" },
-    { Ccompassxauto,"void compassxauto();" },
+    { Ccompassxcal, "void compassxcal(int, int, int, int, int);" },
     { Canalog,      "int analog(int);" },
     { Canalogx,     "int analogx(int);" },
     { Ctilt,        "int tilt(int);" },

@@ -191,11 +191,6 @@ int main() {
                         case 'S':  // test SD card interface on RCM
                             testSD();
                             break;
-                        case 'y':  // recalibrate compass
-                            calibrate_compassx();
-                            compass_continuous_calibration = 0;
-                            printf("#$y");
-                            break;
                     }
                     break;
                 case '%': // jump to user defined functions in myfunc.c

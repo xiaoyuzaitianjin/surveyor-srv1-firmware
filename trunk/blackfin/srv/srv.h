@@ -169,7 +169,6 @@ void init_encoders();
 void read_encoders();
 unsigned int encoders();
 void read_encoder_4wd();
-void calibrate_compassx();
 unsigned int encoder_4wd(unsigned int);
 void update_servos();
 void motor_command(), motor2_command();

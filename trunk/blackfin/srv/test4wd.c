@@ -1,3 +1,29 @@
+void calibrate_compass(int howlong, int speed) {
+    int t0; 
+    int ix;
+    int loop;
+    
+    compassxcal(9999, -9999, 9999, -9999, 1);  // reset the calibration values
+    t0 = time();
+    loop = 1;
+    
+    while (loop == 1) {
+        if (time() > (t0 + howlong))
+            loop = 0;
+        motorx(speed, -speed);
+        delay(300);
+        ix = compassx();
+        printf("heading = %d\r\n", ix);
+        motorx(0, 0);
+        delay(200);
+        compassx();
+        printf("heading = %d\r\n", ix);
+    }
+    motorx(0, 0);
+    compassxcal(cxmin, cxmax, cymin, cymax, 0);  // set calibration, turn off data gathering
+    printf("compass calibration finished: %d %d %d %d\r\n", cxmin, cxmax, cymin, cymax);
+}
+
 void go(int dist, int speed) {  
     int a0, a1, a2, aa;
     int b0, b1, b2, bb;
@@ -85,7 +111,7 @@ void turn(int head, int speed) {
 
 servos(50,50);
 delay(1000);
-compassxauto();
+calibrate_compass(10000, 85);  // 10 seconds at 85 speed
 delay(1000);
 turn(90, 85);
 delay(1000);

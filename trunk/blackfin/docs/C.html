@@ -61,9 +61,13 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>int atan(int opposite, int adjacent): arctan(opposite, adjacent)<br><br>
 <li>int battery(): check SVS battery detector ... 1=okay, 0=low battery<br><br>
 <li>int compass(): read HMC6352 compass<br><br>
-<li>int compassx(): read HMC5843 compass on SRV-NAV<br><br>
-<li>void compassxcal(xmin, xmax, ymin, ymax): set calibration data for HMC5843 (use $c console command to gather data)<br><br>
-<li>void compassxauto(): auto-calibrator for HMC5843 using SRV-4WD motors<br><br>
+<li>int compassx(): read HMC5843 compass on SRV-NAV<br>
+     &nbsp;&nbsp;- note that min/max calibration data is accessible as cxmin, cxmax, cymin, cymax<br><br>
+<li>void compassxcal(xmin, xmax, ymin, ymax, continuous_calibration): set calibration data for HMC5843<br>
+     &nbsp;&nbsp;-  use $c console command to gather data<br>
+     &nbsp;&nbsp;-  continuous_calibration flag determines whether compassx() function continues to collect <br>
+     &nbsp;&nbsp; &nbsp;&nbsp;  calibration data.  continuous_calibration flag:  off = 0, on = 1 <br>
+     &nbsp;&nbsp;-  this function is useful for scripting an auto-calibration routine - see test4wd.c<br><br>
 <li>int cos(int angle): cos(angle) * 1000<br><br>
 <li>void delay(int milliseconds):  delay xxx milliseconds<br><br>
 <li>void encoders():  compute pulses/second from wheel encoders<br>
