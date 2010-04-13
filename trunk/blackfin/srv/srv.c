@@ -1435,6 +1435,28 @@ void process_i2c() {
             i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
             printf("##iW%2x", i2c_device);
             break;
+        case 'd':  // dual channel single byte I2C write
+            i2c_device = (unsigned char)getch();
+            i2c_data[0] = (unsigned char)getch();
+            i2c_data[1] = (unsigned char)getch();
+            i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+            delayUS(1000);
+            i2c_data[0] = (unsigned char)getch();
+            i2c_data[1] = (unsigned char)getch();
+            i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+            break;
+        case 'D':  // dual channel double byte (short) I2C write
+            i2c_device = (unsigned char)getch();
+            i2c_data[0] = (unsigned char)getch();
+            i2c_data[1] = (unsigned char)getch();
+            i2c_data[2] = (unsigned char)getch();
+            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
+            delayUS(1000);
+            i2c_data[0] = (unsigned char)getch();
+            i2c_data[1] = (unsigned char)getch();
+            i2c_data[2] = (unsigned char)getch();
+            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
+            break;
         default:
             return;
     }
@@ -1919,7 +1941,7 @@ void check_failsafe() {
 }
 
 void process_colors() {
-    unsigned char ch, ch1, ch2, ch3, ch4;
+    unsigned char ch, ch1, ch2;
     unsigned int clr, x1, x2, y1, y2;
     unsigned int ix, iy, i1, i2, itot;
     unsigned int ulo[4], uhi[4], vlo[4], vhi[4];
@@ -1975,30 +1997,12 @@ void process_colors() {
                 ix = (ix & 0x0F) + 9;
             else
                 ix &= 0x0F;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ymin[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ymax[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            umin[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            umax[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            vmin[ix] = ch1 * 100 + ch2 * 10  + ch3;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            vmax[ix] = ch1 * 100 + ch2 * 10  + ch3;
+            ymin[ix] = intfromthreechars();
+            ymax[ix] = intfromthreechars();
+            umin[ix] = intfromthreechars();
+            umax[ix] = intfromthreechars();
+            vmin[ix] = intfromthreechars();
+            vmax[ix] = intfromthreechars();
             printf("##vc %d\r\n", ix);
             break;
         case 'd':  //    vd = dump camera registers
@@ -2011,26 +2015,10 @@ void process_colors() {
             break;
         case 'f':  //    vf = find number of pixels in x1, x2, y1, y2 range matching color bin
             clr = getch() & 0x0F;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            x1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            x2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            y1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            y2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            x1 = intfromthreechars();
+            x2 = intfromthreechars();
+            y1 = intfromthreechars();
+            y2 = intfromthreechars();
             grab_frame();
             printf("##vf %d\r\n", vfind((unsigned char *)FRAME_BUF, clr, x1, x2, y1, y2));
             break;
@@ -2069,16 +2057,8 @@ void process_colors() {
             printf("##vmean %d %d %d\r\n", mean[0], mean[1], mean[2]);
             break;
         case 'p':  //    vp = sample individual pixel, print YUV value
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            i1 = ch1*1000 + ch2*100 + ch3*10 + ch4;
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            i2 = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            i1 = intfromthreechars();
+            i2 = intfromthreechars();
             grab_frame();
             ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
             printf("##vp %d %d %d\r\n",
@@ -2105,11 +2085,7 @@ void process_colors() {
             printf("\r\n");
             break;
         case 't':  //    vt = set edge detect threshold (0000-9999, default is 3200)
-            ch1 = getch() & 0x0F;
-            ch2 = getch() & 0x0F;
-            ch3 = getch() & 0x0F;
-            ch4 = getch() & 0x0F;
-            edge_thresh = ch1*1000 + ch2*100 + ch3*10 + ch4;
+            edge_thresh = intfromfourchars();
             printf("##vthresh %d\r\n", edge_thresh);
             break;
         case 'u':  //    vu = scan for horizon, 
@@ -2417,4 +2393,22 @@ unsigned int rand() {
     return (rand_seed);
 }
 
+unsigned int intfromthreechars() {
+    unsigned char ch1, ch2, ch3;
+    
+    ch1 = getch() & 0x0F;
+    ch2 = getch() & 0x0F;
+    ch3 = getch() & 0x0F;
+    return (ch1*100 + ch2*10 + ch3);
+}
+
+unsigned int intfromfourchars() {
+    unsigned char ch1, ch2, ch3, ch4;
+    
+    ch1 = getch() & 0x0F;
+    ch2 = getch() & 0x0F;
+    ch3 = getch() & 0x0F;
+    ch4 = getch() & 0x0F;
+    return (ch1*1000 + ch2*100 + ch3*10 + ch4);
+}
 

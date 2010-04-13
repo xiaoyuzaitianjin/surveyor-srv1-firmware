@@ -94,6 +94,7 @@ extern jmp_buf ExitBuf;
 #   include "../i2c.h"
 #   include "../jpeg.h"
 #   include "../malloc.h"
+#   include "../xmodem.h"
 #   define assert(x)
 #   undef INTERACTIVE_PROMPT_STATEMENT
 #   undef INTERACTIVE_PROMPT_LINE

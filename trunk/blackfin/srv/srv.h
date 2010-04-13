@@ -192,6 +192,8 @@ int check_bounds_0_100(int ix);
 
 /* Misc */
 unsigned int rand();
+unsigned int intfromthreechars();
+unsigned int intfromfourchars();
 
 /* Compass */
 short cxmin, cxmax, cymin, cymax;

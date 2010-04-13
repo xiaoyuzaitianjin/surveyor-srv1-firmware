@@ -1,10 +1,18 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 1 April 2010 
+SRV-1 firmware build for Blackfin - 13 April 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
     
 * created test4wd.c picoC script to exercise SRV-4WD drive, encoders, 
   compass and IR
+
+* created jtest.c picoC script to JPEG transfer from picoC
+
+* added putchar(), read_int() and read_str() functions to picoC. 
+  read_int() returns an integer that is read via the serial input channel. 
+  count = read_str() fills the pre-defined char array xbuf[] from the 
+  serial input channel, terminating on 0x00 or 0x01 input; 'count" is 
+  number of bytes read
 
 ============================================================================
 

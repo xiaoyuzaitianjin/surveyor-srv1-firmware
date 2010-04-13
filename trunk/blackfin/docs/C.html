@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="style_product.css" type="text/css"><title>SRV-1 C Interpreter</title></head><body>
 <a href="http://www.surveyor.com/"><img src="http://www.surveyor.com/images/surveyor.gif" border="0"></a><br>
-<h3>SRV-1 C Interpreter - as of 1 April 2010</h3>
+<h3>SRV-1 C Interpreter - as of 13 April 2010</h3>
 
 <table width="700">
 <tbody>
@@ -123,6 +123,9 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
     &nbsp;&nbsp;&nbsp;&nbsp; - byte/short/word alignment is forced<br><br>
 <li>int rand(int number_range): return random number ranging from 0 to xxx<br><br>
 <li>int range(): use laser pointer to estimate range<br><br>
+<li>int read_int(): reads an integer from the console - terminates on anything but '-' or '0'-'9'<br><br>
+<li>int read_str(): reads a string from the console into global char array xbuf[], returns number of chars read.
+  terminates on receipt of 0x00 or 0x01, or if read count exceeds 1023.<br><br>
 <li>int readi2c(int device, int register): read byte from I2C port<br><br>
 <li>int readi2c2(int device, int register): read short from I2C port<br><br>
 <li>void servos(int timer2, int timer3): set pin 7/8 (tmr 2/3) PPM levels 0 to 100<br><br>
@@ -173,7 +176,7 @@ returned value is size of jpeg image.  input parameter is quality of jpeg image 
 </blockquote>
 </td></tr>
 </tbody></table>
-last updated 1 April 2010 - 23:50 GMT
+last updated 13 April 2010 - 23:50 GMT
 <br>
 <script src="urchin.js" type="text/javascript">
 </script>

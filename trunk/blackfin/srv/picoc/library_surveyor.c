@@ -4,6 +4,7 @@ static int Blobcnt, Blobx1, Blobx2, Bloby1, Bloby2, Iy1, Iy2, Iu1, Iu2, Iv1, Iv2
 static int Cxmin, Cxmax, Cymin, Cymax;
 static int GPSlat, GPSlon, GPSalt, GPSfix, GPSsat, GPSutc, Elcount, Ercount;
 static int ScanVect[16], NNVect[NUM_OUTPUT];
+extern unsigned char xbuff[]; // 1030 byte transfer array from xmodem.c
 
 void PlatformLibraryInit()
 {
@@ -12,6 +13,7 @@ void PlatformLibraryInit()
     IntArrayType = TypeGetMatching(NULL, &IntType, TypeArray, 16, NULL);
     VariableDefinePlatformVar(NULL, "scanvect", IntArrayType, (union AnyValue *)&ScanVect, FALSE);
     VariableDefinePlatformVar(NULL, "neuron", IntArrayType, (union AnyValue *)&NNVect, FALSE);
+    VariableDefinePlatformVar(NULL, "xbuf", CharArrayType, (union AnyValue *)&xbuff, FALSE);
     VariableDefinePlatformVar(NULL, "blobcnt", &IntType, (union AnyValue *)&Blobcnt, FALSE);
     VariableDefinePlatformVar(NULL, "blobx1", &IntType, (union AnyValue *)&Blobx1, FALSE);
     VariableDefinePlatformVar(NULL, "blobx2", &IntType, (union AnyValue *)&Blobx2, FALSE);
@@ -48,6 +50,57 @@ void Csignal(struct ParseState *Parser, struct Value *ReturnValue, struct Value 
 void Cinput(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
 {
     ReturnValue->Val->Integer = getch();
+}
+
+void Cread_int(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+{
+    int ix, sign;
+    unsigned char ch;
+    
+    ix = 0;
+    sign = 1;
+    while (1) {
+        ch = getch();
+        if (ch == '-') {
+            sign = -1;
+            continue;
+        }
+        if ((ch < '0') || (ch > '9')) { // if not '-' or 0-9, we're done
+            ReturnValue->Val->Integer = ix * sign;
+            return;
+        }
+        ix = (ix * 10) + (ch & 0x0F);
+    }
+}
+
+void Cread_str(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+{
+    int ix;
+    unsigned char ch;
+    
+    ix = 0;
+    while (1) {
+        ch = getch();
+        xbuff[ix++] = ch;  // use XMODEM's transfer buffer.  data appears in global array xbuf[] in picoC
+        if ((ch == 0) || (ch == 0x01)) {  // null or ctrl-A
+            ix--;
+            xbuff[ix] = 0;
+            break;
+        }
+        if (ix > 1023) {
+            xbuff[ix] = 0;
+            ix--;
+            break;
+        } 
+    }
+    ReturnValue->Val->Integer = ix;    
+}
+
+void Cputchar(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+{
+    int ch;
+    ch = Param[0]->Val->Integer;
+    putchar((unsigned char)ch);
 }
 
 void Cdelay(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
@@ -833,6 +886,9 @@ struct LibraryFunction PlatformLibrary[] =
 {
     { Csignal,      "int signal();" },
     { Cinput,       "int input();" },
+    { Cread_int,    "int read_int();" },
+    { Cread_str,    "int read_str();" },
+    { Cputchar,     "void putchar(int);" },
     { Cdelay,       "void delay(int);" },
     { Crand,        "int rand(int);" },
     { Ctime,        "int time();" },

@@ -24,7 +24,7 @@ unsigned int vscan(unsigned char *outbuf, unsigned char *inbuf, int thresh,
 unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh, 
            int columns, unsigned int *outvect, int *slope, int *intercept, int filter);
 
-void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh);
+unsigned int svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh);
 void svs_segview(unsigned char *inbuf, unsigned char *outbuf);
 void addvect(unsigned char *outbuf, unsigned int columns, unsigned int *vect);
 void addline(unsigned char *outbuf, int slope, int intercept);

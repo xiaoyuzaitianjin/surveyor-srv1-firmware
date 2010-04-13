@@ -468,16 +468,17 @@ unsigned int vhorizon(unsigned char *outbuf, unsigned char *inbuf, int thresh,
     return hits;
 }
 
-void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh) {
+unsigned int svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh) {
     unsigned int ix, xx, yy, y2, u2, v2, skip;
     unsigned char *ip, *op, cc;
-    unsigned int gx, gy;
+    unsigned int gx, gy, edgepix;
     
     if (imgWidth > 640)   // buffer size limits this function to 640x480 resolution
-        return;
+        return 0;
     
     skip = imgWidth*2;
     op = outbuf;
+    edgepix = 0;
     for (yy=0; yy<imgHeight; yy++) {
         for (xx=0; xx<imgWidth; xx+=2) {   
             if ((xx < 2) || (xx >= imgWidth-2) || (yy < 1) || (yy >= imgHeight-1)) {
@@ -501,12 +502,15 @@ void svs_segcode(unsigned char *outbuf, unsigned char *inbuf, int thresh) {
             cc = ((*ip >> 2) & 0x38)       // threshold U to 0x38 position
                + ((*(ip+2) >> 5) & 0x07);  // threshold V to 0x07 position
             if (gx > thresh)  
-                cc |= 0x80;               // add 0x80 flag if this is edge pixel
+                cc |= 0x80;               // add 0x80 flag if this is a horizontal edge pixel
             if (gy > thresh)  
-                cc |= 0x40;               // add 0x40 flag if this is edge pixel
+                cc |= 0x40;               // add 0x40 flag if this is a vertical edge pixel
+            if (cc & 0xC0)
+                edgepix++;
             *op++ = cc;
         }
     }
+    return edgepix;
 }
 
 void svs_segview(unsigned char *inbuf, unsigned char *outbuf) {
