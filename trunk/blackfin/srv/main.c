@@ -13,12 +13,14 @@
  *  GNU General Public License for more details (www.gnu.org/licenses)
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <cdefBF537.h>
 #include "srv.h"
 #include "print.h"
 #include "string.h"
 #include "gps.h"
 #include "myfunc.h"
 #include "config.h"
+#include "xmodem.h"
 
 #ifdef STEREO
 #include "stereo.h"
@@ -29,7 +31,9 @@ extern void httpd_request(char firstChar);
 
 int main() {
     unsigned char ch;
-    int ix;
+    int ix, ii;
+    unsigned int t0, loop;
+    unsigned short sx;
 
     init_heap();
     init_io(); // Initialise LED, GPIO, serial flow & lasers.
@@ -120,6 +124,43 @@ int main() {
                     switch (getch()) {
                         case '!':  // reset processor
                             reset_cpu();
+                        case '7':  // test of SVS using suart instead of spi
+                            suartInit(1000000);
+                            *pPORTHIO_DIR |= 0x0100;
+                            *pPORTHIO |= 0x0100;  // set GPIO-H8 high to signal slave
+                            t0 = readRTC();
+                            ix = 0;
+                            loop = 1;
+                            while ((readRTC() < t0 + 5000) && loop) {
+                                sx = suartGetChar(100);
+                                if (sx)
+                                    xbuff[ix++] = sx;
+                                if (sx == 0x8000)
+                                    loop = 0;
+                            }
+                            printf("received %d characters\r\n", ix);
+                            for (ii=0; ii<ix; ii++)
+                                printf("%c", (unsigned char)(xbuff[ii] & 0xFF));
+                            printf("\r\n");                                    
+                            *pPORTHIO &= 0xFEFF;  // set GPIO-H8 low to signal slave
+                            break;
+                        case '8':  // test of SVS using suart instead of spi
+                            suartInit(1000000);
+                            *pPORTHIO &= 0xFEFF;
+                            *pPORTHIO_DIR &= 0xFEFF;  // set GPIO-H8 as input
+                            *pPORTHIO_INEN |= 0x0100;  
+                            t0 = readRTC();
+                            loop = 1;
+                            while ((readRTC() < t0 + 5000) && loop) {
+                                if (*pPORTHIO & 0x0100) {
+                                    for (ch=0x20; ch<=0x78; ch++)
+                                        suartPutChar(ch);
+                                    suartPutChar(0);
+                                    printf("sent %d characters\r\n", 0x5A);                                    
+                                    loop = 0;
+                                }
+                            }
+                            break;
                         #ifdef STEREO
                         case 'X':
                             svs_master((unsigned short *)FLASH_BUFFER, 

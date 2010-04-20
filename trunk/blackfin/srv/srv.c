@@ -1396,7 +1396,7 @@ void write_boot_flash () {
         iWabcd - i2c write device a, data b, c, d, return '##ix'
    Serial protocol char: i */
 void process_i2c() {
-    unsigned char i2c_device, i2c_data[16], cx, count;
+    unsigned char i2c_device, i2c_data[16], cx, count, c1, c2, c3;
     
     switch ((unsigned char)getch()) {
         case 'r':
@@ -1439,23 +1439,30 @@ void process_i2c() {
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2c_data[1] = (unsigned char)getch();
+            c1 = (unsigned char)getch();
+            c2 = (unsigned char)getch();
             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
             delayUS(1000);
-            i2c_data[0] = (unsigned char)getch();
-            i2c_data[1] = (unsigned char)getch();
+            i2c_data[0] = c1;
+            i2c_data[1] = c2;
             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
+            printf("##id%2x", i2c_device);
             break;
         case 'D':  // dual channel double byte (short) I2C write
             i2c_device = (unsigned char)getch();
             i2c_data[0] = (unsigned char)getch();
             i2c_data[1] = (unsigned char)getch();
             i2c_data[2] = (unsigned char)getch();
+            c1 = (unsigned char)getch();
+            c2 = (unsigned char)getch();
+            c3 = (unsigned char)getch();
             i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
             delayUS(1000);
-            i2c_data[0] = (unsigned char)getch();
-            i2c_data[1] = (unsigned char)getch();
-            i2c_data[2] = (unsigned char)getch();
+            i2c_data[0] = c1;
+            i2c_data[1] = c2;
+            i2c_data[2] = c3;
             i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
+            printf("##iD%2x", i2c_device);
             break;
         default:
             return;
@@ -2015,10 +2022,10 @@ void process_colors() {
             break;
         case 'f':  //    vf = find number of pixels in x1, x2, y1, y2 range matching color bin
             clr = getch() & 0x0F;
-            x1 = intfromthreechars();
-            x2 = intfromthreechars();
-            y1 = intfromthreechars();
-            y2 = intfromthreechars();
+            x1 = intfromfourchars();
+            x2 = intfromfourchars();
+            y1 = intfromfourchars();
+            y2 = intfromfourchars();
             grab_frame();
             printf("##vf %d\r\n", vfind((unsigned char *)FRAME_BUF, clr, x1, x2, y1, y2));
             break;
@@ -2057,8 +2064,8 @@ void process_colors() {
             printf("##vmean %d %d %d\r\n", mean[0], mean[1], mean[2]);
             break;
         case 'p':  //    vp = sample individual pixel, print YUV value
-            i1 = intfromthreechars();
-            i2 = intfromthreechars();
+            i1 = intfromfourchars();
+            i2 = intfromfourchars();
             grab_frame();
             ix = vpix((unsigned char *)FRAME_BUF, i1, i2);
             printf("##vp %d %d %d\r\n",

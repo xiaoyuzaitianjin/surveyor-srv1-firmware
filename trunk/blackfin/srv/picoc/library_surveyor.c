@@ -4,7 +4,6 @@ static int Blobcnt, Blobx1, Blobx2, Bloby1, Bloby2, Iy1, Iy2, Iu1, Iu2, Iv1, Iv2
 static int Cxmin, Cxmax, Cymin, Cymax;
 static int GPSlat, GPSlon, GPSalt, GPSfix, GPSsat, GPSutc, Elcount, Ercount;
 static int ScanVect[16], NNVect[NUM_OUTPUT];
-extern unsigned char xbuff[]; // 1030 byte transfer array from xmodem.c
 
 void PlatformLibraryInit()
 {
@@ -73,22 +72,23 @@ void Cread_int(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
     }
 }
 
-void Cread_str(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+void Cread_str(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) // read string from console
 {
     int ix;
     unsigned char ch;
     
     ix = 0;
+    char *cp = (char *)Param[0]->Val->NativePointer;
     while (1) {
         ch = getch();
-        xbuff[ix++] = ch;  // use XMODEM's transfer buffer.  data appears in global array xbuf[] in picoC
+        cp[ix++] = ch;
         if ((ch == 0) || (ch == 0x01)) {  // null or ctrl-A
             ix--;
-            xbuff[ix] = 0;
+            cp[ix] = 0;
             break;
         }
         if (ix > 1023) {
-            xbuff[ix] = 0;
+            cp[ix] = 0;
             ix--;
             break;
         } 
@@ -887,7 +887,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Csignal,      "int signal();" },
     { Cinput,       "int input();" },
     { Cread_int,    "int read_int();" },
-    { Cread_str,    "int read_str();" },
+    { Cread_str,    "int read_str(char *);" },
     { Cputchar,     "void putchar(int);" },
     { Cdelay,       "void delay(int);" },
     { Crand,        "int rand(int);" },

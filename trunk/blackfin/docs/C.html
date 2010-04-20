@@ -124,7 +124,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>int rand(int number_range): return random number ranging from 0 to xxx<br><br>
 <li>int range(): use laser pointer to estimate range<br><br>
 <li>int read_int(): reads an integer from the console - terminates on anything but '-' or '0'-'9'<br><br>
-<li>int read_str(): reads a string from the console into global char array xbuf[], returns number of chars read.
+<li>int read_str(char *): reads a string from the console into character array and returns number of chars read.
   terminates on receipt of 0x00 or 0x01, or if read count exceeds 1023.<br><br>
 <li>int readi2c(int device, int register): read byte from I2C port<br><br>
 <li>int readi2c2(int device, int register): read short from I2C port<br><br>
