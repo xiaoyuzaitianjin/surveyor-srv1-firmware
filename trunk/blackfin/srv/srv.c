@@ -1394,9 +1394,10 @@ void write_boot_flash () {
         iMxyz - i2c read device x, register y, count z, return z-byte '##iM values'
         iwxyz - i2c write device x, register y, value z, return '##iw'
         iWabcd - i2c write device a, data b, c, d, return '##ix'
+        idabcde - i2c dual write device a, register1 b, data1 c, register2 d, data2 e, return '##ix'
    Serial protocol char: i */
 void process_i2c() {
-    unsigned char i2c_device, i2c_data[16], cx, count, c1, c2, c3;
+    unsigned char i2c_device, i2c_data[16], cx, count, c1, c2;
     
     switch ((unsigned char)getch()) {
         case 'r':
@@ -1447,22 +1448,6 @@ void process_i2c() {
             i2c_data[1] = c2;
             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
             printf("##id%2x", i2c_device);
-            break;
-        case 'D':  // dual channel double byte (short) I2C write
-            i2c_device = (unsigned char)getch();
-            i2c_data[0] = (unsigned char)getch();
-            i2c_data[1] = (unsigned char)getch();
-            i2c_data[2] = (unsigned char)getch();
-            c1 = (unsigned char)getch();
-            c2 = (unsigned char)getch();
-            c3 = (unsigned char)getch();
-            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
-            delayUS(1000);
-            i2c_data[0] = c1;
-            i2c_data[1] = c2;
-            i2c_data[2] = c3;
-            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
-            printf("##iD%2x", i2c_device);
             break;
         default:
             return;

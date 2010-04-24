@@ -496,18 +496,6 @@ void    httpd_request (char firstChar)
                             i2c_data[1] = (unsigned char)atoi_b16(&params[10]);
                             i2cwrite(i2c_device, (unsigned char *)i2c_data, 1, SCCB_ON);
                             break;
-                        case 'D':  // dual channel double byte (short) I2C write
-                            i2c_device = (unsigned char)atoi_b16(&params[2]);
-                            i2c_data[0] = (unsigned char)atoi_b16(&params[4]);
-                            i2c_data[1] = (unsigned char)atoi_b16(&params[6]);
-                            i2c_data[2] = (unsigned char)atoi_b16(&params[8]);
-                            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
-                            delayUS(1000);
-                            i2c_data[0] = (unsigned char)atoi_b16(&params[10]);
-                            i2c_data[1] = (unsigned char)atoi_b16(&params[12]);
-                            i2c_data[2] = (unsigned char)atoi_b16(&params[14]);
-                            i2cwritex(i2c_device, (unsigned char *)i2c_data, 3, SCCB_ON);
-                            break;
                     }
                     break;
                 case 'v':  // process colors

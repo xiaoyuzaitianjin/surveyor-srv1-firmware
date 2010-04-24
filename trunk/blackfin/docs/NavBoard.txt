@@ -9,15 +9,42 @@ I2C device addresses (7-bit)
 
 SRV-1 firmware provides direct support for access to the gps, a/d and tilt via console and picoC functions:
 
+console (SRV_protocol) functions:
+-----------------------------------------------
     $g   - read gps
     $Axx - read analog, where xx = channel 01-08
     $Tx  - read tilt, where x = 1 (X axis), 2 (Y axis), 3 (Z axis)
+    $C   - read compass
+-----------------------------------------------
 
-    gps(), gps_dist(), gps_head()
-    analog(channel)
-    tilt(axis)
+picoC functions:
+-----------------------------------------------
+  int analog(int channel): read AD7998 8-channel 12-bit A/D
+    channels 1-8 correspond to i2c device 0x20
 
-Console and picoC functions for HMC5843 are still in development
+  int tilt(int axis): return tilt sensor reading from channel 1 (x axis), 2 (y axis) or 3 (z axis)
+    int x = tilt(1); int y = tilt(2); int z = tilt(3);
+
+  int compassx(): read HMC5843 compass on SRV-NAV
+    note that min/max calibration data is accessible as cxmin, cxmax, cymin, cymax
+
+  void gps(): parse $GPGGA string from gps
+    data returned in globals gpslat, gpslon,
+    gpsalt, gpsfix, gpssat, gpsutc
+    36.5deg is represented as 36500000
+    100.5W deg is represented as -100500000
+
+  int gps_dist(int lat1, int lon1, int lat2, int lon2): compute distance in meters
+    between two gps coordinates
+    format of coordinates is deg*1000000
+    36.5deg is represented as 36500000
+    100.5W deg is represented as -100500000
+
+  int gps_head(int lat1, int lon1, int lat2, int lon2): compute heading in degrees
+    between two gps coordinates (N == 0-deg)
+    36.5deg is represented as 36500000
+    100.5W deg is represented as -100500000
+-----------------------------------------------
 
 
 8-pin header connects to I2C and serial interface -
@@ -26,13 +53,6 @@ Console and picoC functions for HMC5843 are still in development
         GND  3.3V    SDA    SCL
   x==================================x  (circuit board edge)
 
-
-On the SRV-1 32-pin header, the GND, 3.3V, SDA and SCL signals correspond to the following:
-
-    Nav board GND  <=> SRV-1 pin 2
-    Nav board 3.3V <=> SRV-1 pin 1
-    Nav board SDA  <=> SRV-1 pin 15
-    Nav board SCL  <=> SRV-1 pin 14 
 
 
 10-pin header connects to analog inputs

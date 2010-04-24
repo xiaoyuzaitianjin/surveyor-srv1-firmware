@@ -90,7 +90,9 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
     &nbsp;&nbsp;between two gps coordinates (N == 0-deg)<br>
     &nbsp;&nbsp;36.5deg is represented as 36500000<br>
     &nbsp;&nbsp;100.5W deg is represented as -100500000<br><br>
+<li>void init_uart1(int baudrate):  initializes 2nd Blackfin UART<br><br>
 <li>int input():  return single character from read of serial channel (same as getch())<br><br>
+<li>int input1():  return single character from read of uart1<br><br>
 <li>void iodir(int iopins):  set GPIO-H15/14/13/12/11/10 as inputs or outputs<br>
     &nbsp;&nbsp;&nbsp;&nbsp;0 = input, 1 = output<br>
     &nbsp;&nbsp;&nbsp;&nbsp;iodir(0x31) == H15-out H14-out H13-in H12-in H11-in H10-out<br>
@@ -117,6 +119,8 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
     &nbsp;&nbsp;&nbsp;&nbsp;neuron output values are found in neuron[]<br>
     &nbsp;&nbsp;&nbsp;&nbsp;return value is index to best match<br><br>
 <li>void nntrain(): train neural net<br><br>
+<li>void output(int): output a single character to serial channel (uart0)<br><br>
+<li>void output1(int): output a single character to uart1<br><br>
 <li>int peek(int address, int wordsize):  int x = peek(addr, size) where size = 1, 2, 4 bytes <br>
     &nbsp;&nbsp;&nbsp;&nbsp; - byte/short/word alignment is forced<br><br>
 <li>void poke(int address, int wordsize, int value):  poke(addr, size, val) where size = 1, 2, 4 bytes <br>
@@ -131,6 +135,7 @@ int Count;<br>for (Count = 1; Count <= 10; Count++)<br>    &nbsp;&nbsp;printf(
 <li>void servos(int timer2, int timer3): set pin 7/8 (tmr 2/3) PPM levels 0 to 100<br><br>
 <li>void servos2(int timer6, int timer7): set pin 5/6 (tmr 6/7) PPM levels 0 to 100<br><br>
 <li>int signal():  non-blocking check for input on serial channel - non-zero return indicates an input<br><br>
+<li>int signal1():  non-blocking check for input on second serial channel (uart1) - non-zero return indicates an input<br><br>
 <li>int sin(int angle): sin(angle) * 1000<br><br>
 <li>int sonar(int which_channel): ping modules 1, 2, 3 or 4<br><br>
 <li>int sqrt(int value): compute integer square root<br><br>
@@ -163,7 +168,8 @@ returned value is size of jpeg image.  input parameter is quality of jpeg image 
 <li>void vmean(): get YUV means over full frame<br>
      &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
 <li>void vpix(int x, int y): get YUV values of vpix(x, y)<br>
-     &nbsp;&nbsp;- data returned in globals y1, u1, v1<br><br>
+     &nbsp;&nbsp;- data returned in globals y1, u1, v1<br>
+     &nbps;&nbsp;- vpix(0,0) reads the pixel from the upper left corner of the image<br><br>
 <li>void vrcap(): capture reference frame for differencing<br><br>
 <li>int vscan(int columns, int threshold): edge detect function<br>
     &nbsp;&nbsp;- counts edge pixels and divides image into columns<br>

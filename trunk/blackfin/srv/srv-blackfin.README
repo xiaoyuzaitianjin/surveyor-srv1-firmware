@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 20 April 2010 
+SRV-1 firmware build for Blackfin - 24 April 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
     
 * created test4wd.c picoC script to exercise SRV-4WD drive, encoders, 
@@ -13,6 +13,10 @@ SRV-1 firmware build for Blackfin - 20 April 2010
   count = read_str(char *) fills a char array from the 
   serial input channel, terminating on 0x00 or 0x01 input; 'count" is 
   number of bytes read
+
+* renamed putchar() to output(); added init_uart1(int baudrate), 
+  int x = signal1(), int x = input1() and output1(int x) to interface 
+  picoC uart1 - the 2nd Blackfin uart
 
 ============================================================================
 

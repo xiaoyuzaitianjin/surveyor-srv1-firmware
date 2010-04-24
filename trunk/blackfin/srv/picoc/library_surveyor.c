@@ -40,15 +40,22 @@ void PlatformLibraryInit()
 
 void Csignal(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // check for kbhit, return t or nil
 {
-    if (getsignal())
-        ReturnValue->Val->Integer = 1;
-    else
-        ReturnValue->Val->Integer = 0;
+    ReturnValue->Val->Integer = getsignal();
+}
+
+void Csignal1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // check for kbhit, return t or nil
+{
+    ReturnValue->Val->Integer = uart1Signal();
 }
 
 void Cinput(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
 {
     ReturnValue->Val->Integer = getch();
+}
+
+void Cinput1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+{
+    ReturnValue->Val->Integer = uart1GetCh();
 }
 
 void Cread_int(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
@@ -96,11 +103,25 @@ void Cread_str(struct ParseState *Parser, struct Value *ReturnValue, struct Valu
     ReturnValue->Val->Integer = ix;    
 }
 
-void Cputchar(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+void Cinit_uart1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+{
+    int ii;
+    ii = Param[0]->Val->Integer;  // ii = baudrate for uart1
+    init_uart1(ii);
+}
+
+void Coutput(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
 {
     int ch;
     ch = Param[0]->Val->Integer;
     putchar((unsigned char)ch);
+}
+
+void Coutput1(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)  // return 0-9 from console input
+{
+    int ch;
+    ch = Param[0]->Val->Integer;
+    uart1SendChar((unsigned char)ch);
 }
 
 void Cdelay(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
@@ -885,10 +906,14 @@ void Cerrormsg (struct ParseState *Parser, struct Value *ReturnValue, struct Val
 struct LibraryFunction PlatformLibrary[] =
 {
     { Csignal,      "int signal();" },
+    { Csignal1,     "int signal1();" },
     { Cinput,       "int input();" },
+    { Cinput1,      "int input1();" },
+    { Cinit_uart1,  "void init_uart1(int);" },
     { Cread_int,    "int read_int();" },
     { Cread_str,    "int read_str(char *);" },
-    { Cputchar,     "void putchar(int);" },
+    { Coutput,      "void output(int);" },
+    { Coutput1,     "void output1(int);" },
     { Cdelay,       "void delay(int);" },
     { Crand,        "int rand(int);" },
     { Ctime,        "int time();" },
