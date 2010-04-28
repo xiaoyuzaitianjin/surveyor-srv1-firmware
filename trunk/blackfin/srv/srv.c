@@ -1711,6 +1711,7 @@ void initPWM2() {
 
 void initTMR4() {
     // configure timer 4
+    *pTIMER_ENABLE  &= ~TIMEN4;  // disable timer
     *pPORTF_FER |= 0x0020;  // configure PF5 TMR4
     *pTIMER4_CONFIG = PULSE_HI | PWM_OUT | PERIOD_CNT;
     *pTIMER4_PERIOD = PERIPHERAL_CLOCK;  // should be counting a 122MHz rate
@@ -1883,6 +1884,7 @@ void delayNS(int delay) {  // delay up to 100000 nanoseconds (.1 millisec)
     
     if ((delay < 10) || (delay > 100000))
         return;
+    
     start = *pTIMER4_COUNTER;
     target = (((PERIPHERAL_CLOCK / 10000) * delay) / 100000) + start;
     

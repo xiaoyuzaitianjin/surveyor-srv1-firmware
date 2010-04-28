@@ -25,6 +25,16 @@
 
 static int suart_timebase;
 
+void waituntilNS(unsigned int target) {
+    if (target > PERIPHERAL_CLOCK) {
+        target -= PERIPHERAL_CLOCK;
+        while (*pTIMER4_COUNTER > target)  // wait for timer to wrap-around
+            continue;
+    }
+    while (*pTIMER4_COUNTER < target)
+        continue;
+}
+
 void suartInit(int baud) {  // use GPIO-H14 and H15 for soft uart.  H14 = TX, H15 = RX
     suart_timebase = 1000000000 / baud;  // define bit period in nanoseconds
     *pPORTHIO_DIR &= 0x3FFF;   // set H14 as output, H15 as input
@@ -33,32 +43,37 @@ void suartInit(int baud) {  // use GPIO-H14 and H15 for soft uart.  H14 = TX, H1
     SSYNC;
     *pPORTHIO_INEN |= 0x8000;  // set H15 as input
     SSYNC;
-    *pPORTHIO &= 0xBFFF;  // set H14 low
+    SUART_SEND0;  // set H14 high
     SSYNC;
 }
 
 void suartPutChar(unsigned char ch)  // soft uart send - transmit on GPIO-H14
 {
     int ix;
+    unsigned int twait;
     
+    twait = *pTIMER4_COUNTER + suart_timebase;
     SUART_SEND1;  // send start bit
-    delayNS(suart_timebase);
+    waituntilNS(twait);
     for (ix=0; ix<8; ix++) {
         if (ch & 0x01)
             SUART_SEND0;  // output is inverted
         else
             SUART_SEND1;
-        delayNS(suart_timebase);
+        twait += suart_timebase; 
+        waituntilNS(twait);
         ch = ch >> 1;
     }
     SUART_SEND0;  // send 2 stop bits
-    delayNS(suart_timebase*2);
+    twait += suart_timebase * 2;
+    waituntilNS(twait); 
 }
 
 unsigned short suartGetChar(int timeout)  // check for incoming character, wait for "timeout" milliseconds
 {
     int t0;
     unsigned short sx, smask;
+    unsigned int twait;
     
     t0 = readRTC();
     sx = 0;
@@ -66,13 +81,16 @@ unsigned short suartGetChar(int timeout)  // check for incoming character, wait 
     while ((readRTC()-t0) < timeout) {  // wait for start bit
         if (SUART_RECV)
             continue;
-        delayNS((suart_timebase * 4) / 3);  // wait for completion of start bit, then go 30% into next bit
+        twait = *pTIMER4_COUNTER + ((suart_timebase * 4) / 3);
+        waituntilNS(twait);  // wait for completion of start bit, then go 30% into next bit
         for (smask=1; smask<256; smask*=2) {
             if (SUART_RECV)
                 sx += smask;
-            delayNS(suart_timebase);  // skip to next bit
+            twait += suart_timebase;
+            waituntilNS(twait); 
         }
-        delayNS((suart_timebase*2)/3);  // wait for stop bit
+        twait += suart_timebase;  // wait for first stop bit
+        waituntilNS(twait); 
         return (sx + 0x8000);  // set high bit to indicate received character
     }
     return 0;

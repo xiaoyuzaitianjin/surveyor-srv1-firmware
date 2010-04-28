@@ -14,9 +14,9 @@ SRV-1 firmware build for Blackfin - 24 April 2010
   serial input channel, terminating on 0x00 or 0x01 input; 'count" is 
   number of bytes read
 
-* renamed putchar() to output(); added init_uart1(int baudrate), 
+* renamed picoC putchar() to output(); added init_uart1(int baudrate), 
   int x = signal1(), int x = input1() and output1(int x) to interface 
-  picoC uart1 - the 2nd Blackfin uart
+  uart1 - the 2nd Blackfin uart via picoC
 
 ============================================================================
 

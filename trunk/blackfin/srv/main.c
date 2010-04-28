@@ -30,8 +30,8 @@ extern int picoc(char *);
 extern void httpd_request(char firstChar);
 
 int main() {
-    unsigned char ch;
-    int ix, ii;
+    unsigned char ch, *cp;
+    int ix;
     unsigned int t0, loop;
     unsigned short sx;
 
@@ -125,27 +125,27 @@ int main() {
                         case '!':  // reset processor
                             reset_cpu();
                         case '7':  // test of SVS using suart instead of spi
-                            suartInit(1000000);
+                            suartInit(10000000);
                             *pPORTHIO_DIR |= 0x0100;
                             *pPORTHIO |= 0x0100;  // set GPIO-H8 high to signal slave
+                            cp = (unsigned char *)FLASH_BUFFER;
                             t0 = readRTC();
                             ix = 0;
                             loop = 1;
                             while ((readRTC() < t0 + 5000) && loop) {
                                 sx = suartGetChar(100);
                                 if (sx)
-                                    xbuff[ix++] = sx;
+                                    cp[ix++] = (unsigned char)(sx & 0x00FF);
                                 if (sx == 0x8000)
                                     loop = 0;
                             }
                             printf("received %d characters\r\n", ix);
-                            for (ii=0; ii<ix; ii++)
-                                printf("%c", (unsigned char)(xbuff[ii] & 0xFF));
+                            printf("%s", cp);
                             printf("\r\n");                                    
                             *pPORTHIO &= 0xFEFF;  // set GPIO-H8 low to signal slave
                             break;
                         case '8':  // test of SVS using suart instead of spi
-                            suartInit(1000000);
+                            suartInit(10000000);
                             *pPORTHIO &= 0xFEFF;
                             *pPORTHIO_DIR &= 0xFEFF;  // set GPIO-H8 as input
                             *pPORTHIO_INEN |= 0x0100;  
@@ -153,10 +153,14 @@ int main() {
                             loop = 1;
                             while ((readRTC() < t0 + 5000) && loop) {
                                 if (*pPORTHIO & 0x0100) {
-                                    for (ch=0x20; ch<=0x78; ch++)
-                                        suartPutChar(ch);
+                                    for (ch=0x20; ch<=0x7A; ch++)  {
+                                        for (ix=0; ix<320; ix++) {
+                                            suartPutChar(ch);
+                                            delayNS(100);  // add an extra bit period
+                                        }
+                                    }
                                     suartPutChar(0);
-                                    printf("sent %d characters\r\n", 0x5A);                                    
+                                    printf("sent %d characters\r\n", 0x5B*320);                                    
                                     loop = 0;
                                 }
                             }
