@@ -1,6 +1,6 @@
 				RELEASE NOTES
 
-SRV-1 firmware build for Blackfin - 24 April 2010 
+SRV-1 firmware build for Blackfin - 5 May 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
     
 * created test4wd.c picoC script to exercise SRV-4WD drive, encoders, 
@@ -18,6 +18,9 @@ SRV-1 firmware build for Blackfin - 24 April 2010
   int x = signal1(), int x = input1() and output1(int x) to interface 
   uart1 - the 2nd Blackfin uart via picoC
 
+* work-in-progress with SVS / miniSVS to use GPIO H14/15 instead of SPI
+  for interprocessor communication
+  
 ============================================================================
 
 SRV-1 firmware build for Blackfin - 20 March 2010 
