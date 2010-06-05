@@ -1,5 +1,15 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 5 June 2010 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* modified AD7998 analog() function so that delay padding is no longer needed
+  and lockups are eliminated.  conversion rate should reach 100ksps.
+
+* added fix for double indexed arrays in picoC
+
+============================================================================
+
 SRV-1 firmware build for Blackfin - 5 May 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
     

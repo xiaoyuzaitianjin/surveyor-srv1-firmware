@@ -97,7 +97,7 @@ int encoder_flag;
 /* IMU globals */
 int x_acc, x_acc0, x_center;
 int y_acc, y_acc0, y_center;
-int compass_init, compass_continuous_calibration, analog_init, tilt_init;
+int compass_init, compass_continuous_calibration, tilt_init;
 short cxmin, cymin, cxmax, cymax, czmin, czmax;
 
 /* Failsafe globals */
@@ -143,7 +143,6 @@ void init_io() {
     pwm1_init = 0;
     pwm2_init = 0;
     xwd_init = 0;
-    analog_init = 0;
     tilt_init = 0;
     sonar_flag = 0;
     edge_detect_flag = 0;
@@ -474,6 +473,8 @@ short read_compass3x(short *x, short *y, short *z) {
     unsigned char addr;
     short xx, yy, sy, sx, ang;
     
+    delayMS(50);  // limit updates to 20Hz
+
     // HMC5843
     addr = 0x1E;
     if (compass_init == 0) {
@@ -489,6 +490,8 @@ short read_compass3x(short *x, short *y, short *z) {
     *x = ((short) (i2c_data[0] * 256 + i2c_data[1]));
     *y = ((short) (i2c_data[2] * 256 + i2c_data[3]));
     *z = ((short) (i2c_data[4] * 256 + i2c_data[5]));
+    if ((*x == (short)0xFFFF) && (*y == (short)0xFFFF) && (*z == (short)0xFFFF))  // compass read failed - return 999
+        return (999);  
     if (compass_continuous_calibration) {  // this is turned off by compassxcal() C function or $y console function
         if (cxmin > *x)
             cxmin = *x;
@@ -525,48 +528,13 @@ short read_compass3x(short *x, short *y, short *z) {
     return (i); 
 }
 
-/* init all 3 possible AD7998 A/D's */
-void init_analog() {
-    unsigned char i2c_data[3], device_id;
-    unsigned int ix;
-    
-    for (ix=0; ix<3; ix++) {
-        switch (ix) {
-            case 0:
-                device_id = 0x20;
-                break;
-            case 1:
-                device_id = 0x23;
-                break;
-            case 2:
-                device_id = 0x24;
-                break;
-        }
-        // set timer register 3
-        i2c_data[0] = 0x03;
-        i2c_data[1] = 0x01;
-        i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
-        delayMS(10);
-        // set analog channel 
-        i2c_data[0] = 0x02;
-        i2c_data[1] = 0x0F;
-        i2c_data[2] = 0xF0;
-        i2cwritex(device_id, (unsigned char *)i2c_data, 3, SCCB_ON);
-        delayMS(10);
-    }
-    analog_init = 1;
-}
-
 /* read AD7998 - channels 01-08, 11-17 or 21-27 */
 unsigned int analog(unsigned int ix)
 {
     unsigned char i2c_data[3], device_id;
     unsigned int channel;
-    unsigned char mask1[] = { 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x04, 0x08 };
-    unsigned char mask2[] = { 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00 };
+    unsigned char mask[] = { 0x80, 0x90, 0xA0, 0xB0, 0xC0, 0xD0, 0xE0, 0xF0 };
     
-    if (!analog_init)
-        init_analog();
     // decide which i2c device based on channel range
     if ((ix<1) || (ix>28))
         return 0xFFFF;  // invalid channel
@@ -586,19 +554,13 @@ unsigned int analog(unsigned int ix)
     if ((channel<1) || (channel>8))
         return 0xFFFF;  // invalid channel
     
-    // set timer register 3
-    i2c_data[0] = 0x03;
-    i2c_data[1] = 0x01;
-    i2cwrite(device_id, (unsigned char *)i2c_data, 1, SCCB_ON);
-
     // set analog channel 
-    i2c_data[0] = 0x02;
-    i2c_data[1] = mask1[channel-1];
-    i2c_data[2] = mask2[channel-1];
-    i2cwritex(device_id, (unsigned char *)i2c_data, 3, SCCB_ON);
+    i2c_data[0] = mask[channel-1];
+    i2c_data[1] = 0;
+    i2cwrite(device_id, (unsigned char *)i2c_data, 2, SCCB_ON);
 
     // small delay
-    delayUS(1000);
+    delayUS(10);
 
     // read data
     i2c_data[0] = 0x00;
@@ -981,8 +943,8 @@ void send_frame () {
     imgHead[8] = (unsigned char)((image_size & 0x00FF0000) >> 16);
     imgHead[9] = 0x00;
     for (i=0; i<10; i++) {
-        while (*pPORTHIO & 0x0001)  // hardware flow control
-            continue;
+        //while (*pPORTHIO & 0x0001)  // hardware flow control
+            //continue;
         putchar(imgHead[i]);
     }
     cp = (unsigned char *)JPEG_BUF;
