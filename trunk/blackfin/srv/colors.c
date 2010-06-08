@@ -60,6 +60,15 @@ unsigned int vblob(unsigned char *frame_buf, unsigned char *blob_buf, unsigned i
     v1 = vmin[ii];
     v2 = vmax[ii];
     
+    for (ix=0; ix<MAX_BLOBS; ix++) {
+        blobcnt[ix] = 0;
+        blobx1[ix] = imgWidth;
+        blobx2[ix] = 0;
+        bloby1[ix] = imgHeight;
+        bloby2[ix] = 0;
+        blobix[ix] = 0;
+    }
+
     bbp = blob_buf;
     for (ix=0; ix<imgWidth*imgHeight; ix++)
         *bbp++ = 0;
