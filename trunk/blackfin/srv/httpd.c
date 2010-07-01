@@ -37,7 +37,7 @@ extern int picoc(char *);
 #define FLASH_SECTORS_LAST      62
 #define FLASH_SECTORS_UNIT      2
 
-#define BOOT_LOADER_SECTORS     2
+#define BOOT_LOADER_SECTORS     3
 #define BOOT_LOADER_MIN_SIZE    (16 * 1024)
 #define BOOT_LOADER_MAX_SIZE    (BOOT_LOADER_SECTORS * FLASH_SECTOR_SIZE)
 

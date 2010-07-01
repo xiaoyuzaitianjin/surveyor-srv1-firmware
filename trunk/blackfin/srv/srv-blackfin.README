@@ -1,5 +1,13 @@
 				RELEASE NOTES
 
+SRV-1 firmware build for Blackfin - 27 June 2010 
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+
+* modified zZ and /admin boot sector flash commands to support 3 sector
+  writes (we need this for current versions of u-boot.ldr)
+  
+============================================================================
+
 SRV-1 firmware build for Blackfin - 8 June 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list
 
@@ -8,7 +16,7 @@ SRV-1 firmware build for Blackfin - 8 June 2010
 
 * added fix for double indexed arrays in picoC
 
-* fixed data initialation in vblob() function
+* fixed data initialization in vblob() function
 
 ============================================================================
 

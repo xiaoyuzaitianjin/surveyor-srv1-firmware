@@ -231,14 +231,14 @@ void check_for_autorun() {
     int ix;
     
     printf("##checking for autorun() in flash sect#4 ... ");
-    spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00010000);  // read flash sector #4
+    spi_read(FLASH_SECTOR, (unsigned char *)FLASH_BUFFER, 0x00020000);  // read flash sector #4 & #5
     cp = (char *)FLASH_BUFFER;
     if (strncmp("autorun", cp, 7) == 0) {
         printf("autorun() found - launching picoC\r\n");
         picoc((char *)FLASH_BUFFER);
     } else {
         printf("no autorun() found\r\n");
-        for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00010000); ix++)  // clear FLASH_BUFFER
+        for (ix = FLASH_BUFFER; ix < (FLASH_BUFFER  + 0x00020000); ix++)  // clear FLASH_BUFFER
             *((unsigned char *)ix) = 0;
     }
 }
@@ -1334,8 +1334,9 @@ void write_double_sector (int isec, int quiet) {  // save 128kB to consecutive s
         printf (" - saved %d bytes to flash sectors %d->%d\r\n", ix, isec, isec+1);   
 }
 
-/* Write boot flash sectors (1-2) from flash buffer
-   Serial protocol char: z-Z */
+/* Write boot flash sectors (1-3) from flash buffer
+   should also work with writing u-boot.ldr
+   Serial protocol char: zZ */
 void write_boot_flash () {
     unsigned int *ip;
     int ix;
@@ -1346,7 +1347,7 @@ void write_boot_flash () {
         return;
     }                        
     ix = spi_write(BOOT_SECTOR, (unsigned char *)FLASH_BUFFER, 
-        (unsigned char *)(FLASH_BUFFER + 0x00020000), 0x00020000);
+        (unsigned char *)(FLASH_BUFFER + 0x00030000), 0x00030000);
     printf("##zZ boot image write count: %d\r\n", ix);
 }
 
