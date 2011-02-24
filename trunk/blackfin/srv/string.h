@@ -6,7 +6,7 @@ extern char *strchr(char *, char);
 extern void strcpy(char *, char *);
 extern char *strncpy(char *, char *, int);
 extern char *strdup(char *);
-extern int strlen(char *);
+extern int strlen(const char *);
 extern int isdigit(char);
 extern int  atoi(char *);
 extern void itoa(int, char *);

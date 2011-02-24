@@ -39,15 +39,15 @@ int strncmp(char *s1, char *s2, int n)
   return 0;
 }
 
-char *strchr(char *s, char c)
+const char *strchr(const char *s, char c)
 {
-        for (;;)
-        {
-             if (*s == c) 
-                    return s;
-             if (!*s++) 
-                    return 0;
-        }
+    for (;;)
+    {
+        if (*s == c) 
+            return s;
+        if (!*s++) 
+            return 0;
+    }
 }
 
 void strcpy(char *pDst, char *pSrc)

@@ -11,6 +11,28 @@ If you are looking for documentation on the "Small C interpreter" built into SRV
 <br>
 The new SRV-1 C interpreter is based on the <a href="http://code.google.com/p/picoc/">picoC open source C interpreter</a>.  Full documentation for picoC is in the works, but for now, we are providing some code samples that highlight capabilities.<br>
 <br>
+srv1-blackfin-022411.zip : Now (February 24, 2011) the SRV1 firmware has the latest version of PicoC - v2.1. This new version
+brings with it numerous bug fixes as well as some very exciting new features.
+<br>
+<br>
+New Features in PicoC 2.1: (From PicoC site)
+<br>
+<br>
+* "static" declarations are now implemented<br>
+* now recognising and ignoring "register", "extern" and "auto"<br>
+* now supports "goto" - but please don't use it...<br>
+* logical operators now only evaluate the second argument if necessary, as specified in the C standard<br>
+* structures now align with the native C structures, making it easier to pass structures to native calls<br>
+<br>
+<br>
+New Features in PicoC 2.0: (From PicoC site)
+<br>
+<br>
+* typedef is implemented<br>
+* a much larger, more complete C library has been added<br>
+* #if/#else/#endif implemented<br>
+* Plenty of bug fixes<br>
+<br>
 <blockquote>
 <b>/*     comments    */</b><br>
 printf("Hello\n"); /* this is a comment */</b><br>printf("Hello\n");  // this is also a comment<br>

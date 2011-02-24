@@ -1,5 +1,0 @@
-I hate doing this kind of test, as it stays in the repos.
-
-However, testing an "add" and "commit".
-
-M

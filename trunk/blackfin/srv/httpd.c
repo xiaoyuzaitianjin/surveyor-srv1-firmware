@@ -729,7 +729,7 @@ void    httpd_request (char firstChar)
                     uart1SendChar('x');
                     uart1SendChar((char)x1);
                     uart1SendChar((char)x2);
-                    while (uart1GetChar(&ch))  // flush the receive buffer
+                    while (uart1GetChar((unsigned char *)&ch))  // flush the receive buffer
                         continue;
                     break;
                 case 'S': // Sabertooth or equivalent PPM servo-based motor control

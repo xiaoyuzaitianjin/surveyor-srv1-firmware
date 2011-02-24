@@ -1,4 +1,7 @@
-#include "picoc.h"
+#include "interpreter.h"
+
+/* maximum size of a value to temporarily copy while we create a variable */
+#define MAX_TMP_COPY_BUF 256
 
 /* the table of global definitions */
 struct Table GlobalTable;
@@ -31,7 +34,7 @@ void VariableFree(struct Value *Val)
 
         /* free macro bodies */
         if (Val->Typ == &MacroType)
-            HeapFreeMem((void *)Val->Val->Parser.Pos);
+            HeapFreeMem((void *)Val->Val->MacroDef.Body.Pos);
 
         /* free the value */
         HeapFreeMem(Val);
@@ -109,13 +112,19 @@ struct Value *VariableAllocValueFromType(struct ParseState *Parser, struct Value
     return NewValue;
 }
 
-/* allocate a value either on the heap or the stack and copy its value */
+/* allocate a value either on the heap or the stack and copy its value. handles overlapping data */
 struct Value *VariableAllocValueAndCopy(struct ParseState *Parser, struct Value *FromValue, int OnHeap)
 {
-    int CopySize = TypeSizeValue(FromValue);
-    struct Value *NewValue = VariableAllocValueAndData(Parser, CopySize, FromValue->IsLValue, FromValue->LValueFrom, OnHeap);
-    NewValue->Typ = FromValue->Typ;
-    memcpy((void *)NewValue->Val, (void *)FromValue->Val, CopySize);
+    struct ValueType *DType = FromValue->Typ;
+    struct Value *NewValue;
+    char TmpBuf[MAX_TMP_COPY_BUF];
+    int CopySize = TypeSizeValue(FromValue, TRUE);
+
+    assert(CopySize <= MAX_TMP_COPY_BUF);
+    memcpy((void *)&TmpBuf[0], (void *)FromValue->Val, CopySize);
+    NewValue = VariableAllocValueAndData(Parser, CopySize, FromValue->IsLValue, FromValue->LValueFrom, OnHeap);
+    NewValue->Typ = DType;
+    memcpy((void *)NewValue->Val, (void *)&TmpBuf[0], CopySize);
     
     return NewValue;
 }
@@ -152,10 +161,66 @@ struct Value *VariableDefine(struct ParseState *Parser, char *Ident, struct Valu
     
     AssignValue->IsLValue = MakeWritable;
         
-    if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, Ident, AssignValue))
+    if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, Ident, AssignValue, Parser ? ((char *)Parser->FileName) : NULL, Parser ? Parser->Line : 0, Parser ? Parser->CharacterPos : 0))
         ProgramFail(Parser, "'%s' is already defined", Ident);
     
     return AssignValue;
+}
+
+/* define a variable. Ident must be registered. If it's a redefinition from the same declaration don't throw an error */
+struct Value *VariableDefineButIgnoreIdentical(struct ParseState *Parser, char *Ident, struct ValueType *Typ, int IsStatic, int *FirstVisit)
+{
+    struct Value *ExistingValue;
+    const char *DeclFileName;
+    int DeclLine;
+    int DeclColumn;
+    
+    if (IsStatic)
+    {
+        char MangledName[LINEBUFFER_MAX];
+        char *MNPos = &MangledName[0];
+        char *MNEnd = &MangledName[LINEBUFFER_MAX-1];
+        const char *RegisteredMangledName;
+        
+        /* make the mangled static name (avoiding using sprintf() to minimise library impact) */
+        memset((void *)&MangledName, '\0', sizeof(MangledName));
+        *MNPos++ = '/';
+        strncpy(MNPos, (char *)Parser->FileName, MNEnd - MNPos);
+        MNPos += strlen(MNPos);
+        
+        if (TopStackFrame != NULL)
+        {
+            /* we're inside a function */
+            if (MNEnd - MNPos > 0) *MNPos++ = '/';
+            strncpy(MNPos, (char *)TopStackFrame->FuncName, MNEnd - MNPos);
+            MNPos += strlen(MNPos);
+        }
+            
+        if (MNEnd - MNPos > 0) *MNPos++ = '/';
+        strncpy(MNPos, Ident, MNEnd - MNPos);
+        RegisteredMangledName = TableStrRegister(MangledName);
+        
+        /* is this static already defined? */
+        if (!TableGet(&GlobalTable, RegisteredMangledName, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn))
+        {
+            /* define the mangled-named static variable store in the global scope */
+            ExistingValue = VariableAllocValueFromType(Parser, Typ, TRUE, NULL, TRUE);
+            TableSet(&GlobalTable, (char *)RegisteredMangledName, ExistingValue, (char *)Parser->FileName, Parser->Line, Parser->CharacterPos);
+            *FirstVisit = TRUE;
+        }
+
+        /* static variable exists in the global scope - now make a mirroring variable in our own scope with the short name */
+        VariableDefinePlatformVar(Parser, Ident, ExistingValue->Typ, ExistingValue->Val, TRUE);
+        return ExistingValue;
+    }
+    else
+    {
+        if (Parser->Line != 0 && TableGet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, Ident, &ExistingValue, &DeclFileName, &DeclLine, &DeclColumn)
+                && DeclFileName == Parser->FileName && DeclLine == Parser->Line && DeclColumn == Parser->CharacterPos)
+            return ExistingValue;
+        else
+            return VariableDefine(Parser, Ident, NULL, Typ, TRUE);
+    }
 }
 
 /* check if a variable with a given name is defined. Ident must be registered */
@@ -163,9 +228,9 @@ int VariableDefined(const char *Ident)
 {
     struct Value *FoundValue;
     
-    if (TopStackFrame == NULL || !TableGet(&TopStackFrame->LocalTable, Ident, &FoundValue))
+    if (TopStackFrame == NULL || !TableGet(&TopStackFrame->LocalTable, Ident, &FoundValue, NULL, NULL, NULL))
     {
-        if (!TableGet(&GlobalTable, Ident, &FoundValue))
+        if (!TableGet(&GlobalTable, Ident, &FoundValue, NULL, NULL, NULL))
             return FALSE;
     }
 
@@ -175,9 +240,9 @@ int VariableDefined(const char *Ident)
 /* get the value of a variable. must be defined. Ident must be registered */
 void VariableGet(struct ParseState *Parser, const char *Ident, struct Value **LVal)
 {
-    if (TopStackFrame == NULL || !TableGet(&TopStackFrame->LocalTable, Ident, LVal))
+    if (TopStackFrame == NULL || !TableGet(&TopStackFrame->LocalTable, Ident, LVal, NULL, NULL, NULL))
     {
-        if (!TableGet(&GlobalTable, Ident, LVal))
+        if (!TableGet(&GlobalTable, Ident, LVal, NULL, NULL, NULL))
             ProgramFail(Parser, "'%s' is undefined", Ident);
     }
 }
@@ -189,7 +254,7 @@ void VariableDefinePlatformVar(struct ParseState *Parser, char *Ident, struct Va
     SomeValue->Typ = Typ;
     SomeValue->Val = FromValue;
     
-    if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, TableStrRegister(Ident), SomeValue))
+    if (!TableSet((TopStackFrame == NULL) ? &GlobalTable : &TopStackFrame->LocalTable, TableStrRegister(Ident), SomeValue, Parser ? Parser->FileName : NULL, Parser ? Parser->Line : 0, Parser ? Parser->CharacterPos : 0))
         ProgramFail(Parser, "'%s' is already defined", Ident);
 }
 
@@ -200,7 +265,7 @@ void VariableStackPop(struct ParseState *Parser, struct Value *Var)
     
 #ifdef DEBUG_HEAP
     if (Var->ValOnStack)
-        printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof(struct Value) + TypeSizeValue(Var)), (unsigned long)Var);
+        printf("popping %ld at 0x%lx\n", (unsigned long)(sizeof(struct Value) + TypeSizeValue(Var, FALSE)), (unsigned long)Var);
 #endif
         
     if (Var->ValOnHeap)
@@ -211,7 +276,7 @@ void VariableStackPop(struct ParseState *Parser, struct Value *Var)
         Success = HeapPopStack(Var, sizeof(struct Value));                       /* free from heap */
     }
     else if (Var->ValOnStack)
-        Success = HeapPopStack(Var, sizeof(struct Value) + TypeSizeValue(Var));  /* free from stack */
+        Success = HeapPopStack(Var, sizeof(struct Value) + TypeSizeValue(Var, FALSE));  /* free from stack */
     else
         Success = HeapPopStack(Var, sizeof(struct Value));                       /* value isn't our problem */
         
@@ -220,7 +285,7 @@ void VariableStackPop(struct ParseState *Parser, struct Value *Var)
 }
 
 /* add a stack frame when doing a function call */
-void VariableStackFrameAdd(struct ParseState *Parser, int NumParams)
+void VariableStackFrameAdd(struct ParseState *Parser, const char *FuncName, int NumParams)
 {
     struct StackFrame *NewFrame;
     
@@ -229,7 +294,8 @@ void VariableStackFrameAdd(struct ParseState *Parser, int NumParams)
     if (NewFrame == NULL)
         ProgramFail(Parser, "out of memory");
         
-    NewFrame->ReturnParser = *Parser;
+    ParserCopy(&NewFrame->ReturnParser, Parser);
+    NewFrame->FuncName = FuncName;
     NewFrame->Parameter = (NumParams > 0) ? ((void *)((char *)NewFrame + sizeof(struct StackFrame))) : NULL;
     TableInitTable(&NewFrame->LocalTable, &NewFrame->LocalHashTable[0], LOCAL_TABLE_SIZE, FALSE);
     NewFrame->PreviousStackFrame = TopStackFrame;
@@ -242,7 +308,7 @@ void VariableStackFramePop(struct ParseState *Parser)
     if (TopStackFrame == NULL)
         ProgramFail(Parser, "stack is empty - can't go back");
         
-    *Parser = TopStackFrame->ReturnParser;
+    ParserCopy(Parser, &TopStackFrame->ReturnParser);
     TopStackFrame = TopStackFrame->PreviousStackFrame;
     HeapPopStackFrame();
 }
@@ -252,7 +318,7 @@ struct Value *VariableStringLiteralGet(char *Ident)
 {
     struct Value *LVal = NULL;
 
-    if (TableGet(&StringLiteralTable, Ident, &LVal))
+    if (TableGet(&StringLiteralTable, Ident, &LVal, NULL, NULL, NULL))
         return LVal;
     else
         return NULL;
@@ -261,7 +327,7 @@ struct Value *VariableStringLiteralGet(char *Ident)
 /* define a string literal. assumes that Ident is already registered */
 void VariableStringLiteralDefine(char *Ident, struct Value *Val)
 {
-    TableSet(&StringLiteralTable, Ident, Val);
+    TableSet(&StringLiteralTable, Ident, Val, NULL, 0, 0);
 }
 
 /* check a pointer for validity and dereference it for use */
@@ -279,6 +345,6 @@ void *VariableDereferencePointer(struct ParseState *Parser, struct Value *Pointe
     if (DerefIsLValue != NULL)
         *DerefIsLValue = TRUE;
 
-    return PointerValue->Val->NativePointer;
+    return PointerValue->Val->Pointer;
 }
 

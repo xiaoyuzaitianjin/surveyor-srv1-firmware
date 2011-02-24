@@ -28,10 +28,11 @@
 #define PERIPHERAL_CLOCK  (CORE_CLOCK / SCLK_DIVIDER)
 
 // UART config
-
-//#define UART0_BAUDRATE 115200
-//#define UART0_BAUDRATE 921600
-#define UART0_BAUDRATE 2304000
+#if defined(__SRV_UART0_BAUDRATE_115200)
+	#define UART0_BAUDRATE 115200
+#else
+	#define UART0_BAUDRATE 2304000
+#endif
 #define UART1_BAUDRATE 115200
 
 // must be power of 2!

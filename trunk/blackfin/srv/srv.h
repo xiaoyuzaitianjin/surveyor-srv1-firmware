@@ -47,8 +47,8 @@
 #define DISP_BUF     0x00F00000  // buffer used to send disparity data
 
 /* Stack info */
-#define STACK_TOP    0xFFB00FFC
-#define STACK_BOTTOM 0xFFB00000
+#define STACK_TOP    0xFF904000
+#define STACK_BOTTOM 0xFF900000
 
 /* Misc Init */
 void init_io ();

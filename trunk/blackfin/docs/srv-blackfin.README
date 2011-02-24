@@ -1,4 +1,28 @@
-				RELEASE NOTES
+                        RELEASE NOTES
+
+SRV-1 firmware build for Blackfin - 24 February 2011
+    http://code.google.com/p/surveyor-srv1-firmware/downloads/list
+    srv1-blackfin-022411.zip
+
+* Integrated latest PicoC version - (v2.1) - all PicoC functions working
+    except floating point and #include (many bug fixes and new features)
+
+* Fixed bug with removing ctrl-z characters from PicoC input stream 
+    (user program) that added significant delays before a large program
+    would run.
+
+* Fixed bug with user functions in PicoC on SRV platform
+
+* Fixed problem with system initalization (lack of true crt0.asm)
+
+* Expanded system C stack from 1KB to 4KB. Many more levels of user
+    defined functions are now possible in PicoC than before
+
+* Modified makefile to simultainously build both normal (2.5Mbaud) and
+    slow serial (115Kbaud) versions of srv1.ldr (Note that 115k version
+    is called srv1_115k.ldr now)
+
+============================================================================
 
 SRV-1 firmware build for Blackfin - 27 June 2010 
     http://code.google.com/p/surveyor-srv1-firmware/downloads/list

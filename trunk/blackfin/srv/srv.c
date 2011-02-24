@@ -33,6 +33,7 @@
 #include "neural.h"
 #include "sdcard.h"
 #include "gps.h"
+#include "picoc\picoc.h"
 
 #ifdef STEREO
 #include "stereo.h"
@@ -71,7 +72,7 @@ int move_start_time, move_stop_time, move_time_mS;
 int robot_moving;
 
 /* Version */
-unsigned char version_string[] = "SRV-1 Blackfin w/picoC 1.0 "  __TIME__ " - " __DATE__;
+unsigned char version_string[] = "SRV-1 Blackfin w/PicoC " PICOC_VERSION " built:" __TIME__ " - " __DATE__;
 
 /* Frame count output string */
 unsigned char frame[] = "000-deg 000-f 000-d 000-l 000-r";
