@@ -1,6 +1,6 @@
 OUTPUT_FORMAT("elf32-bfin", "elf32-bfin", "elf32-bfin")
 OUTPUT_ARCH(bfin)
-
+ 
 MEMORY
 {
     ram(rwx)            : ORIGIN = 0x00000000, LENGTH = 0x02000000
