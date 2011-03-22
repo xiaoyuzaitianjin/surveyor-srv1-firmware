@@ -483,7 +483,21 @@ enum ParseResult ParseStatement(struct ParseState *Parser, int CheckTrailingSemi
     int Condition;
     struct ParseState PreState;
     enum LexToken Token;
-    
+    unsigned char InChar;
+	
+	// BPS: Adding ability to check for serial input to run SRV firmware commands _while_ runnign a PICOC app
+	if (getchar(&InChar))
+	{
+		// This function does all firmware command processing
+		ProcessCommands(InChar);
+	}
+	// Check to see if the user typed a "get me out of PICOC" command ("|")
+	if (!PicoCRunning)
+	{
+		printf("Halting PicoC and returning to SRV command prompt.\n\r");
+		PlatformExit(1);
+	}
+		
     ParserCopy(&PreState, Parser);
     Token = LexGetToken(Parser, &LexerValue, TRUE);
     
@@ -840,7 +854,7 @@ void PicocParse(const char *FileName, const char *Source, int SourceLen, int Run
     
     if (Ok == ParseResultError)
         ProgramFail(&Parser, "parse error");
-    
+		
     /* clean up */
     if (CleanupNow)
         HeapFreeMem(Tokens);

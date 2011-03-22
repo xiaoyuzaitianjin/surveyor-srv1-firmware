@@ -44,6 +44,9 @@
 void _motionvect(unsigned char *, unsigned char *, char *, char *, int, int, int);
 extern int picoc(char *);
 
+/* PicoC state variables */
+unsigned int PicoCRunning = FALSE;
+
 /* Size of frame */
 unsigned int imgWidth, imgHeight;
 

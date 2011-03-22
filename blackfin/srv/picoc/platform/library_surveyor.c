@@ -866,6 +866,10 @@ void Cerrormsg (struct ParseState *Parser, struct Value *ReturnValue, struct Val
     LibPrintf(Parser, ReturnValue, Param, NumArgs);
 }
 
+void Cpause (struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) {
+   PicoCRunning = FALSE;
+}
+
 /* list of all library functions and their prototypes */
 struct LibraryFunction PlatformLibrary[] =
 {
@@ -939,6 +943,7 @@ struct LibraryFunction PlatformLibrary[] =
     { Cautorun,     "void autorun(int);" },
     { Clineno,      "int lineno();" },
     { Cerrormsg,    "void errormsg(char *);" },
+    { Cpause,       "void pause();" },
     { NULL,         NULL }
 };
 
