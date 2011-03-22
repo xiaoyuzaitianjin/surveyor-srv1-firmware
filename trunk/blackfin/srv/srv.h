@@ -194,6 +194,8 @@ int check_bounds_0_100(int ix);
 unsigned int rand();
 unsigned int intfromthreechars();
 unsigned int intfromfourchars();
+void ProcessCommands(unsigned char CharIn);
+
 
 /* Compass */
 short cxmin, cxmax, cymin, cymax;
@@ -238,6 +240,8 @@ extern int svs_enable_ground_priors;
 extern int svs_enable_mapping;
 extern int svs_disp_left, svs_disp_right, svs_steer;
 extern unsigned char version_string[];
+extern unsigned int PicoCRunning;
+extern unsigned int PicoCGoInteractive;
 
 #endif
 

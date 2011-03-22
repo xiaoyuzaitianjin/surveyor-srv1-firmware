@@ -12,13 +12,12 @@ void PlatformCleanup()
 /* get a line of interactive input */
 char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt)
 {
-    int ix;
-    char ch, *cp;
+    unsigned int ix;
+    char ch;
     
     printf(Prompt);
-    
+
     ix = 0;
-    cp = 0;
     
     // If the first character is \n or \r, eat it
     ch = getch();
@@ -28,19 +27,46 @@ char *PlatformGetLine(char *Buf, int MaxLen, const char *Prompt)
         ch = getch();
     }
     
-    while (ix++ < MaxLen) {
-
-        if (ch == 0x1B || ch == 0x03) { // ESC character or ctrl-c (to avoid problem with TeraTerm) - exit
+    while (ix < MaxLen) 
+    {
+        // ESC character or ctrl-c (to avoid problem with TeraTerm) - exit
+        if (ch == 0x1B)
+        { 
+            printf("LLeaving PicoC\n");
+            return NULL;
+        }
+        else if (ch == 0x03) 
+        { 
             printf("Leaving PicoC\n");
             return NULL;
         }
-        if (ch == '\n') {
-            *cp++ = '\n';  // if newline, send newline character followed by null
-            *cp = 0;
+        // Backspace character has to be handled special
+        else if (ch == 0x08)
+        {
+            // Remove the latest character from our buffer
+            if (ix > 0)
+            {
+                // Send a space and then backspace again
+                putchar(' ');
+                putchar(0x08);
+                Buf[ix] = 0x00;
+                ix--;
+            }
+        }
+        else if (ch == '\n') 
+        {
+            Buf[ix] = ch;  // if newline, send newline character followed by null
+            ix++;
+            Buf[ix] = 0;
+            
             return Buf;
         }
-        *cp++ = ch;
-        ix++;
+        else
+        {
+            // Handle the normal storage of the byte
+            Buf[ix] = ch;
+            ix++;
+        }
         ch = getch();
     }
     return NULL;
